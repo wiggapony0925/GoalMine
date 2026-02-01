@@ -1,65 +1,94 @@
-# GoalMine 🏆 - World Cup 2026 Betting Engine
+# GoalMine: Autonomous World Cup 2026 Prediction Engine
 
-**GoalMine** is a state-of-the-art, event-driven hybrid intelligence system designed to function as a "Human-in-the-Loop" betting advisor for the 2026 FIFA World Cup.
+**GoalMine** is an event-driven hybrid intelligence system designed to provide professional-grade betting insights for the 2026 FIFA World Cup.
 
-It operates on a sophisticated architecture that merges **deterministic mathematical modeling** (Quant Engine) with **semantic AI reasoning** (Agent Swarm) to deliver high-confidence, professional-grade betting insights directly via WhatsApp.
+It operates on a sophisticated architecture that merges **deterministic mathematical modeling** (Quant Engine) with **semantic AI reasoning** (Agent Swarm). The system delivers high-confidence, real-time strategic advice directly via WhatsApp, acting as an automated "Human-in-the-Loop" advisor.
 
 ---
 
-## 🏗 System Architecture
+## 1. System Architecture
 
-The core of GoalMine is an **Agent Swarm** orchestration pattern combined with **Fail-Safe Redundancy**.
+The core of GoalMine is an **Agent Swarm** orchestration pattern combined with **Fail-Safe Redundancy**. The system is built to handle live data ingestion, multi-agent consensus, and quantitative validation.
 
-### 🔄 The Intelligence Flow
+![GoalMine Flow Architecture](goalmine_n8n_flow_diagram.png)
+
+### 1.1 The Intelligence Flow
 
 ```mermaid
 graph TD
-    User([User (WhatsApp)]) -->|Message| Webhook[Flask Gateway]
-    
-    Webhook --> Gatekeeper{Gatekeeper AI}
-    
-    Gatekeeper -- Chit Chat / Off Topic --> DirectResponse[Simple AI Reply]
-    Gatekeeper -- Betting Intent --> Orchestrator[Orchestrator Service]
-    
-    subgraph "The Agent Swarm (Parallel Execution)"
-        Orchestrator -->|Analyze| Logistics[Logistics Agent]
-        Orchestrator -->|Analyze| Tactics[Tactics Agent]
-        Orchestrator -->|Analyze| Market[Market Agent]
-        Orchestrator -->|Analyze| Narrative[Narrative Agent]
-        
-        Logistics -->|Fatigue & Travel Data| Quant[Quant Engine]
-        Tactics -->|xG & Injury Data| Quant
-        Market -->|Live Odds| Quant
-        Narrative -->|Sentiment Score| Quant
+    subgraph Sources
+        USER([User Interface (WhatsApp)])
+        SCHED[("schedule.json (Calendar)")]
+        BETS[("bet_types.json (Market Taxonomy)")]
+    end
+
+    subgraph Processing Step
+        WEBHOOK[Flask Gateway]
+        GATE{Gatekeeper AI}
+        ORCH[Orchestrator Service]
     end
     
-    Quant -->|Win Probabilities & Edge| Closer[The Closer (LLM)]
+    subgraph Agent Swarm
+        TAC[Tactics Agent] <--> MONKS[SportMonks API v3]
+        LOG[Logistics Agent] <--> METEO[Open-Meteo API]
+        MKT[Market Agent] <--> ODDS[The Odds API]
+        NAR[Narrative Agent] <--> GOOG[Google News System]
+    end
+
+    subgraph Synthesis
+        QUANT[Quant Engine (Math Model)]
+        CLOSER[The Closer (LLM Finalizer)]
+    end
+
+    USER -->|Message| WEBHOOK
+    WEBHOOK --> GATE
     
-    Closer -->|Final Briefing| User
+    GATE -- "Chit Chat" --> USER
+    GATE -- "Betting Intent" --> ORCH
+    
+    SCHED --> ORCH
+    
+    ORCH -->|Trigger| TAC
+    ORCH -->|Trigger| LOG
+    ORCH -->|Trigger| MKT
+    ORCH -->|Trigger| NAR
+    
+    TAC -->|xG / Squad Data| QUANT
+    LOG -->|Fatigue Score| QUANT
+    MKT -->|Live Odds| QUANT
+    NAR -->|Sentiment Score| QUANT
+    
+    QUANT -->|Probability & Edge| CLOSER
+    BETS --> CLOSER
+    
+    CLOSER -->|Final Advisory| USER
 ```
 
 ---
 
-## 🧠 The Agent Swarm (Redundant & Robust)
+## 2. Agent Capabilities & Fallback Protocols
 
-Each agent is designed with a **"Live"** mode and a **"Crisis Fallback"** mode. If an API fails, the Agent switches personas to estimation mode, ensuring zero downtime.
+Each agent is designed with a **Primary Live Mode** and a **Crisis Fallback Mode**. If an external API fails, the Agent seamlessly switches to an internal estimation protocol, ensuring system reliability.
 
-### 1. 👮 The Gatekeeper
-*   **Role**: Traffic Controller.
-*   **Tech**: Uses Async LLM Classification (`BETTING` vs `CHIT_CHAT` vs `OFF_TOPIC`).
-*   **Function**: dynamically interprets user intent from natural language (e.g., "Analyze France vs Brazil" is automatically parsed).
+### 2.1 The Gatekeeper
+*   **Role**: Traffic Controller & Intent Classifier.
+*   **Technology**: Asynchronous LLM Classification.
+*   **Function**: Dynamically parses user natural language (e.g., "Analyze the France game" vs "Hello") to route requests efficiently.
 
-### 2. 🚚 Logistics Agent (`agents/logistics`)
-*   **Persona**: "Mission Control"
-*   **Primary Data**: **Open-Meteo API** (Real Elevation & Live Weather).
-*   **Crisis Fallback**: "Geographic Estimator" (Uses latitude/month averages).
-*   **Function**: Calculates precise "Altitude Shock" (MetLife -> Azteca) and physiological travel penalties.
+### 2.2 Logistics Agent
+*   **Role**: Environmental & Physiological Analyst.
+*   **Primary Data**: **Open-Meteo API** (Live Weather, Elevation Data).
+*   **Operational Logic**: Calculates "Altitude Shock" (e.g., Sea Level to Mexico City) and travel fatigue penalties.
+*   **Fallback**: "Geographic Estimator" (Uses historical climate averages for the region).
 
-### 3. ♟️ Tactics Agent (`agents/tactics`)
-*   **Persona**: "The Pep Guardiola of Analytics"
-*   **Primary Data**: **SportMonks API v3** (Real xG, Form, Squads).
-*   **Crisis Fallback**: "Internal Knowledge" (Estimates xG based on team tiers).
-*   **Function**: Deconstructs match-ups and predicts "Game Flow" (e.g., Low Block vs High Press).
+### 2.3 Tactics Agent
+*   **Role**: Team Performance & Tactical Analyst.
+*   **Primary Data**: **SportMonks API v3** (Live Scores, Squads, Recent Form).
+*   **Operational Logic**:
+    *   **Pre-Match**: Analyzes Roster Depth and Form (Last 5 Games).
+    *   **Live Monitoring**: reports real-time minutes and scorelines.
+    *   **Half-Time Strategy**: Identifies specific "Comeback" or "Next Goal" opportunities during the break.
+*   **Fallback**: "Internal Knowledge Base" (Estimates xG based on team tiers).
 
 ### 4. 📉 Market Agent (`agents/market`)
 *   **Persona**: "The Vegas Sharp"
@@ -75,7 +104,13 @@ Each agent is designed with a **"Live"** mode and a **"Crisis Fallback"** mode. 
 
 ---
 
-## 🕰 Dynamic Scheduling & Alerts
+### 6. 🎛 The Orchestrator & Quant Fusion
+*   **Role**: The Conductor.
+*   **Process**:
+    1.  **Parallel Execution**: Triggers all 4 Agents simultaneously (`asyncio.gather`).
+    2.  **Data Fusion**: Aggregates JSON outputs (Logistics Fatigue + Tactics xG + Market Odds + Narrative Sentiment).
+    3.  **Quant Weighting**: Applies mathematical penalties (e.g., *Multiplies Away Team xG by 0.85 if Altitude Fatigue > 8*).
+    4.  **The Closer**: The final LLM receives this synthesized "God View" JSON to write the final WhatsApp briefing.
 
 *   **Kick-Off Alerts**: Scans `schedule.json` every 15 minutes. If a game starts in < 60 mins, it texts the user: *"🚨 Alert: Match Starting!"*
 *   **Morning Brief**: At 8:00 AM, checks the **Real Calendar Date**. If games exist, it sends a briefing. If not, it stays silent.
@@ -92,7 +127,42 @@ Each agent is designed with a **"Live"** mode and a **"Crisis Fallback"** mode. 
 
 ---
 
-## 🚀 Setup Guide
+### 7. 🧠 The "God View" JSON Payload
+This is the heart of the engine—the synthesized data block that the final LLM receives to generate its advice. It is designed to be **context-rich** and **action-oriented**.
+
+```json
+{
+  "match_context": {
+    "fixture": "France vs Brazil",
+    "stage": "Semi-Final",
+    "venue": "Azteca (High Altitude)",
+    "kickoff_weather": "28°C, 35% Humidity (Heat Stress Alert)"
+  },
+  "tactical_intel": {
+    "live_status": "HT",
+    "score": "0-1",
+    "possession": "42% vs 58%",
+    "key_insight": "France lost midfield control. Mbappe isolated (0 touches in box).",
+    "roster_health": "Varane limping (42')."
+  },
+  "market_pulse": {
+    "pre_match_line": "France -110",
+    "live_line": "France +220 (Drastic drift)",
+    "smart_money_move": "Sharp money hitting Brazil -0.5 heavily."
+  },
+  "narrative_vibe": {
+    "home_sentiment": "Toxic (Coach arguing with bench)",
+    "away_sentiment": "Confident / Flow State"
+  },
+  "quant_verdict": {
+    "win_prob": {"home": 32.1, "away": 45.4, "draw": 22.5},
+    "value_edge": "Bet Brazil 2nd Goal @ +140 (>5% EV)"
+  }
+}
+```
+
+*   **Multi-Game Handling**: If multiple games are active, the Orchestrator generates a **List** of these JSON blocks (`[Match_A_Payload, Match_B_Payload]`).
+*   **The Closer** iterates through this list and prioritizes the match with the **Highest 'Value Edge'** to present first.
 
 ### 1. Prerequisites
 *   Python 3.10+

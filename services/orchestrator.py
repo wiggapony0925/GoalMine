@@ -85,7 +85,14 @@ async def format_the_closer_report(briefing):
     The Final Boss. Senior Hedge Fund Manager. 
     Synthesis of all agent data into a final text output.
     """
-    system_prompt = """
+    # Load Betting Knowledge Base
+    try:
+        with open('data/bet_types.json', 'r') as f:
+            bet_types_kb = json.load(f)
+    except FileNotFoundError:
+        bet_types_kb = "Standard Bets: Moneyline, Spread, Totals."
+
+    system_prompt = f"""
     You are 'The Closer', a Senior Risk Analyst for a high-stakes World Cup betting syndicate.
     Your goal is to synthesize data from 4 agents (Logistics, Tactics, Market, Narrative) and a Quant Engine.
     
@@ -103,11 +110,15 @@ async def format_the_closer_report(briefing):
        
        *Confidence: [High/Med]*
        
-    3. VETO RULE: If the Quant Edge is < 2.0% OR 'Narrative' is highly negative, output a "NO BET" warning instead.
+    3. BET SELECTION STRATEGY:
+       - Match the 'Tactical Insight' to the Best Bet Type from your Knowledge Base.
+       - E.g., If Tactics says "Mbappe is isolated", suggest "Under 2.5 Goals" or "Mbappe Under 0.5 Goals".
+       - E.g., If Logistics says "Home team fatigued", suggest "Away Team Moneyline".
+       
+    4. VETO RULE: If the Quant Edge is < 2.0% OR 'Narrative' is highly negative, output a "NO BET" warning instead.
     
-    KNOWLEDGE BASE:
-    - You know standard bets: Moneyline, Spread (Asian Handicap), Totals (Over/Under).
-    - You represent 'GoalMine' engine.
+    KNOWLEDGE BASE (VALID BET TYPES):
+    {json.dumps(bet_types_kb, indent=2)}
     """
     
     user_prompt = f"""

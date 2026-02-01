@@ -1,0 +1,166 @@
+{
+    "meta": {
+        "tournament": "FIFA World Cup 2026",
+        "location": "USA, Canada, Mexico",
+        "teams": 48,
+        "groups": "A-L (12 Groups)",
+        "structure": "Group Stage -> Round of 32 -> Round of 16 -> QF -> SF -> Final",
+        "sportsbooks_referenced": [
+            "DraftKings",
+            "FanDuel"
+        ],
+        "version": "FINAL_2.0"
+    },
+    "betting_categories": [
+        {
+            "category_name": "Tournament Outrights (Futures)",
+            "description": "Long-term wagers determined by final tournament standings or cumulative awards.",
+            "bets": [
+                {
+                    "name": "World Cup Winner",
+                    "description": "A wager on which nation will win the final match on July 19, 2026."
+                },
+                {
+                    "name": "Golden Boot Winner",
+                    "description": "A bet on the individual player who scores the most goals during the tournament."
+                },
+                {
+                    "name": "Golden Ball Winner",
+                    "description": "A wager on the player voted the best overall performer of the tournament."
+                },
+                {
+                    "name": "Golden Glove Winner",
+                    "description": "A wager on the goalkeeper voted the best in the tournament (most clean sheets/saves)."
+                },
+                {
+                    "name": "FIFA Young Player Award",
+                    "description": "A bet on the best player under 21 years of age."
+                },
+                {
+                    "name": "To Reach the Final/Semi/Quarter",
+                    "description": "A bet that a specific team will advance to a designated round, regardless of the outcome in that round."
+                },
+                {
+                    "name": "Winning Confederation",
+                    "description": "A wager on the continent (e.g., UEFA, CONMEBOL) of the winning team."
+                },
+                {
+                    "name": "Team Top Goalscorer",
+                    "description": "A bet on which player will score the most goals specifically for their own country."
+                },
+                {
+                    "name": "Stage of Elimination",
+                    "description": "A prediction of the exact round in which a team will be knocked out (e.g., USA to lose in Round of 16)."
+                }
+            ]
+        },
+        {
+            "category_name": "Group Stage Markets",
+            "description": "Futures specifically related to the results of the 12 groups (A-L).",
+            "bets": [
+                {
+                    "name": "Group Winner",
+                    "description": "A wager on which team will finish 1st in their specific group standings."
+                },
+                {
+                    "name": "To Qualify (To Advance)",
+                    "description": "A bet on a team to finish in the Top 2 or as a 'Best 3rd Place' team to reach the Round of 32."
+                },
+                {
+                    "name": "Group Exact Finish",
+                    "description": "Predicting the exact 1-2-3-4 order of teams in a group."
+                },
+                {
+                    "name": "To Finish Bottom",
+                    "description": "A wager on which team will finish in last place (4th) in their group."
+                }
+            ]
+        },
+        {
+            "category_name": "Match Markets (Pre-Game)",
+            "description": "Standard wagers placed before kickoff on the outcome of a single match.",
+            "bets": [
+                {
+                    "name": "3-Way Moneyline",
+                    "description": "A wager on the result after 90 mins + injury time: Team A Win, Team B Win, or Draw."
+                },
+                {
+                    "name": "Draw No Bet",
+                    "description": "A bet on a team to win that refunds the stake if the match ends in a tie."
+                },
+                {
+                    "name": "Double Chance",
+                    "description": "A wager covering two outcomes (e.g., Team A Win OR Draw) to reduce risk."
+                },
+                {
+                    "name": "Spread / Handicap",
+                    "description": "A bet where a team must win by more than a set goal margin (e.g., -1.5) to cover."
+                },
+                {
+                    "name": "Total Goals (Over/Under)",
+                    "description": "A wager on whether the combined score will be higher or lower than a set number (e.g., 2.5)."
+                },
+                {
+                    "name": "Both Teams to Score (BTTS)",
+                    "description": "A Yes/No wager on whether both teams will score at least one goal."
+                },
+                {
+                    "name": "Correct Score",
+                    "description": "A high-risk wager predicting the exact final scoreline (e.g., 2-1)."
+                },
+                {
+                    "name": "Halftime/Fulltime (HT/FT)",
+                    "description": "Predicting the result at halftime AND the result at fulltime in one bet."
+                }
+            ]
+        },
+        {
+            "category_name": "Prop Bets (Player & Game)",
+            "description": "Wagers on specific events or stats within a match.",
+            "bets": [
+                {
+                    "name": "Anytime Goalscorer",
+                    "description": "A bet on a specific player to score a goal at any moment during regulation."
+                },
+                {
+                    "name": "Player Assists",
+                    "description": "A wager on a specific player to provide the final pass leading to a goal."
+                },
+                {
+                    "name": "Total Corners",
+                    "description": "Over/Under wager on the total number of corner kicks taken by both teams."
+                },
+                {
+                    "name": "Total Cards (Bookings)",
+                    "description": "Over/Under wager on the total number of yellow/red cards issued."
+                },
+                {
+                    "name": "Player Shots on Target",
+                    "description": "A bet on whether a player will have more/fewer shots on goal than a set line."
+                },
+                {
+                    "name": "Clean Sheet",
+                    "description": "A bet on a team to prevent the opponent from scoring any goals."
+                }
+            ]
+        },
+        {
+            "category_name": "Live / In-Play Betting",
+            "description": "Dynamic wagers placed after the match has started.",
+            "bets": [
+                {
+                    "name": "Next Goal",
+                    "description": "A wager on which team will score the very next goal of the match."
+                },
+                {
+                    "name": "Rest of Match Winner",
+                    "description": "Who will win the remainder of the game from the current moment (ignoring current score)."
+                },
+                {
+                    "name": "Interval Betting (15-min)",
+                    "description": "Will a goal occur within a specific time block (e.g., 60:00–74:59)?"
+                }
+            ]
+        }
+    ]
+}

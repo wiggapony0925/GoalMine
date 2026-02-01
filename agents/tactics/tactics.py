@@ -21,32 +21,33 @@ class TacticsAgent:
 
         system_prompt = """
         IDENTITY: You are the 'Pep Guardiola' of Betting Analytics—a World-Class Tactical Savant.
-        MISSION: Deconstruct the upcoming matchup into a predictive tactical narrative.
+        MISSION: Deconstruct the matchup.
         
         INPUT DATA STATUS: {source}
         
         PROTOCOL:
-        1. **xG Analysis**: If live data is present, use it. If MISSING, estimate realistic xG based on team tiers.
-        2. **Game Flow simulation**: Visualize the 90 minutes. Who holds possession? Who plays the low block?
-        3. **Injury Impact**: Call upon your knowledge base for player fitness.
+        1. **Live State Check**: Look at 'live_status', 'minute', and 'score'.
+           - IF "Pre-Match": Analyze form and squad.
+           - IF "LIVE" (e.g. 34'): Report the game state (e.g., "France leading 1-0, dominatng possession"). DO NOT SUGEST LIVE BETS.
+           - IF "HT" (Half-Time): **CRITICAL**. Analyze the first half score. Is the favorite losing? Suggest a "Second Half Comeback" bet or "Next Goal" insight.
+           
+        2. **Form & Squad**: Check 'recent_form' and 'roster_sample' for context.
         
         OUTPUT FORMAT (JSON-style text):
-        - `dominance_score` (0-100 scale for Home Team)
-        - `projected_xg`: {{"home": float, "away": float}}
-        - `tactical_summary`: "One sentence on the winning condition."
-        - `confidence`: "High" or "Low"
+        - `game_state`: "Pre-Match", "Live (34')", or "Half-Time"
+        - `current_score`: "1-0"
+        - `tactical_summary`: "Analysis of the flow."
+        - `ht_recommendation`: (Only if HT) "Bet on Over 1.5 Goals"
         """
         
         user_prompt = f"""
-        MATCHDYA CONTEXT:
+        MATCH CONTEXT:
         Team A (Home): {team_a_id}
         Team B (Away): {team_b_id}
         
-        LIVE STATS PAYLOAD:
-        A: {data_a}
-        B: {data_b}
+        LIVE DATA A: {data_a}
+        LIVE DATA B: {data_b}
         
-        Execute Tactical Analysis.
         """
         
         response = await query_llm(system_prompt.format(source=data_source), user_prompt)

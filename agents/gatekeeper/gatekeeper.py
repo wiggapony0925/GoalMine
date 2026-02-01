@@ -18,17 +18,29 @@ class Gatekeeper:
     @staticmethod
     async def _classify_async(message_body):
         system_prompt = """
-        You are a Firewall AI.
-        Classify the user's message into exactly one category:
-        1. BETTING: User wants analysis, odds, predictions, schedule, or match info.
-        2. CHIT_CHAT: Greetings, thanks, or small talk.
-        3. OFF_TOPIC: Politics, coding, weather (unrelated to football), jokes.
+        You are a Firewall AI for a World Cup Betting Engine.
+        Global Rule: You ONLY authorize content related to Football (Soccer), Betting, Odds, or Match Schedules.
         
-        OUTPUT ONLY THE CATEGORY NAME.
+        STRICTLY CLASSIFY INPUT INTO ONE OF 3 CATEGORIES:
+        
+        1. "BETTING": 
+           - Users asking for match analysis ("Analyze France vs Brazil").
+           - Users asking for odds, predictions, or lineups.
+           - Users replying with menu numbers ("1", "2").
+           
+        2. "CHIT_CHAT":
+           - Simple greetings ("Hi", "Hello", "Thanks").
+           
+        3. "OFF_TOPIC":
+           - ANY request about cooking, recipes, coding, politics, weather (non-match), history, or general knowledge.
+           - Example: "How do I bake a cake?" -> OFF_TOPIC
+           - Example: "Write me a python script" -> OFF_TOPIC
+        
+        OUTPUT ONLY THE CATEGORY NAME (BETTING, CHIT_CHAT, OFF_TOPIC).
         """
         
         try:
-            category = await query_llm(system_prompt, f"User Input: {message_body}", temperature=0.1)
+            category = await query_llm(system_prompt, f"User Input: {message_body}", temperature=0.0)
             category = category.strip().upper().replace(".", "")
             
             if "BETTING" in category: return "BETTING", message_body
