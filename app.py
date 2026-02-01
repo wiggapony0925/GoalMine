@@ -21,8 +21,7 @@ logs.print_start_banner()
 
 # --- SERVICES ---
 wa_client = WhatsAppClient()
-CONVERSATION_MEMORY = {}
-conv_handler = ConversationHandler(wa_client, CONVERSATION_MEMORY)
+conv_handler = ConversationHandler(wa_client)
 
 # --- SCHEDULER ---
 def push_morning_brief():

@@ -40,9 +40,16 @@ class WhatsAppClient:
             logger.info(f"Message sent to {to_number}")
             return response.json()
         except requests.exceptions.RequestException as e:
-            logger.error(f"Error sending WhatsApp message: {e}")
-            if e.response:
-                logger.error(f"Response: {e.response.text}")
+            if e.response is not None and e.response.status_code == 401:
+                logger.error("❌ WHATSAPP AUTH ERROR (401 Unauthorized)")
+                logger.error("👉 TROUBLESHOOTING:")
+                logger.error("   1. Your WHATSAPP_TOKEN has likely expired. Temporary tokens only last 24 hours.")
+                logger.error("   2. Go to Meta Developer Portal -> WhatsApp -> API Setup to generate a new token.")
+                logger.error("   3. Check if your PHONE_NUMBER_ID in .env matches the portal.")
+            else:
+                logger.error(f"Error sending WhatsApp message: {e}")
+                if e.response:
+                    logger.error(f"Response: {e.response.text}")
             return None
 
     def send_template_message(self, to_number, template_name, language_code="en_US"):

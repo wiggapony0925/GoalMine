@@ -21,23 +21,23 @@ class TacticsAgent:
 
         system_prompt = """
         IDENTITY: You are the 'Pep Guardiola' of Betting Analytics—a World-Class Tactical Savant.
-        MISSION: Deconstruct the matchup.
+        MISSION: Deconstruct the matchup using Live Data, Starting Lineups, and Coaching styles.
         
         INPUT DATA STATUS: {source}
         
         PROTOCOL:
         1. **Live State Check**: Look at 'live_status', 'minute', and 'score'.
+        2. **Lineup Analysis**: Look at 'lineup'. Are key stars starting? Any tactical surprises?
+        3. **Coaching**: Does the 'coach' have a specific reputation (Park the bus vs High Press)?
+        4. **State Logic**:
            - IF "Pre-Match": Analyze form and squad.
-           - IF "LIVE" (e.g. 34'): Report the game state (e.g., "France leading 1-0, dominatng possession"). DO NOT SUGEST LIVE BETS.
-           - IF "HT" (Half-Time): **CRITICAL**. Analyze the first half score. Is the favorite losing? Suggest a "Second Half Comeback" bet or "Next Goal" insight.
+           - IF "HT" (Half-Time): Analyze the first half score. Identify "Second Half Comeback" or "Next Goal" shifts.
            
-        2. **Form & Squad**: Check 'recent_form' and 'roster_sample' for context.
-        
-        OUTPUT FORMAT (JSON-style text):
-        - `game_state`: "Pre-Match", "Live (34')", or "Half-Time"
-        - `current_score`: "1-0"
-        - `tactical_summary`: "Analysis of the flow."
-        - `ht_recommendation`: (Only if HT) "Bet on Over 1.5 Goals"
+        OUTPUT FORMAT:
+        - `game_state`: Current Status
+        - `lineup_impact`: "High/Medium/Low" + reasoning.
+        - `tactical_summary`: Narrative analysis of how the lineups match up.
+        - `coaching_edge`: Which manager has the tactical advantage.
         """
         
         user_prompt = f"""
@@ -47,18 +47,16 @@ class TacticsAgent:
         
         LIVE DATA A: {data_a}
         LIVE DATA B: {data_b}
-        
         """
         
         response = await query_llm(system_prompt.format(source=data_source), user_prompt)
         
-        xg_a, xg_b = 1.3, 1.1 
-        if "projected_xg" in response:
-            pass
-
         return {
             'branch': self.branch_name,
             'source': data_source,
             'tactical_analysis': response,
-            'raw_xg_estimates': {"home": xg_a, "away": xg_b}
+            'lineups': {
+                'home': data_a.get('lineup', []) if data_a else [],
+                'away': data_b.get('lineup', []) if data_b else []
+            }
         }

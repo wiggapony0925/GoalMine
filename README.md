@@ -1,14 +1,14 @@
 # GoalMine: Autonomous World Cup 2026 Prediction Engine
 
-**GoalMine** is an event-driven hybrid intelligence system designed to provide professional-grade betting insights for the 2026 FIFA World Cup.
+**GoalMine** is a production-grade, event-driven hybrid intelligence system designed for professional-grade betting insights for the 2026 FIFA World Cup.
 
-It operates on a sophisticated architecture that merges **deterministic mathematical modeling** (Quant Engine) with **semantic AI reasoning** (Agent Swarm). The system delivers high-confidence, real-time strategic advice directly via WhatsApp, acting as an automated "Human-in-the-Loop" advisor.
+It operates on a sophisticated architecture that merges **deterministic mathematical modeling** (Quant Engine) with **semantic AI reasoning** (Agent Swarm). The system delivers high-confidence, real-time strategic advice directly via WhatsApp, acting as an automated "Human-in-the-Loop" advisor for sports syndicates.
 
 ---
 
 ## 1. System Architecture
 
-GoalMine is built for **scalability** and **persistence**. The core is an **Agent Swarm** orchestration pattern combined with **Fail-Safe Redundancy**.
+The core of GoalMine is an **Agent Swarm** orchestration pattern. It is designed to be **Cloud-Native**, with strictly enforced persistence and modular intelligence.
 
 ### 1.1 The Intelligence Flow
 
@@ -24,25 +24,25 @@ graph TD
     subgraph Processing Layer
         WEBHOOK[Flask Gateway]
         CONV[Conversation Handler]
-        MEM[("memory.json (Persistence)")]
+        DB[(Supabase Cloud Database)]
     end
     
     subgraph Agent Swarm
-        TAC[Tactics Agent] <--> MONKS[SportMonks API v3]
-        LOG[Logistics Agent] <--> METEO[Open-Meteo API]
-        MKT[Market Agent] <--> ODDS[The Odds API]
-        NAR[Narrative Agent] <--> GOOG[News] & REDDIT[Reddit]
+        TAC[Tactics Agent] <--> MONKS[SportMonks V3 (Lineups/Coaches)]
+        LOG[Logistics Agent] <--> METEO[Open-Meteo API (Weather/Alt)]
+        MKT[Market Agent] <--> ODDS[The Odds API (Live Lines)]
+        NAR[Narrative Agent] <--> NEWS[Google News] & REDDIT[No-Key Scraper]
     end
 
     subgraph Synthesis
         QUANT[Quant Engine (NumPy Matrix)]
         ORCH[Orchestrator Service]
-        MODELS[("model_config.json")]
+        MODELS[("model_config.json (LLM Routing)")]
     end
 
     USER -->|Message| WEBHOOK
     WEBHOOK --> CONV
-    CONV <--> MEM
+    CONV <--> DB
     
     CONV -->|Trigger Analysis| ORCH
     ORCH --> MODELS
@@ -76,15 +76,13 @@ Each agent is designed with a **Primary Live Mode** and a **Crisis Fallback Mode
 *   **Role**: Environmental & Physiological Analyst.
 *   **Primary Data**: **Open-Meteo API** (Live Weather, Elevation Data).
 *   **Operational Logic**: Calculates "Altitude Shock" (e.g., Sea Level to Mexico City) and temperature stress penalties.
-*   **Fallback**: "Geographic Estimator" (Uses historical climate averages).
 
-### 2.3 Tactics Agent
+### 2.3 Tactics Agent (Pro)
 *   **Role**: Team Performance & Tactical Analyst.
-*   **Primary Data**: **SportMonks API v3** (Live Scores, Squads, Recent Form).
+*   **Primary Data**: **SportMonks V3** (Live Scores, Lineups, Coaches).
 *   **Operational Logic**:
-    *   **Pre-Match**: Analyzes Roster Depth and Form (Last 5 Games).
-    *   **Live Monitoring**: Reports real-time minutes and scorelines.
-*   **Fallback**: "Internal Knowledge Base" (Estimates xG based on team tiers).
+    *   **Pre-Match**: Analyzes specific **Starting Eleven Lineups** and **Head Coach reputations**.
+    *   **Lineup Analysis**: Evaluates tactical surprises or missing star players.
 
 ### 2.4 Market Agent
 *   **Persona**: "The Vegas Sharp"
@@ -92,94 +90,67 @@ Each agent is designed with a **Primary Live Mode** and a **Crisis Fallback Mode
 *   **Function**: Identifies Arbitrage, Trap Lines, and "Sharp" money moves.
 
 ### 2.5 Narrative Agent (Social Sentiment)
-*   **Dual-Scan**: Checks **Google News RSS** and **Reddit** (via PRAW).
+*   **Dual-Scan**: Checks **Google News RSS** and **Reddit (No-Key Scraper)**.
 *   **Config**: Uses `data/reddit_config.json` to monitor specific subreddits (r/soccer, r/worldcup).
-*   **Function**: Scrapes headers for Morale, Scandals, and Locker Room friction.
-
-### 2.6 The Quant Engine (Math Core)
-*   **Logic**: Vectorized Poisson Matrix + Kelly Criterion Staking.
-*   **Dynamic Staking**: Automatically recalculates exact dollar amounts based on the user's specified budget.
+*   **Function**: Scrapes headers for Morale, Scandals, and Locker Room friction without requiring API keys.
 
 ---
 
-## 3. Advanced Features
+## 3. Production Features
 
-### 3.1 Model Routing (`data/model_config.json`)
+### 3.1 Cloud Persistence (Supabase)
+The system strictly enforces cloud persistence. Every "God View" and user session is saved to **Supabase**, ensuring that the bot retains memory even across server restarts or ephemeral cloud deployments.
+
+#### 🛠️ Database Setup (Supabase)
+To enable persistence, create a table in your Supabase project:
+1.  **Table Name:** `sessions`
+2.  **Primary Key:** `phone` (Type: `text`)
+3.  **Column:** `god_view` (Type: `jsonb`)
+
+### 3.2 Dynamic Model Routing (`data/model_config.json`)
 Allows you to swap AI models for each agent instantly. You can route simple tasks to `gpt-4o-mini` and complex synthesis to `gpt-4o`.
-
-### 3.2 Persistent Memory (`data/memory.json`)
-Saves the "God View" of matches per user. This allows the bot to answer follow-up questions (e.g., *"Why did you recommend that?"*) without re-running the expensive agent swarm.
-
-### 3.3 Dynamic Settings
-- **`bet_types.json`**: Define which markets the bot is authorized to recommend.
-- **`reddit_config.json`**: Manage your social intelligence streams effortlessly.
-
----
-
-## 4. 🧠 The "God View" JSON Payload
-This is the heart of the engine—the synthesized data block that the final Orchestrator uses to generate advice.
-
-```json
-{
-  "match_context": {
-    "fixture": "France vs Brazil",
-    "venue": "Azteca (High Altitude)",
-    "kickoff_weather": "28°C, 35% Humidity"
-  },
-  "tactical_intel": {
-    "live_status": "HT",
-    "score": "0-1",
-    "key_insight": "Mbappe isolated. Brazil controlling midfield."
-  },
-  "quant_verdict": {
-    "win_prob": {"home": 32.1, "away": 45.4, "draw": 22.5},
-    "value_edge": "Bet Brazil Win @ +140 (>5% EV)",
-    "top_plays": [
-      {"type": "Moneyline Brazil", "odds": 2.20, "stake": "$42.00"}
-    ]
-  }
-}
-```
 
 ---
 
 ## ⚙️ Setup & Installation
 
 ### 1. Prerequisites
-*   Python 3.14+
-*   Meta Developer Account (WhatsApp Cloud API)
-*   OpenAI API Key
+*   Python 3.12+
+*   Supabase Account (Database)
+*   Docker (Optional, for Cloud deployment)
 
-### 2. Installation
+### 2. Environment Variables (.env)
 ```bash
-git clone https://github.com/YourUsername/GoalMine.git
-cd GoalMine
-pip install -r requirements.txt
-```
-
-### 3. Environment Variables (.env)
-```bash
+# Core
 OPENAI_API_KEY=sk-...
+SUPABASE_URL=...
+SUPABASE_KEY=...
+
+# WhatsApp
+WHATSAPP_TOKEN=...
+PHONE_NUMBER_ID=...
+VERIFY_TOKEN=...
+
+# Intelligence Agents
 ODDS_API_KEY=...
 SPORTMONKS_API_TOKEN=...
-REDDIT_CLIENT_ID=...
-REDDIT_CLIENT_SECRET=...
 ```
 
-### 4. Launch
+### 3. Deployment (Docker)
+The project includes a professional `Dockerfile` for one-command deployment.
 ```bash
-python app.py
+docker build -t goalmine-ai .
+docker run -p 8000:8000 goalmine-ai
 ```
 
 ---
 
 ## 🧪 WhatsApp Usage
-- **"Analyze [Team]"**: Runs the full swarm intelligence.
-- **"Give me 3 bets"**: Multi-bet synthesis with Kelly staking.
-- **"I have $100 budget"**: Automatically updates all staking recommendations.
-- **"What's the weather?"**: Context-aware Q&A based on memory.
+- **"Analyze [Match]"**: Full swarm intelligence + Lineup analysis.
+- **"Give me 3 bets with $100 budget"**: Multi-bet synthesis with Kelly staking.
+- **"What's the weather?"**: Context-aware Q&A using Supabase session memory.
 
 ---
 
-**Status**: 🟢 Production Ready (Live Data + Hybrid Sentiment)
+**Status**: � Cloud-Native / Production Ready
 **Developer**: Jeffrey Fernandez

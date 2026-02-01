@@ -65,9 +65,15 @@ def print_start_banner():
     """
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         init(autoreset=True)
+        # Database Status Check
+        db_status = Fore.RED + "OFFLINE"
+        if os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY"):
+            db_status = Fore.GREEN + "ONLINE (Supabase Cloud)"
+        
         ascii_banner = pyfiglet.figlet_format("GoalMine AI")
         print(Fore.CYAN + ascii_banner)
         print(Fore.GREEN + "✅ System Initialized: World Cup 2026 Betting Engine Online")
+        print(Fore.YELLOW + f"💾 Persistence: {db_status}")
         print(Fore.YELLOW + "📊 Agents: [Logistics, Tactics, Market, Narrative] -> READY")
         print(Fore.MAGENTA + f"📡 Webhook Active: /webhook")
         print(Style.RESET_ALL)
