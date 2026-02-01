@@ -67,11 +67,11 @@ async def generate_betting_briefing(match_info, user_budget=100):
     final_xg_a = base_xg_a * sent_mult_a
     final_xg_b = base_xg_b * sent_mult_b * log_penalty
     
-    # Mocking odds for quant
+    # Mocking odds for quant (Slightly improved for demo edge)
     mock_best_odds = {
-        'Team_A_Win': {'odds': 2.10, 'platform': 'DraftKings'}, 
-        'Draw': {'odds': 3.20, 'platform': 'FanDuel'}, 
-        'Team_B_Win': {'odds': 3.50, 'platform': 'BetMGM'}
+        'Team_A_Win': {'odds': 2.50, 'platform': 'DraftKings'}, 
+        'Draw': {'odds': 3.40, 'platform': 'FanDuel'}, 
+        'Team_B_Win': {'odds': 4.10, 'platform': 'BetMGM'}
     }
     
     logger.info(f"🤖 Quant Engine processing: Adj xG {round(final_xg_a,2)} vs {round(final_xg_b,2)}")
@@ -87,7 +87,7 @@ async def generate_betting_briefing(match_info, user_budget=100):
         "final_xg": {"home": round(final_xg_a, 2), "away": round(final_xg_b, 2)}
     }
 
-async def format_the_closer_report(briefing):
+async def format_the_closer_report(briefing, num_bets=1):
     """
     PERSONA: The Closer
     The Final Boss. Senior Hedge Fund Manager. 
@@ -105,28 +105,29 @@ async def format_the_closer_report(briefing):
     Your goal is to synthesize data from 4 agents (Logistics, Tactics, Market, Narrative) and a Quant Engine.
     
     OUTPUT RULES:
-    1. Tone: Professional, Concise, Wall Street/Hedge Fund style. No "Hello", no fluff.
-    2. Format:
-       🏆 OFFICIAL BET BRIEFING
-       ⚽ Match: [Match Name]
-       💰 The Play: [Bet Type] @ [Odds] ([Bookmaker])
+    1. Tone: Professional, Concise, Wall Street style.
+    2. Format (WHATSAPP MARKDOWN):
+       🏆 *OFFICIAL BET BRIEFING*
+       ⚽ *Match:* [Match Name]
        
-       The Why:
-       1. Math: Quant model gives [X]% prob (Edge: [Y]%).
-       2. Intel: [One sharp sentence from Narrative/Tactics].
-       3. Logistics: [One sharp sentence about travel/weather].
+       (If bets exist):
+       💰 *TOP OPPORTUNITIES:*
+       1. *[Bet Type]* @ *[Odds]* ([Bookmaker]) - Stake: *$[Amount]*
+       2. *[Bet Type]* @ *[Odds]* ([Bookmaker]) - Stake: *$[Amount]*
        
-       *Confidence: [High/Med]*
+       (If NO bets exist):
+       🚫 *NO BET WARNING:* [Reason from Quant]
        
-    3. BET SELECTION STRATEGY:
-       - Match the 'Tactical Insight' to the Best Bet Type from your Knowledge Base.
-       - E.g., If Tactics says "Mbappe is isolated", suggest "Under 2.5 Goals" or "Mbappe Under 0.5 Goals".
-       - E.g., If Logistics says "Home team fatigued", suggest "Away Team Moneyline".
+       *The Why:*
+       1. *Math:* [Sharp sentence on probabilities/edge].
+       2. *Intel:* [One sharp sentence from Narrative/Tactics].
+       3. *Logistics:* [One sharp sentence about travel/weather].
        
-    4. VETO RULE: If the Quant Edge is < 2.0% OR 'Narrative' is highly negative, output a "NO BET" warning instead.
-    
-    KNOWLEDGE BASE (VALID BET TYPES):
-    {json.dumps(bet_types_kb, indent=2)}
+       *Confidence:* [High/Med/Low]
+       
+    3. BET SELECTION:
+       - Provide {num_bets} opportunities if they exist in 'top_plays'.
+       - Use *bolding* (asterisks) for key terms.
     """
     
     user_prompt = f"""
@@ -139,13 +140,14 @@ async def format_the_closer_report(briefing):
     4. Narrative: {briefing['narrative']}
     5. QUANT ENGINE RESULT (IMPORTANT): {briefing['quant']}
     
+    The user is looking for {num_bets} bet(s).
     Generate the final WhatsApp message now.
     """
     
     response = await query_llm(system_prompt, user_prompt, temperature=0.5)
     return response
 
-async def answer_follow_up_question(memory, user_message):
+async def answer_follow_up_question(memory, user_message, num_bets=1):
     """
     Handles 'Chat with Data' requests.
     """
@@ -159,11 +161,16 @@ async def answer_follow_up_question(memory, user_message):
     {json.dumps(memory, indent=2)}
     
     Your goal is to answer the user's specific question based strictly on this data.
+    - Use *WHATSAPP BOLDING* (asterisks) for emphasis.
     - If they ask about "xG", look at 'tactics'.
     - If they ask about "weather", look at 'logistics'.
-    - If they ask "why", explain the 'quant' or 'narrative' reasoning.
+    - If they ask for "bets" or "staking/budget", find the edge in the 'quant' data and recalculate amounts if a budget is mentioned.
     
-    Keep answers short (under 50 words) and factual.
+    Format:
+    🎯 *Analysis Update*
+    [Your answer here]
+    
+    Keep answers short (under 75 words) and factual.
     """
     
     user_prompt = f"User Question: {user_message}"
@@ -209,6 +216,28 @@ def get_upcoming_matches():
             upcoming.append(m)
             
     return upcoming
+
+def get_next_scheduled_match():
+    """
+    Finds the absolute next match in the schedule.
+    """
+    now = datetime.now()
+    next_match = None
+    for m in SCHEDULE:
+        match_date = datetime.fromisoformat(m['date_iso'])
+        if match_date > now:
+            next_match = m
+            break
+            
+    if next_match:
+        return {
+            'home_team': next_match['team_home'],
+            'away_team': next_match['team_away'],
+            'date_iso': next_match['date_iso'],
+            'venue_from': 'MetLife_NY', 
+            'venue_to': 'Azteca_Mexico' 
+        }
+    return None
 
 def get_morning_brief_content():
     todays = get_todays_matches()

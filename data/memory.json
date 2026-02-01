@@ -1,0 +1,58 @@
+{
+  "19294255178": {
+    "match": "Mexico vs South Africa",
+    "logistics": {
+      "branch": "logistics",
+      "travel_km": 3373.9,
+      "altitude_change": 2241.0,
+      "weather_source": "LIVE_METEO",
+      "recommendation": "**Fatigue Score Calculation:**\n\n1. **Altitude Shock**:  \n   - Elevation gain from MetLife Stadium (elevation approximately 3m) to Azteca Stadium (elevation 2245m) is 2242m.\n   - Significant aerobic pe...",
+      "full_analysis": "**Fatigue Score Calculation:**\n\n1. **Altitude Shock**:  \n   - Elevation gain from MetLife Stadium (elevation approximately 3m) to Azteca Stadium (elevation 2245m) is 2242m.\n   - Significant aerobic penalty due to altitude gain: 2242m / 500m = 4.48 (round to 4.5).\n\n2. **Travel Fatigue**:  \n   - Flight distance is 3373.9 km, which is greater than 2000 km.\n   - Circadian disruption factor: 2.0.\n\n3. **Heat Stress**:  \n   - Temperature is 13.6\u00b0C, which is below the threshold of 28\u00b0C.\n   - No additional performance drop due to heat stress.\n\n4. **Recent Workload**:  \n   - 1 match in the last 2 weeks indicates a moderate workload.\n\n**Total Fatigue Score**:  \n- Altitude Shock: 4.5  \n- Travel Fatigue: 2.0  \n- Heat Stress: 0  \n- Workload Adjustment: Small impact anticipated, so add 0.5\n\nTotal Fatigue Score = 4.5 + 2.0 + 0 + 0.5 = **7.0**\n\n**Strategic Advice**:  \n\"Altitude at Azteca amplifies home team advantage. Recommend acclimatization period and altitude training sessions to mitigate aerobic penalty. Minimize effects of travel fatigue by optimizing sleep schedules and recovery protocols.\""
+    },
+    "tactics": {
+      "branch": "tactics",
+      "source": "INTERNAL_KNOWLEDGE_FALLBACK",
+      "tactical_analysis": "```json\n{\n    \"game_state\": \"Pre-Match\",\n    \"current_score\": \"0-0\",\n    \"tactical_summary\": \"With no live data available, the analysis focuses on pre-match factors. Consider Team A's home advantage and recent form against Team B's away performance and squad depth. Key players and historical encounters could play a significant role.\",\n    \"ht_recommendation\": null\n}\n```",
+      "raw_xg_estimates": {
+        "home": 1.3,
+        "away": 1.1
+      }
+    },
+    "market": {
+      "branch": "market_sniper",
+      "data_source": "LIVE_ODDS_API",
+      "analysis": "- Best Home Odds: 1.54 (FanDuel)\n- Best Away Odds: 6.5 (FanDuel)\n- Implied Probability Gap: No significant underestimation of the favorite\n- Verdict: Bet Home",
+      "best_books": "Analysis pending in summary"
+    },
+    "narrative": {
+      "home": {
+        "branch": "narrative",
+        "source": "LIVE_RSS_FEED",
+        "team": "Mexico",
+        "score": 5,
+        "articles_scanned": 5,
+        "summary": "- **Sentiment Score**: 3.5\n\n- **The Scoop**: Mexico's national soccer team is grappling with significant morale challenges as a key player's injury and potential absence from the World Cup casts a shadow over their preparations. The early onset of injury concerns is creating a sense of panic and unc..."
+      },
+      "away": {
+        "branch": "narrative",
+        "source": "LIVE_RSS_FEED",
+        "team": "South Africa",
+        "score": 5,
+        "articles_scanned": 5,
+        "summary": "- **Sentiment Score**: 6.5\n\n- **The Scoop**: South Africa's cricket team is dealing with a significant blow to their morale as veteran batter David Miller faces uncertainty about his participation in the T20 World Cup 2026 due to injury concerns. While the team\u2019s historical resilience and strategic ..."
+      }
+    },
+    "quant": {
+      "probabilities": {
+        "team_a_win": 46.42,
+        "draw": 25.77,
+        "team_b_win": 27.81
+      },
+      "top_plays": []
+    },
+    "final_xg": {
+      "home": 1.5,
+      "away": 1.1
+    }
+  }
+}
