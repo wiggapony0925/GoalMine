@@ -2,3 +2,8 @@ Flask==3.0.0
 requests==2.31.0
 python-dotenv==1.0.0
 gunicorn==21.2.0
+apscheduler==3.10.4
+openai==1.12.0
+beautifulsoup4==4.12.3
+pyfiglet==1.0.2
+colorama==0.4.6

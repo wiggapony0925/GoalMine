@@ -1,0 +1,834 @@
+[
+    {
+        "stage": "Group Stage",
+        "group": "Group A",
+        "date_iso": "2026-06-11T15:00:00",
+        "match_label": "Mexico vs South Africa",
+        "team_home": "Mexico",
+        "team_away": "South Africa"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group A",
+        "date_iso": "2026-06-11T22:00:00",
+        "match_label": "South Korea vs TBD",
+        "team_home": "South Korea",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group B",
+        "date_iso": "2026-06-12T15:00:00",
+        "match_label": "Canada vs TBD",
+        "team_home": "Canada",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group D",
+        "date_iso": "2026-06-12T21:00:00",
+        "match_label": "USA vs Paraguay",
+        "team_home": "USA",
+        "team_away": "Paraguay"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group B",
+        "date_iso": "2026-06-13T15:00:00",
+        "match_label": "Qatar vs Switzerland",
+        "team_home": "Qatar",
+        "team_away": "Switzerland"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group C",
+        "date_iso": "2026-06-13T18:00:00",
+        "match_label": "Brazil vs Morocco",
+        "team_home": "Brazil",
+        "team_away": "Morocco"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group C",
+        "date_iso": "2026-06-13T21:00:00",
+        "match_label": "Haiti vs Scotland",
+        "team_home": "Haiti",
+        "team_away": "Scotland"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group D",
+        "date_iso": "2026-06-14T00:00:00",
+        "match_label": "Australia vs TBD",
+        "team_home": "Australia",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group E",
+        "date_iso": "2026-06-14T13:00:00",
+        "match_label": "Germany vs Curaçao",
+        "team_home": "Germany",
+        "team_away": "Curaçao"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group F",
+        "date_iso": "2026-06-14T16:00:00",
+        "match_label": "Netherlands vs Japan",
+        "team_home": "Netherlands",
+        "team_away": "Japan"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group E",
+        "date_iso": "2026-06-14T19:00:00",
+        "match_label": "Ivory Coast vs Ecuador",
+        "team_home": "Ivory Coast",
+        "team_away": "Ecuador"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group F",
+        "date_iso": "2026-06-14T22:00:00",
+        "match_label": "TBD vs Tunisia",
+        "team_home": "TBD",
+        "team_away": "Tunisia"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group H",
+        "date_iso": "2026-06-15T12:00:00",
+        "match_label": "Spain vs Cape Verde",
+        "team_home": "Spain",
+        "team_away": "Cape Verde"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group G",
+        "date_iso": "2026-06-15T15:00:00",
+        "match_label": "Belgium vs Egypt",
+        "team_home": "Belgium",
+        "team_away": "Egypt"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group H",
+        "date_iso": "2026-06-15T18:00:00",
+        "match_label": "Saudi Arabia vs Uruguay",
+        "team_home": "Saudi Arabia",
+        "team_away": "Uruguay"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group G",
+        "date_iso": "2026-06-15T21:00:00",
+        "match_label": "Iran vs New Zealand",
+        "team_home": "Iran",
+        "team_away": "New Zealand"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group I",
+        "date_iso": "2026-06-16T15:00:00",
+        "match_label": "France vs Senegal",
+        "team_home": "France",
+        "team_away": "Senegal"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group I",
+        "date_iso": "2026-06-16T18:00:00",
+        "match_label": "TBD vs Norway",
+        "team_home": "TBD",
+        "team_away": "Norway"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group J",
+        "date_iso": "2026-06-16T21:00:00",
+        "match_label": "Argentina vs Algeria",
+        "team_home": "Argentina",
+        "team_away": "Algeria"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group J",
+        "date_iso": "2026-06-17T00:00:00",
+        "match_label": "Austria vs Jordan",
+        "team_home": "Austria",
+        "team_away": "Jordan"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group K",
+        "date_iso": "2026-06-17T13:00:00",
+        "match_label": "Portugal vs TBD",
+        "team_home": "Portugal",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group L",
+        "date_iso": "2026-06-17T16:00:00",
+        "match_label": "England vs Croatia",
+        "team_home": "England",
+        "team_away": "Croatia"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group L",
+        "date_iso": "2026-06-17T19:00:00",
+        "match_label": "Ghana vs Panama",
+        "team_home": "Ghana",
+        "team_away": "Panama"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group K",
+        "date_iso": "2026-06-17T22:00:00",
+        "match_label": "Uzbekistan vs Colombia",
+        "team_home": "Uzbekistan",
+        "team_away": "Colombia"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group A",
+        "date_iso": "2026-06-18T12:00:00",
+        "match_label": "TBD vs South Africa",
+        "team_home": "TBD",
+        "team_away": "South Africa"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group B",
+        "date_iso": "2026-06-18T15:00:00",
+        "match_label": "Switzerland vs TBD",
+        "team_home": "Switzerland",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group B",
+        "date_iso": "2026-06-18T18:00:00",
+        "match_label": "Canada vs Qatar",
+        "team_home": "Canada",
+        "team_away": "Qatar"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group A",
+        "date_iso": "2026-06-18T21:00:00",
+        "match_label": "Mexico vs South Korea",
+        "team_home": "Mexico",
+        "team_away": "South Korea"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group D",
+        "date_iso": "2026-06-19T15:00:00",
+        "match_label": "USA vs Australia",
+        "team_home": "USA",
+        "team_away": "Australia"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group C",
+        "date_iso": "2026-06-19T18:00:00",
+        "match_label": "Scotland vs Morocco",
+        "team_home": "Scotland",
+        "team_away": "Morocco"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group C",
+        "date_iso": "2026-06-19T21:00:00",
+        "match_label": "Brazil vs Haiti",
+        "team_home": "Brazil",
+        "team_away": "Haiti"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group D",
+        "date_iso": "2026-06-20T00:00:00",
+        "match_label": "TBD vs Paraguay",
+        "team_home": "TBD",
+        "team_away": "Paraguay"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group F",
+        "date_iso": "2026-06-20T13:00:00",
+        "match_label": "Netherlands vs TBD",
+        "team_home": "Netherlands",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group E",
+        "date_iso": "2026-06-20T16:00:00",
+        "match_label": "Germany vs Ivory Coast",
+        "team_home": "Germany",
+        "team_away": "Ivory Coast"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group E",
+        "date_iso": "2026-06-20T20:00:00",
+        "match_label": "Ecuador vs Curaçao",
+        "team_home": "Ecuador",
+        "team_away": "Curaçao"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group F",
+        "date_iso": "2026-06-21T00:00:00",
+        "match_label": "Tunisia vs Japan",
+        "team_home": "Tunisia",
+        "team_away": "Japan"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group H",
+        "date_iso": "2026-06-21T12:00:00",
+        "match_label": "Spain vs Saudi Arabia",
+        "team_home": "Spain",
+        "team_away": "Saudi Arabia"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group G",
+        "date_iso": "2026-06-21T15:00:00",
+        "match_label": "Belgium vs Iran",
+        "team_home": "Belgium",
+        "team_away": "Iran"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group H",
+        "date_iso": "2026-06-21T18:00:00",
+        "match_label": "Uruguay vs Cape Verde",
+        "team_home": "Uruguay",
+        "team_away": "Cape Verde"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group G",
+        "date_iso": "2026-06-21T21:00:00",
+        "match_label": "New Zealand vs Egypt",
+        "team_home": "New Zealand",
+        "team_away": "Egypt"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group J",
+        "date_iso": "2026-06-22T13:00:00",
+        "match_label": "Argentina vs Austria",
+        "team_home": "Argentina",
+        "team_away": "Austria"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group I",
+        "date_iso": "2026-06-22T17:00:00",
+        "match_label": "France vs TBD",
+        "team_home": "France",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group I",
+        "date_iso": "2026-06-22T20:00:00",
+        "match_label": "Norway vs Senegal",
+        "team_home": "Norway",
+        "team_away": "Senegal"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group J",
+        "date_iso": "2026-06-22T23:00:00",
+        "match_label": "Jordan vs Algeria",
+        "team_home": "Jordan",
+        "team_away": "Algeria"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group K",
+        "date_iso": "2026-06-23T13:00:00",
+        "match_label": "Portugal vs Uzbekistan",
+        "team_home": "Portugal",
+        "team_away": "Uzbekistan"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group L",
+        "date_iso": "2026-06-23T16:00:00",
+        "match_label": "England vs Ghana",
+        "team_home": "England",
+        "team_away": "Ghana"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group L",
+        "date_iso": "2026-06-23T19:00:00",
+        "match_label": "Panama vs Croatia",
+        "team_home": "Panama",
+        "team_away": "Croatia"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group K",
+        "date_iso": "2026-06-23T22:00:00",
+        "match_label": "Colombia vs TBD",
+        "team_home": "Colombia",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group B",
+        "date_iso": "2026-06-24T15:00:00",
+        "match_label": "Switzerland vs Canada",
+        "team_home": "Switzerland",
+        "team_away": "Canada"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group B",
+        "date_iso": "2026-06-24T15:00:00",
+        "match_label": "TBD vs Qatar",
+        "team_home": "TBD",
+        "team_away": "Qatar"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group C",
+        "date_iso": "2026-06-24T18:00:00",
+        "match_label": "Morocco vs Haiti",
+        "team_home": "Morocco",
+        "team_away": "Haiti"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group C",
+        "date_iso": "2026-06-24T18:00:00",
+        "match_label": "Scotland vs Brazil",
+        "team_home": "Scotland",
+        "team_away": "Brazil"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group A",
+        "date_iso": "2026-06-24T21:00:00",
+        "match_label": "South Africa vs South Korea",
+        "team_home": "South Africa",
+        "team_away": "South Korea"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group A",
+        "date_iso": "2026-06-24T21:00:00",
+        "match_label": "TBD vs Mexico",
+        "team_home": "TBD",
+        "team_away": "Mexico"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group E",
+        "date_iso": "2026-06-25T16:00:00",
+        "match_label": "Curaçao vs Ivory Coast",
+        "team_home": "Curaçao",
+        "team_away": "Ivory Coast"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group E",
+        "date_iso": "2026-06-25T16:00:00",
+        "match_label": "Ecuador vs Germany",
+        "team_home": "Ecuador",
+        "team_away": "Germany"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group F",
+        "date_iso": "2026-06-25T19:00:00",
+        "match_label": "Tunisia vs Netherlands",
+        "team_home": "Tunisia",
+        "team_away": "Netherlands"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group F",
+        "date_iso": "2026-06-25T19:00:00",
+        "match_label": "Japan vs TBD",
+        "team_home": "Japan",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group D",
+        "date_iso": "2026-06-25T22:00:00",
+        "match_label": "TBD vs USA",
+        "team_home": "TBD",
+        "team_away": "USA"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group D",
+        "date_iso": "2026-06-25T22:00:00",
+        "match_label": "Paraguay vs Australia",
+        "team_home": "Paraguay",
+        "team_away": "Australia"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group I",
+        "date_iso": "2026-06-26T15:00:00",
+        "match_label": "Norway vs France",
+        "team_home": "Norway",
+        "team_away": "France"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group I",
+        "date_iso": "2026-06-26T15:00:00",
+        "match_label": "Senegal vs TBD",
+        "team_home": "Senegal",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group H",
+        "date_iso": "2026-06-26T20:00:00",
+        "match_label": "Cape Verde vs Saudi Arabia",
+        "team_home": "Cape Verde",
+        "team_away": "Saudi Arabia"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group H",
+        "date_iso": "2026-06-26T20:00:00",
+        "match_label": "Uruguay vs Spain",
+        "team_home": "Uruguay",
+        "team_away": "Spain"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group G",
+        "date_iso": "2026-06-26T23:00:00",
+        "match_label": "New Zealand vs Belgium",
+        "team_home": "New Zealand",
+        "team_away": "Belgium"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group G",
+        "date_iso": "2026-06-26T23:00:00",
+        "match_label": "Egypt vs Iran",
+        "team_home": "Egypt",
+        "team_away": "Iran"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group L",
+        "date_iso": "2026-06-27T17:00:00",
+        "match_label": "Panama vs England",
+        "team_home": "Panama",
+        "team_away": "England"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group L",
+        "date_iso": "2026-06-27T17:00:00",
+        "match_label": "Croatia vs Ghana",
+        "team_home": "Croatia",
+        "team_away": "Ghana"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group K",
+        "date_iso": "2026-06-27T19:30:00",
+        "match_label": "Colombia vs Portugal",
+        "team_home": "Colombia",
+        "team_away": "Portugal"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group K",
+        "date_iso": "2026-06-27T19:30:00",
+        "match_label": "TBD vs Uzbekistan",
+        "team_home": "TBD",
+        "team_away": "Uzbekistan"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group J",
+        "date_iso": "2026-06-27T22:00:00",
+        "match_label": "Algeria vs Austria",
+        "team_home": "Algeria",
+        "team_away": "Austria"
+    },
+    {
+        "stage": "Group Stage",
+        "group": "Group J",
+        "date_iso": "2026-06-27T22:00:00",
+        "match_label": "Jordan vs Argentina",
+        "team_home": "Jordan",
+        "team_away": "Argentina"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-06-28T15:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-06-29T13:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-06-29T16:30:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-06-29T21:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-06-30T13:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-06-30T17:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-06-30T21:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-07-01T12:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-07-01T16:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-07-01T20:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-07-02T15:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-07-02T19:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-07-02T23:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-07-03T14:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-07-03T18:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 32",
+        "group": null,
+        "date_iso": "2026-07-03T21:30:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 16",
+        "group": null,
+        "date_iso": "2026-07-04T13:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 16",
+        "group": null,
+        "date_iso": "2026-07-04T17:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 16",
+        "group": null,
+        "date_iso": "2026-07-05T16:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 16",
+        "group": null,
+        "date_iso": "2026-07-05T20:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 16",
+        "group": null,
+        "date_iso": "2026-07-06T15:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 16",
+        "group": null,
+        "date_iso": "2026-07-06T20:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 16",
+        "group": null,
+        "date_iso": "2026-07-07T12:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Round of 16",
+        "group": null,
+        "date_iso": "2026-07-07T16:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Quarter-finals",
+        "group": null,
+        "date_iso": "2026-07-09T16:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Quarter-finals",
+        "group": null,
+        "date_iso": "2026-07-10T15:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Quarter-finals",
+        "group": null,
+        "date_iso": "2026-07-11T17:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Quarter-finals",
+        "group": null,
+        "date_iso": "2026-07-11T21:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Semi-finals",
+        "group": null,
+        "date_iso": "2026-07-14T15:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Semi-finals",
+        "group": null,
+        "date_iso": "2026-07-15T15:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Third place play-off",
+        "group": null,
+        "date_iso": "2026-07-18T17:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    },
+    {
+        "stage": "Final",
+        "group": null,
+        "date_iso": "2026-07-19T15:00:00",
+        "match_label": "TBD vs TBD",
+        "team_home": "TBD",
+        "team_away": "TBD"
+    }
+]
