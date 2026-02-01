@@ -8,7 +8,7 @@ It operates on a sophisticated architecture that merges **deterministic mathemat
 
 ## 🏗 System Architecture
 
-The core of GoalMine is an **Agent Swarm** orchestration pattern. Unlike simple chatbots, GoalMine does not just "reply"; it actively thinks, researches, calculates, and synthesizes information from multiple live sensors before formulating a response.
+The core of GoalMine is an **Agent Swarm** orchestration pattern combined with **Fail-Safe Redundancy**.
 
 ### 🔄 The Intelligence Flow
 
@@ -40,74 +40,55 @@ graph TD
 
 ---
 
-## 🧠 The Agent Swarm
+## 🧠 The Agent Swarm (Redundant & Robust)
 
-GoalMine relies on 4 specialized sub-agents and 1 master decision maker. Each agent is an **Object-Oriented Class** situated in `agents/` that partners with a specific external API.
+Each agent is designed with a **"Live"** mode and a **"Crisis Fallback"** mode. If an API fails, the Agent switches personas to estimation mode, ensuring zero downtime.
 
-### 1. 👮 The Gatekeeper (`agents/gatekeeper`)
+### 1. 👮 The Gatekeeper
 *   **Role**: Traffic Controller.
-*   **Logic**: Uses OpenAI to classify incoming messages into `BETTING` (High Value) vs `CHIT_CHAT` (Low Value).
-*   **Purpose**: Prevents wasting expensive API calls on messages like "Hello" or "Thanks".
+*   **Tech**: Uses Async LLM Classification (`BETTING` vs `CHIT_CHAT` vs `OFF_TOPIC`).
+*   **Function**: dynamically interprets user intent from natural language (e.g., "Analyze France vs Brazil" is automatically parsed).
 
-### 2. � Logistics Agent (`agents/logistics`)
-*   **Persona**: Senior Logistics Coordinator.
-*   **Partner API**: `WeatherAPI`.
-*   **Function**:
-    *   Calculates **Haversine Distance** between venues (e.g., MetLife NJ to Azteca Mexico).
-    *   Analyzes **Altitude Shock** (e.g., playing at 2,240m elevation).
-    *   Determines **Travel Fatigue** impact on player performance.
+### 2. 🚚 Logistics Agent (`agents/logistics`)
+*   **Persona**: "Mission Control"
+*   **Primary Data**: **Open-Meteo API** (Real Elevation & Live Weather).
+*   **Crisis Fallback**: "Geographic Estimator" (Uses latitude/month averages).
+*   **Function**: Calculates precise "Altitude Shock" (MetLife -> Azteca) and physiological travel penalties.
 
 ### 3. ♟️ Tactics Agent (`agents/tactics`)
-*   **Persona**: World-Class Tactician (Pep Guardiola style).
-*   **Partner API**: `SportMonks` / `API-Football`.
-*   **Function**:
-    *   Fetches **Expected Goals (xG)** stats.
-    *   Analyzes recent form and **Key Injuries**.
-    *   Uses LLM to predict "Game Flow" (Possession vs Counter-Attack).
+*   **Persona**: "The Pep Guardiola of Analytics"
+*   **Primary Data**: **SportMonks API v3** (Real xG, Form, Squads).
+*   **Crisis Fallback**: "Internal Knowledge" (Estimates xG based on team tiers).
+*   **Function**: Deconstructs match-ups and predicts "Game Flow" (e.g., Low Block vs High Press).
 
 ### 4. 📉 Market Agent (`agents/market`)
-*   **Persona**: Quantitative Market Sniper.
-*   **Partner API**: `The Odds API`.
-*   **Function**:
-    *   Scans books (DraftKings, FanDuel, BetMGM).
-    *   Identifies **Arbitrage** opportunities and **Line Shopping** value.
-    *   Detects "Trap Lines" where implied probability disagrees with stats.
+*   **Persona**: "The Vegas Sharp"
+*   **Primary Data**: **The Odds API** (Live Lines from DraftKings, FanDuel).
+*   **Crisis Fallback**: "Vegas Estimator" (Sets its own fair lines if the market is down).
+*   **Function**: Identifies Arbitrage and "Trap Lines".
 
 ### 5. 📰 Narrative Agent (`agents/narrative`)
-*   **Persona**: Sports Psychologist & Media Analyst.
-*   **Partner API**: `NewsAPI`.
-*   **Function**:
-    *   Scrapes global news headlines.
-    *   Uses LLM to generate a **Sentiment Score** (0-10).
-    *   Detects non-stat factors: locker room scandals, manager friction, motivation levels.
+*   **Persona**: "Investigative Journalist"
+*   **Primary Data**: **Google News RSS** (Real-time Headlines).
+*   **Crisis Fallback**: "Archive Recall" (Historical reputation analysis).
+*   **Function**: Scrapes headers for Morale, Scandals, and Locker Room friction.
 
 ---
 
-## 🧮 The Quant Engine & Decision Core
+## 🕰 Dynamic Scheduling & Alerts
 
-The brain of the operation isn't just an LLM; it's a rigorous math model found in `agents/quant/quant.py`.
-
-### The Math: Monte Carlo & Poisson
-*   **Simulation**: Runs **10,000 matches** between the two teams using their adjusted xG (Expected Goals).
-*   **Poisson Distribution**: Models the probability of every possible scoreline (0-0, 1-0, 2-1, etc.).
-*   **Kelly Criterion**: Calculates the mathematically optimal bet size (% of bankroll) based on the calculated **Edge** vs the Bookmaker's Odds.
-
-### The Closer (`services/orchestrator.py`)
-*   **Persona**: Senior Hedge Fund Risk Manager.
-*   **Function**: The Final Boss.
-*   **Input**: Receives the raw math from the Quant Engine + the qualitative "Vibes" from the Narrative/Tactics agents.
-*   **Veto Power**: If the Quant Engine says "Bet" (Edge > 2%) but the Narrative Agent signals "Crisis" (Score < 3), The Closer **VETOES** the bet.
-*   **Output**: A concise, professional, "Wall Street" style memo sent to WhatsApp.
+*   **Kick-Off Alerts**: Scans `schedule.json` every 15 minutes. If a game starts in < 60 mins, it texts the user: *"🚨 Alert: Match Starting!"*
+*   **Morning Brief**: At 8:00 AM, checks the **Real Calendar Date**. If games exist, it sends a briefing. If not, it stays silent.
+*   **Awareness**: If you text "Betting" on a day with no games, GoalMine replies: *"No games scheduled today. I can simulate one if you like."*
 
 ---
 
 ## ⚙️ Technical Stack
 
 *   **Core**: Python 3.14+, Flask (Webhook Gateway).
-*   **Async**: `asyncio` for parallel agent execution (High Performance).
-*   **Scheduling**: `APScheduler` for the 8:00 AM Morning Brief.
-*   **LLM**: OpenAI GPT-4o via `AsyncOpenAI` client.
-*   **database**: JSON (Mock) / Postgres (Production).
+*   **Async**: `asyncio` for parallel agent execution.
+*   **LLM**: OpenAI GPT-4o via `AsyncOpenAI`.
+*   **APIs**: SportMonks (Tactics), Open-Meteo (Logistics), The Odds API (Market), Google News (Narrative).
 
 ---
 
@@ -116,9 +97,6 @@ The brain of the operation isn't just an LLM; it's a rigorous math model found i
 ### 1. Prerequisites
 *   Python 3.10+
 *   Meta Developer Account (WhatsApp Cloud API)
-*   OpenAI API Key
-*   The Odds API Key (Free Tier)
-*   NewsAPI Key (Free Tier)
 
 ### 2. Installation
 ```bash
@@ -130,29 +108,16 @@ pip install -r requirements.txt
 ```
 
 ### 3. Environment Configuration
-Create a `.env` file in the root directory:
-```ini
-# Meta / WhatsApp
-VERIFY_TOKEN=my_secure_verify_token
-WHATSAPP_TOKEN=EAAG... (System User Token)
-PHONE_NUMBER_ID=100...
-
-# Intelligence
-OPENAI_API_KEY=sk-...
-
-# Data Partners
-ODDS_API_KEY=...
-NEWS_API_KEY=...
-```
+Create a `.env` file (See `.env.example`).
+**CRITICAL**: You must provide `OPENAI_API_KEY` and specific data keys (`ODDS_API_KEY`, `SPORTMONKS_API_TOKEN`) for full "Live" mode.
 
 ### 4. Launch
 ```bash
 python app.py
 ```
-*You should see the "GoalMine AI" Banner and System Check logs.*
+*You will see the "GoalMine AI" Banner and System Check logs.*
 
 ---
 
-**Status**: 🏗 Alpha (Logic Complete / Mock Data Active)
+**Status**: 🟢 Production Ready (Live Data + Fallback Logic Active)
 **Developer**: Jeffrey Fernandez
-**License**: Proprietary
