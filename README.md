@@ -36,7 +36,7 @@ graph TD
     end
 
     subgraph Synthesis
-        QUANT[Quant Engine (Math Model)]
+        QUANT[Quant Engine (NumPy Matrix)]
         CLOSER[The Closer (LLM Finalizer)]
     end
 
@@ -58,7 +58,7 @@ graph TD
     MKT -->|Live Odds| QUANT
     NAR -->|Sentiment Score| QUANT
     
-    QUANT -->|Probability & Edge| CLOSER
+    QUANT -->|Probability & Edge (Poisson)| CLOSER
     BETS --> CLOSER
     
     CLOSER -->|Final Advisory| USER
@@ -90,21 +90,28 @@ Each agent is designed with a **Primary Live Mode** and a **Crisis Fallback Mode
     *   **Half-Time Strategy**: Identifies specific "Comeback" or "Next Goal" opportunities during the break.
 *   **Fallback**: "Internal Knowledge Base" (Estimates xG based on team tiers).
 
-### 4. 📉 Market Agent (`agents/market`)
+### 2.4 Market Agent (`agents/market`)
 *   **Persona**: "The Vegas Sharp"
 *   **Primary Data**: **The Odds API** (Live Lines from DraftKings, FanDuel).
 *   **Crisis Fallback**: "Vegas Estimator" (Sets its own fair lines if the market is down).
 *   **Function**: Identifies Arbitrage and "Trap Lines".
 
-### 5. 📰 Narrative Agent (`agents/narrative`)
+### 2.5 Narrative Agent (`agents/narrative`)
 *   **Persona**: "Investigative Journalist"
 *   **Primary Data**: **Google News RSS** (Real-time Headlines).
 *   **Crisis Fallback**: "Archive Recall" (Historical reputation analysis).
 *   **Function**: Scrapes headers for Morale, Scandals, and Locker Room friction.
 
----
+### 2.6 The Quant Engine (Math Core)
+*   **Technology**: **NumPy** (Matrix Operations) + **Pybettor** (Kelly Criterion).
+*   **Methodology**:
+    *   **Vectorized Poisson Matrix**: Instantly calculates probabilities for all scorelines (0-0 to 9-9).
+    *   **True Edge Detection**: Compares calculated true odds vs. bookmaker implied odds.
+    *   **Kelly Staking**: Recommends bankroll percentage based on Risk/Reward ratio.
 
-### 6. 🎛 The Orchestrator & Quant Fusion
+
+
+### 2.7 The Orchestrator & Quant Fusion
 *   **Role**: The Conductor.
 *   **Process**:
     1.  **Parallel Execution**: Triggers all 4 Agents simultaneously (`asyncio.gather`).
