@@ -127,7 +127,8 @@ Each agent is designed with a **Primary Live Mode** and a **Crisis Fallback Mode
 
 ## ⚙️ Technical Stack
 
-*   **Core**: Python 3.14+, Flask (Webhook Gateway).
+*   **Core**: Python 3.14+, Flask (Webhook Gateway), Modular Service Architecture.
+*   **Structure**: `logs.py` (Central Logging), `services/conversation.py` (Business Logic), `app.py` (Routing).
 *   **Async**: `asyncio` for parallel agent execution.
 *   **LLM**: OpenAI GPT-4o via `AsyncOpenAI`.
 *   **APIs**: SportMonks (Tactics), Open-Meteo (Logistics), The Odds API (Market), Google News (Narrative).
