@@ -12,8 +12,7 @@ def get_forecast(lat, lon):
         "latitude": lat,
         "longitude": lon,
         "current_weather": "true",
-        "hourly": "temperature_2m,relativehumidity_2m,precipitation_probability",
-        "elevation": "true" # Requests elevation data for altitude shock
+        "hourly": "temperature_2m,relativehumidity_2m",
     }
     
     try:

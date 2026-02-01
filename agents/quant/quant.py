@@ -1,5 +1,6 @@
 import math
 import random
+import numpy as np
 from math import exp, factorial, sqrt
 import pybettor # Professional Betting Library
 
