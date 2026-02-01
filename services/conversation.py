@@ -29,12 +29,12 @@ class ConversationHandler:
             return
 
         # 3. Route by Intent
-        if intent == "CHIT_CHAT" or intent == "OFF_TOPIC":
-            resp = Gatekeeper.get_response(intent)
+        if intent == "CONV":
+            resp = await orchestrator.handle_general_conversation(msg_body)
             self.wa.send_message(from_number, resp)
 
         elif intent == "SCHEDULE":
-            await self._handle_schedule(from_number)
+            await self._handle_schedule(from_number, msg_body)
 
         elif intent == "BETTING":
             await self._handle_betting(from_number, msg_body)
@@ -47,7 +47,7 @@ class ConversationHandler:
         memory = self.db.load_memory(from_number)
         logger.info(f"Q&A Check for {from_number}: Memory={'Found' if memory else 'None'}, Intent={intent}")
         
-        if memory and intent in ["CHIT_CHAT", "OFF_TOPIC", "BETTING"]:
+        if memory and intent in ["CONV", "BETTING"]:
             body_low = msg_body.lower()
             
             # STAKING UPDATE CHECK: "I have $50", "Budget is 100"
@@ -83,12 +83,18 @@ class ConversationHandler:
                     return True
         return False
 
-    async def _handle_schedule(self, from_number):
-        brief = orchestrator.get_morning_brief_content()
-        if brief:
-            self.wa.send_message(from_number, brief)
+    async def _handle_schedule(self, from_number, msg_body):
+        low_msg = msg_body.lower()
+        
+        if any(w in low_msg for w in ["full", "all", "week"]):
+            resp = orchestrator.get_schedule_brief()
+        elif any(w in low_msg for w in ["4", "four", "menu", "list"]):
+            resp = orchestrator.get_schedule_menu(limit=4)
         else:
-            self.wa.send_message(from_number, Responses.NO_MATCHES_TODAY)
+            # Default to the "Next Match" view you had before
+            resp = orchestrator.get_next_match_content()
+            
+        self.wa.send_message(from_number, resp)
 
     async def _handle_betting(self, from_number, msg_body):
         todays_games = orchestrator.get_todays_matches()

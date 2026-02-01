@@ -4,8 +4,21 @@ from core.llm import query_llm
 from .api.open_meteo import get_forecast
 
 VENUES = {
-    'MetLife_NY': {'lat': 40.8135, 'lon': -74.0745},
-    'Azteca_Mexico': {'lat': 19.3029, 'lon': -99.1505},
+    'Estadio Azteca, Mexico City': {'lat': 19.3029, 'lon': -99.1505},
+    'Estadio Guadalajara, Guadalajara': {'lat': 20.6811, 'lon': -103.4504},
+    'BC Place, Vancouver': {'lat': 49.2767, 'lon': -123.1119},
+    'SoFi Stadium, Los Angeles': {'lat': 33.9534, 'lon': -118.3387},
+    'BMO Field, Toronto': {'lat': 43.6333, 'lon': -79.4186},
+    'Gillette Stadium, Boston': {'lat': 42.0909, 'lon': -71.2643},
+    'MetLife Stadium, East Rutherford': {'lat': 40.8135, 'lon': -74.0745},
+    'Levi\'s Stadium, San Francisco Bay Area': {'lat': 37.403, 'lon': -121.97},
+    'Lincoln Financial Field, Philadelphia': {'lat': 39.9008, 'lon': -75.1675},
+    'NRG Stadium, Houston': {'lat': 29.6847, 'lon': -95.4107},
+    'AT&T Stadium, Dallas': {'lat': 32.7473, 'lon': -97.0945},
+    'Estadio Monterrey, Monterrey': {'lat': 25.669, 'lon': -100.245},
+    'Hard Rock Stadium, Miami': {'lat': 25.958, 'lon': -80.238},
+    'Mercedes-Benz Stadium, Atlanta': {'lat': 33.755, 'lon': -84.401},
+    'Lumen Field, Seattle': {'lat': 47.595, 'lon': -122.332}
 }
 
 class LogisticsAgent:
@@ -27,8 +40,8 @@ class LogisticsAgent:
         return R * c
 
     async def analyze(self, venue1_key, venue2_key, cumulative_matches=1):
-        v1 = VENUES.get(venue1_key, VENUES['MetLife_NY'])
-        v2 = VENUES.get(venue2_key, VENUES['Azteca_Mexico'])
+        v1 = VENUES.get(venue1_key, VENUES['MetLife Stadium, East Rutherford'])
+        v2 = VENUES.get(venue2_key, VENUES['Estadio Azteca, Mexico City'])
         
         distance = self.haversine_distance(v1['lat'], v1['lon'], v2['lat'], v2['lon'])
         
@@ -46,19 +59,30 @@ class LogisticsAgent:
             weather_context = "Live Weather Offline. Estimate based on June Averages for this Latitude."
 
         system_prompt = """
-        IDENTITY: You are 'Mission Control' for Logistics & Performance.
-        MISSION: Calculate the physiological toll of travel and environment on the athletes.
+        # IDENTITY: GoalMine Mission Control (Logistics & Performance AI)
         
-        DATA SOURCE: {source}
-        
-        FACTORS TO WEIGH:
-        1. **Altitude Shock**: Every 500m gain = significant aerobic penalty.
-        2. **Travel Fatigue**: >2000km flights = circadian disruption.
-        3. **Heat Stress**: If temp > 28C, performance drops 15%.
-        
-        OUTPUT:
-        - Fatigue Score (0-10)
-        - Strategic Advice: (e.g., "Home team advantage magnified by altitude.")
+        # MISSION
+        Synthesize geographic, environmental, and travel data to calculate the 'Physiological Toll' on professional athletes. Your analysis determines the hidden physical fatigue that standard betting markets often miss.
+
+        # DATA SOURCE: {source}
+
+        # OPERATIONAL FACTORS
+        1. **ALTITUDE SHOCK**: 
+           - Every 500m gain above sea level increases VO2 max strain.
+           - Above 2,000m (e.g., Mexico City), unacclimatized teams face a -15% performance penalty in the final 20 minutes.
+        2. **CIRCADIAN DISRUPTION (Jet Lag)**:
+           - Flights crossing >2 time zones or >2,000km distances induce 'Heavy Legs' syndrome.
+           - Eastward travel is harder to recover from than Westward.
+        3. **THERMAL STRAIN**:
+           - Temperatures >28°C (82°F) trigger metabolic cooling penalties.
+           - High humidity (>70%) prevents evaporation—fatigue accumulates 2x faster.
+        4. **WORKLOAD ACCUMULATION**:
+           - High-density schedules (3 games in 10 days) lead to nonlinear injury risk spikes.
+
+        # OUTPUT REQUIREMENTS
+        - **Fatigue Score**: (Scale 0-10, where 10 is 'Exhausted/High Risk').
+        - **Logistics Edge**: Who benefits from the travel/weather? (Home/Away/None).
+        - **Operational Summary**: A sharp, technical brief on the primary environmental inhibitor.
         """
         
         user_prompt = f"""
@@ -70,8 +94,18 @@ class LogisticsAgent:
         
         llm_insight = await query_llm(system_prompt.format(source=source), user_prompt)
         
+        # Structured extraction of fatigue score
+        fatigue_score = 5
+        try:
+            # Look for number in brackets or after colon
+            import re
+            score_match = re.search(r"Fatigue Score:\s*(\d+)", llm_insight)
+            if score_match: fatigue_score = int(score_match.group(1))
+        except: pass
+
         return {
             "branch": self.branch_name,
+            "fatigue_score": fatigue_score,
             "travel_km": round(distance, 1),
             "altitude_change": round(alt_diff, 1),
             "weather_source": source,

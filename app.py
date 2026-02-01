@@ -27,10 +27,10 @@ conv_handler = ConversationHandler(wa_client)
 def push_morning_brief():
     """ 8am Daily Brief """
     logger.info("Pushing Morning Brief...")
-    msg = orchestrator.get_morning_brief_content()
+    msg = orchestrator.get_schedule_brief(days=1)
 
     if msg:
-        test_user = "15550000000"
+        test_user = "9294255178"
         wa_client.send_message(test_user, msg)
     else:
         logger.info("No matches today. Skipping brief.")
@@ -41,13 +41,13 @@ def check_upcoming_matches_alert():
     upcoming = orchestrator.get_upcoming_matches()
 
     for m in upcoming:
-        test_user = "15550000000"
+        test_user = "9294255178"
         msg = f"🚨 KICK-OFF ALERT: {m['team_home']} vs {m['team_away']} starts in 1 hour!\nReply 'Analyze {m['team_home']}' for a last-minute edge."
         wa_client.send_message(test_user, msg)
 
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(push_morning_brief, 'cron', hour=8, minute=0)
+scheduler.add_job(push_morning_brief, 'cron', hour=5, minute=0)
 scheduler.add_job(check_upcoming_matches_alert, 'interval', minutes=15)
 scheduler.start()
 
@@ -59,6 +59,7 @@ def home():
 
 @app.route("/webhook", methods=["GET", "POST"])
 async def webhook():
+    logger.info(f"📩 Webhook Hit: {request.method}")
     # 1. Verification Request
     if request.method == "GET":
         mode = request.args.get("hub.mode")

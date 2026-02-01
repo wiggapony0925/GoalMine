@@ -41,24 +41,32 @@ class RedditScanner:
             
             # We iterate through subreddits and fetch search results
             for sub in self.config.get("subreddits", ["soccer"]):
-                # Adding .json to a reddit URL gives you the raw data!
-                url = f"https://www.reddit.com/r/{sub}/search.json?q={query}&sort=new&t=day&restrict_sr=1"
+                # Using hot.json is MUCH more stable than search.json (avoids 403s)
+                url = f"https://www.reddit.com/r/{sub}/hot.json?limit=50"
                 
-                headers = {"User-Agent": self.user_agent}
-                response = requests.get(url, headers=headers, timeout=5)
+                headers = {
+                    "User-Agent": f"GoalMineAnalysis/1.0 (Contact: intel@goalmine.ai)",
+                    "Referer": "https://www.google.com/"
+                }
                 
-                if response.status_code == 200:
-                    data = response.json().get("data", {}).get("children", [])
-                    for post in data:
-                        p = post.get("data", {})
-                        headlines.append({
-                            "title": p.get("title"),
-                            "score": p.get("score"),
-                            "url": f"https://reddit.com{p.get('permalink')}",
-                            "comment_count": p.get("num_comments")
-                        })
-                else:
-                    logger.warning(f"Reddit Scrape Failed for r/{sub}: {response.status_code}")
+                try:
+                    response = requests.get(url, headers=headers, timeout=7)
+                    if response.status_code == 200:
+                        children = response.json().get("data", {}).get("children", [])
+                        for post in children:
+                            p = post.get("data", {})
+                            title = p.get("title", "")
+                            # Filter for team name in title
+                            if team_name.lower() in title.lower():
+                                headlines.append({
+                                    "title": title,
+                                    "score": p.get("score"),
+                                    "url": f"https://reddit.com{p.get('permalink')}",
+                                })
+                    else:
+                        logger.warning(f"Reddit Scrape Failed for r/{sub}: {response.status_code}")
+                except Exception as e:
+                    logger.warning(f"Reddit Request Failed for r/{sub}: {e}")
 
             return {
                 "source": "reddit_public",

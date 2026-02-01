@@ -15,7 +15,7 @@ class Gatekeeper:
 
     @staticmethod
     async def _classify_async(message_body):
-        # 1. COST SAVING: Regex Logic First (0ms, $0)
+        # 1. Regex Logic (Cost saving)
         msg = message_body.lower().strip()
         
         # Numeric Menu Selection
@@ -23,69 +23,46 @@ class Gatekeeper:
             return "BETTING", message_body
 
         # Schedule / Next Match
-        if any(w in msg for w in ["schedule", "games", "today", "tomorrow", "next", "upcoming", "menu"]):
+        if any(w in msg for w in ["schedule", "games", "today", "tomorrow", "next", "upcoming", "menu", "list"]):
             return "SCHEDULE", None
             
-        # Explicit Betting / Analysis (Detects "Team A vs Team B")
-        if any(w in msg for w in [" vs ", " v ", "against", "analyze", "predict", "odds", "bet"]):
+        # Explicit Betting / Analysis
+        if any(w in msg for w in [" vs ", " v ", "against", "analyze", "predict", "odds", "bet", "staking", "budget"]):
             return "BETTING", message_body
             
-        # Chit Chat
-        if any(w in msg for w in ["hi", "hello", "hola", "sup", "hey", "start", "yo"]):
-            return "CHIT_CHAT", None
+        # Conversation / Greetings
+        if any(w in msg for w in ["hi", "hello", "hola", "sup", "hey", "start", "yo", "who are you", "what are you"]):
+            return "CONV", None
 
-        # 2. FALLBACK: LLM for ambiguous queries (Cost incurred)
+        # 2. FALLBACK: LLM for ambiguous queries
         system_prompt = """
-        You are a Firewall AI for a World Cup Betting Engine.
-        Global Rule: You ONLY authorize content related to Football (Soccer), Betting, Odds, or Match Schedules.
+        # IDENTITY: GoalMine Security Firewall (Gatekeeper AI)
         
-        STRICTLY CLASSIFY INPUT INTO ONE OF 4 CATEGORIES:
-        
-        1. "BETTING": 
-           - Users asking for analysis ("Analyze France vs Brazil").
-           - Users replying with numeric menu selections ("1", "2").
-           
-        2. "SCHEDULE":
-           - Users asking "What's the schedule?", "Who plays today?".
-           
-        3. "CHIT_CHAT":
-           - Simple greetings ("Hi", "Hello", "Hola").
-           
-        4. "OFF_TOPIC":
-           - ANY request about cooking, recipes, coding, politics.
-        
-        OUTPUT ONLY THE CATEGORY NAME.
+        # MISSION
+        You are the first line of defense for a high-frequency World Cup Betting Engine. Your sole priority is to classify incoming user packets into one of three operational channels.
+
+        # OPERATIONAL CHANNELS:
+        1. **BETTING**: Requests for match analysis, specific odds, staking advice, or "$X on Team A" style queries.
+        2. **SCHEDULE**: Inquiries about kickoff times, dates, group standings, or game lists ("Who plays today?").
+        3. **CONV**: Human-like greetings, general World Cup history, bot capability questions, or non-actionable chatter.
+
+        # CLASSIFICATION LOGIC:
+        - If the packet mentions TWO TEAMS and a request for insight -> **BETTING**.
+        - If the packet asks about TIME or LISTS -> **SCHEDULE**.
+        - If the packet is VAGUE or GREETING-based -> **CONV**.
+        - **OFF-TOPIC POLICY**: If a packet is non-football or non-betting related, force-classify as **CONV** for graceful redirection.
+
+        # OUTPUT STRICTION
+        - OUTPUT ONLY THE CHANNEL NAME (e.g., BETTING).
+        - ZERO NARRATIVE. ZERO EXPLANATION.
         """
         
         try:
             category = await query_llm(system_prompt, f"User Input: {message_body}", config_key="gatekeeper")
-            category = category.strip().upper().replace(".", "")
+            category = category.strip().upper()
             
             if "SCHEDULE" in category: return "SCHEDULE", None
             if "BETTING" in category: return "BETTING", message_body
-            if "CHIT" in category: return "CHIT_CHAT", None
-            if "OFF" in category: return "OFF_TOPIC", None
-            
-            return "CHIT_CHAT", None
+            return "CONV", None
         except Exception:
-            # Default safe fallback
-            return "BETTING", message_body
-
-    @staticmethod
-    def get_response(intent):
-        if intent == "CHIT_CHAT":
-            greetings = [
-                "👋 **GoalMine AI Online**\nReady to find an edge? Ask for the 'Schedule' or a specific match like 'France vs Brazil'.",
-                "🤖 **System Ready.**\nI analyze World Cup data for alpha. What match are we targeting?",
-                "🧠 **GoalMine Active.**\nThe swarm is standing by. Usage:\n- 'Schedule': See games\n- 'Analyze [Team]': Get report"
-            ]
-            return random.choice(greetings)
-            
-        elif intent == "OFF_TOPIC":
-            errors = [
-                "⚠️ I am strictly programmed for World Cup analysis. Please stick to football.",
-                "🚫 **Out of Scope.**\nI handle Odds, Data, and Match Logic only.",
-                "🤖 My algorithms are focused on the pitch. Ask me about the World Cup."
-            ]
-            return random.choice(errors)
-        return None
+            return "CONV", None

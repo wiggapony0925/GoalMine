@@ -2,30 +2,39 @@ import random
 
 class Responses:
     """
-    Central repository for premium, randomized bot strings.
+    Central repository for premium, conversational bot strings.
     """
     
-    SYSTEM_GREETINGS = [
-        "🤖 GoalMine AI Online. Targeting alpha in World Cup 2026.",
-        "📊 System Ready. Swarm intel activated for match analysis.",
-        "🕵️ GoalMine Analyst 01 reporting. Feed me a match, I'll find the edge."
-    ]
+    GREETING = (
+        "🤖 *Welcome to GoalMine AI* — Your elite World Cup 2026 Betting Engine.\n\n"
+        "I am a multi-agent swarm designed to find the edge in every fixture. I track official tournament data, logistics, and market movements to provide professional-grade analysis.\n\n"
+        "📍 *What I can do for you:*\n"
+        "• *Schedule:* Get today's games or the full week's lineup.\n"
+        "• *Analyze Match:* Ask 'Analyze France vs Brazil' to launch the swarm.\n"
+        "• *Betting Intel:* Ask about specific bet types or staking strategies.\n"
+        "• *General Info:* Questions about venues, teams, or WC history.\n\n"
+        "📜 *The Rules:*\n"
+        "1. I only track official World Cup 2026 fixtures.\n"
+        "2. I strictly discuss Football (Soccer) and Betting.\n"
+        "3. Every morning at *5:00 AM*, I'll drop a briefing of the day's games and sharpest opportunities into your inbox.\n\n"
+        "How can I help you target alpha today?"
+    )
 
     MATCH_READING = [
-        "🤖 Reading match details...",
-        "🔍 Parsing fixture data...",
-        "⚖️ Extracting match context..."
+        "🔍 One moment, I'm pulling the latest data for this fixture...",
+        "⚖️ Accessing the vault. Reading match context and market odds...",
+        "🤖 Just a second, GoalMine Analyst 01 is parsing the details..."
     ]
 
     LAUNCHING_SWARM = [
-        "🕵️ Identified: {match}. Launching Swarm...",
-        "🚀 Fixture Confirmed: {match}. Deploying agents...",
-        "📡 Syncing: {match}. Synchronizing Logistics, Tactics, Market, and Narrative..."
+        "🚀 Action confirmed: *{match}*. Deploying the Swarm [Logistics, Tactics, Market, Narrative]...",
+        "📡 Syncing all agents for *{match}*. Calculating adjusted xG and market edge...",
+        "🕵️ Identified: *{match}*. Launching deep-swarm analysis now..."
     ]
 
     @staticmethod
     def get_greeting():
-        return random.choice(Responses.SYSTEM_GREETINGS)
+        return Responses.GREETING
 
     @staticmethod
     def get_reading():
@@ -35,6 +44,6 @@ class Responses:
     def get_launch(match):
         return random.choice(Responses.LAUNCHING_SWARM).format(match=match)
 
-    NO_MATCHES_TODAY = "⛔ No World Cup matches today.\n\nTry 'Analyze France vs Brazil' or ask about an upcoming clash."
-    UNKNOWN_TEAMS = "❓ I couldn't identify the teams. Please specify them clearly (e.g., 'Analyze USA vs Mexico')."
-    INVALID_SCHEDULE = "⚠️ Match not found in World Cup 2026 Schedule.\nI only track official tournament fixtures."
+    NO_MATCHES_TODAY = "📅 *Calendar Check:* No official World Cup matches scheduled for today.\n\nTry asking for the 'Full Schedule' or analyze an upcoming clash like 'Analyze USA vs Mexico'."
+    UNKNOWN_TEAMS = "❓ *Identify Failed:* I couldn't quite catch those teams. Could you specify them clearly? (e.g., 'Analyze England vs Germany')"
+    INVALID_SCHEDULE = "⚠️ *Fixture Error:* Match not found in the official World Cup 2026 Schedule.\nI only track sanctioned tournament games."

@@ -17,8 +17,8 @@ def fetch_team_stats(team_name):
     
     try:
         # 1. Search for Team ID
-        search_url = f"https://api.sportmonks.com/v3/football/teams/search/{team_name}"
-        response = requests.get(search_url, headers=headers)
+        search_url = f"https://api.sportmonks.com/v3/football/teams/search/{team_name}?api_token={api_token}"
+        response = requests.get(search_url)
         response.raise_for_status()
         data = response.json().get('data', [])
         
@@ -29,9 +29,8 @@ def fetch_team_stats(team_name):
         team_display_name = data[0]['name']
 
         # 2. Get Fixture Data (Today/Upcoming) with Lineups
-        # We include 'lineups.player' and 'coach' to see who is leading and playing.
-        fixtures_url = f"https://api.sportmonks.com/v3/football/fixtures/between/2026-01-01/2026-12-31/{team_id}?include=lineups.player,coaches.coach,venue"
-        fixture_resp = requests.get(fixtures_url, headers=headers)
+        fixtures_url = f"https://api.sportmonks.com/v3/football/fixtures/between/2026-01-01/2026-12-31/{team_id}?api_token={api_token}&include=lineups.player,coaches.coach,venue"
+        fixture_resp = requests.get(fixtures_url)
         fixture_data = fixture_resp.json().get('data', [])
         
         # Sort by date to find the most relevant (upcoming or live)

@@ -5,7 +5,8 @@
         "date_iso": "2026-06-11T15:00:00",
         "match_label": "Mexico vs South Africa",
         "team_home": "Mexico",
-        "team_away": "South Africa"
+        "team_away": "South Africa",
+        "venue": "Estadio Azteca, Mexico City"
     },
     {
         "stage": "Group Stage",
@@ -13,7 +14,8 @@
         "date_iso": "2026-06-11T22:00:00",
         "match_label": "South Korea vs TBD",
         "team_home": "South Korea",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Estadio Guadalajara, Guadalajara"
     },
     {
         "stage": "Group Stage",
@@ -21,7 +23,8 @@
         "date_iso": "2026-06-12T15:00:00",
         "match_label": "Canada vs TBD",
         "team_home": "Canada",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "BC Place, Vancouver"
     },
     {
         "stage": "Group Stage",
@@ -29,7 +32,8 @@
         "date_iso": "2026-06-12T21:00:00",
         "match_label": "USA vs Paraguay",
         "team_home": "USA",
-        "team_away": "Paraguay"
+        "team_away": "Paraguay",
+        "venue": "SoFi Stadium, Los Angeles"
     },
     {
         "stage": "Group Stage",
@@ -37,7 +41,8 @@
         "date_iso": "2026-06-13T15:00:00",
         "match_label": "Qatar vs Switzerland",
         "team_home": "Qatar",
-        "team_away": "Switzerland"
+        "team_away": "Switzerland",
+        "venue": "BMO Field, Toronto"
     },
     {
         "stage": "Group Stage",
@@ -45,7 +50,8 @@
         "date_iso": "2026-06-13T18:00:00",
         "match_label": "Brazil vs Morocco",
         "team_home": "Brazil",
-        "team_away": "Morocco"
+        "team_away": "Morocco",
+        "venue": "Gillette Stadium, Boston"
     },
     {
         "stage": "Group Stage",
@@ -53,7 +59,8 @@
         "date_iso": "2026-06-13T21:00:00",
         "match_label": "Haiti vs Scotland",
         "team_home": "Haiti",
-        "team_away": "Scotland"
+        "team_away": "Scotland",
+        "venue": "MetLife Stadium, East Rutherford"
     },
     {
         "stage": "Group Stage",
@@ -61,7 +68,8 @@
         "date_iso": "2026-06-14T00:00:00",
         "match_label": "Australia vs TBD",
         "team_home": "Australia",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Levi's Stadium, San Francisco Bay Area"
     },
     {
         "stage": "Group Stage",
@@ -69,7 +77,8 @@
         "date_iso": "2026-06-14T13:00:00",
         "match_label": "Germany vs Curaçao",
         "team_home": "Germany",
-        "team_away": "Curaçao"
+        "team_away": "Curaçao",
+        "venue": "Lincoln Financial Field, Philadelphia"
     },
     {
         "stage": "Group Stage",
@@ -77,7 +86,8 @@
         "date_iso": "2026-06-14T16:00:00",
         "match_label": "Netherlands vs Japan",
         "team_home": "Netherlands",
-        "team_away": "Japan"
+        "team_away": "Japan",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Group Stage",
@@ -85,7 +95,8 @@
         "date_iso": "2026-06-14T19:00:00",
         "match_label": "Ivory Coast vs Ecuador",
         "team_home": "Ivory Coast",
-        "team_away": "Ecuador"
+        "team_away": "Ecuador",
+        "venue": "AT&T Stadium, Dallas"
     },
     {
         "stage": "Group Stage",
@@ -93,7 +104,8 @@
         "date_iso": "2026-06-14T22:00:00",
         "match_label": "TBD vs Tunisia",
         "team_home": "TBD",
-        "team_away": "Tunisia"
+        "team_away": "Tunisia",
+        "venue": "Estadio Monterrey, Monterrey"
     },
     {
         "stage": "Group Stage",
@@ -101,7 +113,8 @@
         "date_iso": "2026-06-15T12:00:00",
         "match_label": "Spain vs Cape Verde",
         "team_home": "Spain",
-        "team_away": "Cape Verde"
+        "team_away": "Cape Verde",
+        "venue": "MetLife Stadium, East Rutherford"
     },
     {
         "stage": "Group Stage",
@@ -109,7 +122,8 @@
         "date_iso": "2026-06-15T15:00:00",
         "match_label": "Belgium vs Egypt",
         "team_home": "Belgium",
-        "team_away": "Egypt"
+        "team_away": "Egypt",
+        "venue": "Hard Rock Stadium, Miami"
     },
     {
         "stage": "Group Stage",
@@ -117,7 +131,8 @@
         "date_iso": "2026-06-15T18:00:00",
         "match_label": "Saudi Arabia vs Uruguay",
         "team_home": "Saudi Arabia",
-        "team_away": "Uruguay"
+        "team_away": "Uruguay",
+        "venue": "Mercedes-Benz Stadium, Atlanta"
     },
     {
         "stage": "Group Stage",
@@ -125,7 +140,8 @@
         "date_iso": "2026-06-15T21:00:00",
         "match_label": "Iran vs New Zealand",
         "team_home": "Iran",
-        "team_away": "New Zealand"
+        "team_away": "New Zealand",
+        "venue": "SoFi Stadium, Los Angeles"
     },
     {
         "stage": "Group Stage",
@@ -133,7 +149,8 @@
         "date_iso": "2026-06-16T15:00:00",
         "match_label": "France vs Senegal",
         "team_home": "France",
-        "team_away": "Senegal"
+        "team_away": "Senegal",
+        "venue": "Levi's Stadium, San Francisco Bay Area"
     },
     {
         "stage": "Group Stage",
@@ -141,7 +158,8 @@
         "date_iso": "2026-06-16T18:00:00",
         "match_label": "TBD vs Norway",
         "team_home": "TBD",
-        "team_away": "Norway"
+        "team_away": "Norway",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Group Stage",
@@ -149,7 +167,8 @@
         "date_iso": "2026-06-16T21:00:00",
         "match_label": "Argentina vs Algeria",
         "team_home": "Argentina",
-        "team_away": "Algeria"
+        "team_away": "Algeria",
+        "venue": "Lumen Field, Seattle"
     },
     {
         "stage": "Group Stage",
@@ -157,7 +176,8 @@
         "date_iso": "2026-06-17T00:00:00",
         "match_label": "Austria vs Jordan",
         "team_home": "Austria",
-        "team_away": "Jordan"
+        "team_away": "Jordan",
+        "venue": "Estadio Azteca, Mexico City"
     },
     {
         "stage": "Group Stage",
@@ -165,7 +185,8 @@
         "date_iso": "2026-06-17T13:00:00",
         "match_label": "Portugal vs TBD",
         "team_home": "Portugal",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "BMO Field, Toronto"
     },
     {
         "stage": "Group Stage",
@@ -173,7 +194,8 @@
         "date_iso": "2026-06-17T16:00:00",
         "match_label": "England vs Croatia",
         "team_home": "England",
-        "team_away": "Croatia"
+        "team_away": "Croatia",
+        "venue": "AT&T Stadium, Dallas"
     },
     {
         "stage": "Group Stage",
@@ -181,7 +203,8 @@
         "date_iso": "2026-06-17T19:00:00",
         "match_label": "Ghana vs Panama",
         "team_home": "Ghana",
-        "team_away": "Panama"
+        "team_away": "Panama",
+        "venue": "Estadio Monterrey, Monterrey"
     },
     {
         "stage": "Group Stage",
@@ -189,7 +212,8 @@
         "date_iso": "2026-06-17T22:00:00",
         "match_label": "Uzbekistan vs Colombia",
         "team_home": "Uzbekistan",
-        "team_away": "Colombia"
+        "team_away": "Colombia",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Group Stage",
@@ -197,7 +221,8 @@
         "date_iso": "2026-06-18T12:00:00",
         "match_label": "TBD vs South Africa",
         "team_home": "TBD",
-        "team_away": "South Africa"
+        "team_away": "South Africa",
+        "venue": "Mercedes-Benz Stadium, Atlanta"
     },
     {
         "stage": "Group Stage",
@@ -205,7 +230,8 @@
         "date_iso": "2026-06-18T15:00:00",
         "match_label": "Switzerland vs TBD",
         "team_home": "Switzerland",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "SoFi Stadium, Los Angeles"
     },
     {
         "stage": "Group Stage",
@@ -213,7 +239,8 @@
         "date_iso": "2026-06-18T18:00:00",
         "match_label": "Canada vs Qatar",
         "team_home": "Canada",
-        "team_away": "Qatar"
+        "team_away": "Qatar",
+        "venue": "BC Place, Vancouver"
     },
     {
         "stage": "Group Stage",
@@ -221,7 +248,8 @@
         "date_iso": "2026-06-18T21:00:00",
         "match_label": "Mexico vs South Korea",
         "team_home": "Mexico",
-        "team_away": "South Korea"
+        "team_away": "South Korea",
+        "venue": "Estadio Guadalajara, Guadalajara"
     },
     {
         "stage": "Group Stage",
@@ -229,7 +257,8 @@
         "date_iso": "2026-06-19T15:00:00",
         "match_label": "USA vs Australia",
         "team_home": "USA",
-        "team_away": "Australia"
+        "team_away": "Australia",
+        "venue": "Lumen Field, Seattle"
     },
     {
         "stage": "Group Stage",
@@ -237,7 +266,8 @@
         "date_iso": "2026-06-19T18:00:00",
         "match_label": "Scotland vs Morocco",
         "team_home": "Scotland",
-        "team_away": "Morocco"
+        "team_away": "Morocco",
+        "venue": "Lincoln Financial Field, Philadelphia"
     },
     {
         "stage": "Group Stage",
@@ -245,7 +275,8 @@
         "date_iso": "2026-06-19T21:00:00",
         "match_label": "Brazil vs Haiti",
         "team_home": "Brazil",
-        "team_away": "Haiti"
+        "team_away": "Haiti",
+        "venue": "Gillette Stadium, Boston"
     },
     {
         "stage": "Group Stage",
@@ -253,7 +284,8 @@
         "date_iso": "2026-06-20T00:00:00",
         "match_label": "TBD vs Paraguay",
         "team_home": "TBD",
-        "team_away": "Paraguay"
+        "team_away": "Paraguay",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Group Stage",
@@ -261,7 +293,8 @@
         "date_iso": "2026-06-20T13:00:00",
         "match_label": "Netherlands vs TBD",
         "team_home": "Netherlands",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "BMO Field, Toronto"
     },
     {
         "stage": "Group Stage",
@@ -269,7 +302,8 @@
         "date_iso": "2026-06-20T16:00:00",
         "match_label": "Germany vs Ivory Coast",
         "team_home": "Germany",
-        "team_away": "Ivory Coast"
+        "team_away": "Ivory Coast",
+        "venue": "Levi's Stadium, San Francisco Bay Area"
     },
     {
         "stage": "Group Stage",
@@ -277,7 +311,8 @@
         "date_iso": "2026-06-20T20:00:00",
         "match_label": "Ecuador vs Curaçao",
         "team_home": "Ecuador",
-        "team_away": "Curaçao"
+        "team_away": "Curaçao",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Group Stage",
@@ -285,7 +320,8 @@
         "date_iso": "2026-06-21T00:00:00",
         "match_label": "Tunisia vs Japan",
         "team_home": "Tunisia",
-        "team_away": "Japan"
+        "team_away": "Japan",
+        "venue": "Estadio Monterrey, Monterrey"
     },
     {
         "stage": "Group Stage",
@@ -293,7 +329,8 @@
         "date_iso": "2026-06-21T12:00:00",
         "match_label": "Spain vs Saudi Arabia",
         "team_home": "Spain",
-        "team_away": "Saudi Arabia"
+        "team_away": "Saudi Arabia",
+        "venue": "Hard Rock Stadium, Miami"
     },
     {
         "stage": "Group Stage",
@@ -301,7 +338,8 @@
         "date_iso": "2026-06-21T15:00:00",
         "match_label": "Belgium vs Iran",
         "team_home": "Belgium",
-        "team_away": "Iran"
+        "team_away": "Iran",
+        "venue": "AT&T Stadium, Dallas"
     },
     {
         "stage": "Group Stage",
@@ -309,7 +347,8 @@
         "date_iso": "2026-06-21T18:00:00",
         "match_label": "Uruguay vs Cape Verde",
         "team_home": "Uruguay",
-        "team_away": "Cape Verde"
+        "team_away": "Cape Verde",
+        "venue": "BC Place, Vancouver"
     },
     {
         "stage": "Group Stage",
@@ -317,7 +356,8 @@
         "date_iso": "2026-06-21T21:00:00",
         "match_label": "New Zealand vs Egypt",
         "team_home": "New Zealand",
-        "team_away": "Egypt"
+        "team_away": "Egypt",
+        "venue": "SoFi Stadium, Los Angeles"
     },
     {
         "stage": "Group Stage",
@@ -325,7 +365,8 @@
         "date_iso": "2026-06-22T13:00:00",
         "match_label": "Argentina vs Austria",
         "team_home": "Argentina",
-        "team_away": "Austria"
+        "team_away": "Austria",
+        "venue": "AT&T Stadium, Dallas"
     },
     {
         "stage": "Group Stage",
@@ -333,7 +374,8 @@
         "date_iso": "2026-06-22T17:00:00",
         "match_label": "France vs TBD",
         "team_home": "France",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Group Stage",
@@ -341,7 +383,8 @@
         "date_iso": "2026-06-22T20:00:00",
         "match_label": "Norway vs Senegal",
         "team_home": "Norway",
-        "team_away": "Senegal"
+        "team_away": "Senegal",
+        "venue": "Estadio Guadalajara, Guadalajara"
     },
     {
         "stage": "Group Stage",
@@ -349,7 +392,8 @@
         "date_iso": "2026-06-22T23:00:00",
         "match_label": "Jordan vs Algeria",
         "team_home": "Jordan",
-        "team_away": "Algeria"
+        "team_away": "Algeria",
+        "venue": "Levi's Stadium, San Francisco Bay Area"
     },
     {
         "stage": "Group Stage",
@@ -357,7 +401,8 @@
         "date_iso": "2026-06-23T13:00:00",
         "match_label": "Portugal vs Uzbekistan",
         "team_home": "Portugal",
-        "team_away": "Uzbekistan"
+        "team_away": "Uzbekistan",
+        "venue": "BMO Field, Toronto"
     },
     {
         "stage": "Group Stage",
@@ -365,7 +410,8 @@
         "date_iso": "2026-06-23T16:00:00",
         "match_label": "England vs Ghana",
         "team_home": "England",
-        "team_away": "Ghana"
+        "team_away": "Ghana",
+        "venue": "Gillette Stadium, Boston"
     },
     {
         "stage": "Group Stage",
@@ -373,7 +419,8 @@
         "date_iso": "2026-06-23T19:00:00",
         "match_label": "Panama vs Croatia",
         "team_home": "Panama",
-        "team_away": "Croatia"
+        "team_away": "Croatia",
+        "venue": "Mercedes-Benz Stadium, Atlanta"
     },
     {
         "stage": "Group Stage",
@@ -381,7 +428,8 @@
         "date_iso": "2026-06-23T22:00:00",
         "match_label": "Colombia vs TBD",
         "team_home": "Colombia",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Estadio Monterrey, Monterrey"
     },
     {
         "stage": "Group Stage",
@@ -389,7 +437,8 @@
         "date_iso": "2026-06-24T15:00:00",
         "match_label": "Switzerland vs Canada",
         "team_home": "Switzerland",
-        "team_away": "Canada"
+        "team_away": "Canada",
+        "venue": "BC Place, Vancouver"
     },
     {
         "stage": "Group Stage",
@@ -397,7 +446,8 @@
         "date_iso": "2026-06-24T15:00:00",
         "match_label": "TBD vs Qatar",
         "team_home": "TBD",
-        "team_away": "Qatar"
+        "team_away": "Qatar",
+        "venue": "Hard Rock Stadium, Miami"
     },
     {
         "stage": "Group Stage",
@@ -405,7 +455,8 @@
         "date_iso": "2026-06-24T18:00:00",
         "match_label": "Morocco vs Haiti",
         "team_home": "Morocco",
-        "team_away": "Haiti"
+        "team_away": "Haiti",
+        "venue": "Mercedes-Benz Stadium, Atlanta"
     },
     {
         "stage": "Group Stage",
@@ -413,7 +464,8 @@
         "date_iso": "2026-06-24T18:00:00",
         "match_label": "Scotland vs Brazil",
         "team_home": "Scotland",
-        "team_away": "Brazil"
+        "team_away": "Brazil",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Group Stage",
@@ -421,7 +473,8 @@
         "date_iso": "2026-06-24T21:00:00",
         "match_label": "South Africa vs South Korea",
         "team_home": "South Africa",
-        "team_away": "South Korea"
+        "team_away": "South Korea",
+        "venue": "Estadio Monterrey, Monterrey"
     },
     {
         "stage": "Group Stage",
@@ -429,7 +482,8 @@
         "date_iso": "2026-06-24T21:00:00",
         "match_label": "TBD vs Mexico",
         "team_home": "TBD",
-        "team_away": "Mexico"
+        "team_away": "Mexico",
+        "venue": "Estadio Azteca, Mexico City"
     },
     {
         "stage": "Group Stage",
@@ -437,7 +491,8 @@
         "date_iso": "2026-06-25T16:00:00",
         "match_label": "Curaçao vs Ivory Coast",
         "team_home": "Curaçao",
-        "team_away": "Ivory Coast"
+        "team_away": "Ivory Coast",
+        "venue": "Lincoln Financial Field, Philadelphia"
     },
     {
         "stage": "Group Stage",
@@ -445,7 +500,8 @@
         "date_iso": "2026-06-25T16:00:00",
         "match_label": "Ecuador vs Germany",
         "team_home": "Ecuador",
-        "team_away": "Germany"
+        "team_away": "Germany",
+        "venue": "Hard Rock Stadium, Miami"
     },
     {
         "stage": "Group Stage",
@@ -453,7 +509,8 @@
         "date_iso": "2026-06-25T19:00:00",
         "match_label": "Tunisia vs Netherlands",
         "team_home": "Tunisia",
-        "team_away": "Netherlands"
+        "team_away": "Netherlands",
+        "venue": "Mercedes-Benz Stadium, Atlanta"
     },
     {
         "stage": "Group Stage",
@@ -461,7 +518,8 @@
         "date_iso": "2026-06-25T19:00:00",
         "match_label": "Japan vs TBD",
         "team_home": "Japan",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Estadio Monterrey, Monterrey"
     },
     {
         "stage": "Group Stage",
@@ -469,7 +527,8 @@
         "date_iso": "2026-06-25T22:00:00",
         "match_label": "TBD vs USA",
         "team_home": "TBD",
-        "team_away": "USA"
+        "team_away": "USA",
+        "venue": "SoFi Stadium, Los Angeles"
     },
     {
         "stage": "Group Stage",
@@ -477,7 +536,8 @@
         "date_iso": "2026-06-25T22:00:00",
         "match_label": "Paraguay vs Australia",
         "team_home": "Paraguay",
-        "team_away": "Australia"
+        "team_away": "Australia",
+        "venue": "Lumen Field, Seattle"
     },
     {
         "stage": "Group Stage",
@@ -485,7 +545,8 @@
         "date_iso": "2026-06-26T15:00:00",
         "match_label": "Norway vs France",
         "team_home": "Norway",
-        "team_away": "France"
+        "team_away": "France",
+        "venue": "BMO Field, Toronto"
     },
     {
         "stage": "Group Stage",
@@ -493,7 +554,8 @@
         "date_iso": "2026-06-26T15:00:00",
         "match_label": "Senegal vs TBD",
         "team_home": "Senegal",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Gillette Stadium, Boston"
     },
     {
         "stage": "Group Stage",
@@ -501,7 +563,8 @@
         "date_iso": "2026-06-26T20:00:00",
         "match_label": "Cape Verde vs Saudi Arabia",
         "team_home": "Cape Verde",
-        "team_away": "Saudi Arabia"
+        "team_away": "Saudi Arabia",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Group Stage",
@@ -509,7 +572,8 @@
         "date_iso": "2026-06-26T20:00:00",
         "match_label": "Uruguay vs Spain",
         "team_home": "Uruguay",
-        "team_away": "Spain"
+        "team_away": "Spain",
+        "venue": "BC Place, Vancouver"
     },
     {
         "stage": "Group Stage",
@@ -517,7 +581,8 @@
         "date_iso": "2026-06-26T23:00:00",
         "match_label": "New Zealand vs Belgium",
         "team_home": "New Zealand",
-        "team_away": "Belgium"
+        "team_away": "Belgium",
+        "venue": "Levi's Stadium, San Francisco Bay Area"
     },
     {
         "stage": "Group Stage",
@@ -525,7 +590,8 @@
         "date_iso": "2026-06-26T23:00:00",
         "match_label": "Egypt vs Iran",
         "team_home": "Egypt",
-        "team_away": "Iran"
+        "team_away": "Iran",
+        "venue": "Estadio Guadalajara, Guadalajara"
     },
     {
         "stage": "Group Stage",
@@ -533,7 +599,8 @@
         "date_iso": "2026-06-27T17:00:00",
         "match_label": "Panama vs England",
         "team_home": "Panama",
-        "team_away": "England"
+        "team_away": "England",
+        "venue": "Lincoln Financial Field, Philadelphia"
     },
     {
         "stage": "Group Stage",
@@ -541,7 +608,8 @@
         "date_iso": "2026-06-27T17:00:00",
         "match_label": "Croatia vs Ghana",
         "team_home": "Croatia",
-        "team_away": "Ghana"
+        "team_away": "Ghana",
+        "venue": "MetLife Stadium, East Rutherford"
     },
     {
         "stage": "Group Stage",
@@ -549,7 +617,8 @@
         "date_iso": "2026-06-27T19:30:00",
         "match_label": "Colombia vs Portugal",
         "team_home": "Colombia",
-        "team_away": "Portugal"
+        "team_away": "Portugal",
+        "venue": "AT&T Stadium, Dallas"
     },
     {
         "stage": "Group Stage",
@@ -557,7 +626,8 @@
         "date_iso": "2026-06-27T19:30:00",
         "match_label": "TBD vs Uzbekistan",
         "team_home": "TBD",
-        "team_away": "Uzbekistan"
+        "team_away": "Uzbekistan",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Group Stage",
@@ -565,7 +635,8 @@
         "date_iso": "2026-06-27T22:00:00",
         "match_label": "Algeria vs Austria",
         "team_home": "Algeria",
-        "team_away": "Austria"
+        "team_away": "Austria",
+        "venue": "Estadio Monterrey, Monterrey"
     },
     {
         "stage": "Group Stage",
@@ -573,7 +644,8 @@
         "date_iso": "2026-06-27T22:00:00",
         "match_label": "Jordan vs Argentina",
         "team_home": "Jordan",
-        "team_away": "Argentina"
+        "team_away": "Argentina",
+        "venue": "Estadio Azteca, Mexico City"
     },
     {
         "stage": "Round of 32",
@@ -581,7 +653,8 @@
         "date_iso": "2026-06-28T15:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "SoFi Stadium, Los Angeles"
     },
     {
         "stage": "Round of 32",
@@ -589,7 +662,8 @@
         "date_iso": "2026-06-29T13:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Gillette Stadium, Boston"
     },
     {
         "stage": "Round of 32",
@@ -597,7 +671,8 @@
         "date_iso": "2026-06-29T16:30:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Estadio Monterrey, Monterrey"
     },
     {
         "stage": "Round of 32",
@@ -605,7 +680,8 @@
         "date_iso": "2026-06-29T21:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Round of 32",
@@ -613,15 +689,17 @@
         "date_iso": "2026-06-30T13:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "MetLife Stadium, East Rutherford"
     },
     {
         "stage": "Round of 32",
         "group": null,
-        "date_iso": "2026-06-30T17:00:00",
+        "date_iso": "2026-07-30T17:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "AT&T Stadium, Dallas"
     },
     {
         "stage": "Round of 32",
@@ -629,7 +707,8 @@
         "date_iso": "2026-06-30T21:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Estadio Azteca, Mexico City"
     },
     {
         "stage": "Round of 32",
@@ -637,7 +716,8 @@
         "date_iso": "2026-07-01T12:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Mercedes-Benz Stadium, Atlanta"
     },
     {
         "stage": "Round of 32",
@@ -645,7 +725,8 @@
         "date_iso": "2026-07-01T16:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Levi's Stadium, San Francisco Bay Area"
     },
     {
         "stage": "Round of 32",
@@ -653,7 +734,8 @@
         "date_iso": "2026-07-01T20:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Lumen Field, Seattle"
     },
     {
         "stage": "Round of 32",
@@ -661,7 +743,8 @@
         "date_iso": "2026-07-02T15:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "BMO Field, Toronto"
     },
     {
         "stage": "Round of 32",
@@ -669,7 +752,8 @@
         "date_iso": "2026-07-02T19:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "SoFi Stadium, Los Angeles"
     },
     {
         "stage": "Round of 32",
@@ -677,7 +761,8 @@
         "date_iso": "2026-07-02T23:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "BC Place, Vancouver"
     },
     {
         "stage": "Round of 32",
@@ -685,7 +770,8 @@
         "date_iso": "2026-07-03T14:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Hard Rock Stadium, Miami"
     },
     {
         "stage": "Round of 32",
@@ -693,7 +779,8 @@
         "date_iso": "2026-07-03T18:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "AT&T Stadium, Dallas"
     },
     {
         "stage": "Round of 32",
@@ -701,7 +788,8 @@
         "date_iso": "2026-07-03T21:30:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Round of 16",
@@ -709,7 +797,8 @@
         "date_iso": "2026-07-04T13:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Lincoln Financial Field, Philadelphia"
     },
     {
         "stage": "Round of 16",
@@ -717,7 +806,8 @@
         "date_iso": "2026-07-04T17:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Round of 16",
@@ -725,7 +815,8 @@
         "date_iso": "2026-07-05T16:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "MetLife Stadium, East Rutherford"
     },
     {
         "stage": "Round of 16",
@@ -733,7 +824,8 @@
         "date_iso": "2026-07-05T20:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Estadio Azteca, Mexico City"
     },
     {
         "stage": "Round of 16",
@@ -741,7 +833,8 @@
         "date_iso": "2026-07-06T15:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "AT&T Stadium, Dallas"
     },
     {
         "stage": "Round of 16",
@@ -749,7 +842,8 @@
         "date_iso": "2026-07-06T20:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Lumen Field, Seattle"
     },
     {
         "stage": "Round of 16",
@@ -757,7 +851,8 @@
         "date_iso": "2026-07-07T12:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Mercedes-Benz Stadium, Atlanta"
     },
     {
         "stage": "Round of 16",
@@ -765,7 +860,8 @@
         "date_iso": "2026-07-07T16:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "BC Place, Vancouver"
     },
     {
         "stage": "Quarter-finals",
@@ -773,7 +869,8 @@
         "date_iso": "2026-07-09T16:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Gillette Stadium, Boston"
     },
     {
         "stage": "Quarter-finals",
@@ -781,7 +878,8 @@
         "date_iso": "2026-07-10T15:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "SoFi Stadium, Los Angeles"
     },
     {
         "stage": "Quarter-finals",
@@ -789,7 +887,8 @@
         "date_iso": "2026-07-11T17:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Hard Rock Stadium, Miami"
     },
     {
         "stage": "Quarter-finals",
@@ -797,7 +896,8 @@
         "date_iso": "2026-07-11T21:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "NRG Stadium, Houston"
     },
     {
         "stage": "Semi-finals",
@@ -805,7 +905,8 @@
         "date_iso": "2026-07-14T15:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "AT&T Stadium, Dallas"
     },
     {
         "stage": "Semi-finals",
@@ -813,7 +914,8 @@
         "date_iso": "2026-07-15T15:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Mercedes-Benz Stadium, Atlanta"
     },
     {
         "stage": "Third place play-off",
@@ -821,7 +923,8 @@
         "date_iso": "2026-07-18T17:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "Hard Rock Stadium, Miami"
     },
     {
         "stage": "Final",
@@ -829,6 +932,7 @@
         "date_iso": "2026-07-19T15:00:00",
         "match_label": "TBD vs TBD",
         "team_home": "TBD",
-        "team_away": "TBD"
+        "team_away": "TBD",
+        "venue": "MetLife Stadium, East Rutherford"
     }
 ]

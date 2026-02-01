@@ -17,14 +17,20 @@ tactics_agent = TacticsAgent()
 market_agent = MarketAgent()
 narrative_agent = NarrativeAgent()
 
-def load_schedule():
+def load_json_data(path):
     try:
-        with open('data/schedule.json', 'r') as f:
+        with open(path, 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        return []
+        return {}
 
-SCHEDULE = load_schedule()
+SCHEDULE = load_json_data('data/schedule.json')
+BET_TYPES = load_json_data('data/bet_types.json')
+
+def format_to_12hr(date_iso):
+    """Converts ISO timestamp to 12-hour format: 5:00 PM."""
+    dt = datetime.fromisoformat(date_iso)
+    return dt.strftime("%I:%M %p").lstrip("0")
 
 async def generate_betting_briefing(match_info, user_budget=100):
     """
@@ -36,10 +42,13 @@ async def generate_betting_briefing(match_info, user_budget=100):
     
     logger.info(f"🚀 GoalMine Swarm Activated: {home} vs {away}")
     
-    # 1. Parallel Execution of Swarm
-    task_log = logistics_agent.analyze(match_info.get('venue_from', 'MetLife_NY'), match_info.get('venue_to', 'Azteca_Mexico'))
-    task_tac = tactics_agent.analyze("team_a_id", "team_b_id") 
-    task_mkt = market_agent.analyze() # Fetches own data
+    # 1. Start Agents in Parallel
+    task_log = logistics_agent.analyze(
+        match_info.get('venue_from', 'MetLife Stadium, East Rutherford'), 
+        match_info.get('venue', 'Estadio Azteca, Mexico City')
+    )
+    task_tac = tactics_agent.analyze(home, away)
+    task_mkt = market_agent.analyze(home, away)
     task_nar_a = narrative_agent.analyze(home)
     task_nar_b = narrative_agent.analyze(away)
     
@@ -48,34 +57,31 @@ async def generate_betting_briefing(match_info, user_budget=100):
     
     log_res, tac_res, mkt_res, nar_a, nar_b = results
     
-    logger.info(f"✅ Logistics: Condition {log_res.get('weather', {}).get('condition', 'Unknown ☁️')}")
+    logger.info(f"✅ Logistics: Fatigue Score {log_res.get('fatigue_score', 'N/A')}")
     logger.info(f"✅ Tactics: xG {tac_res.get('team_a_xg', 'N/A')} vs {tac_res.get('team_b_xg', 'N/A')}")
-    logger.info(f"✅ Market: {len(mkt_res.get('bets', []))} Live Situations Found")
+    logger.info(f"✅ Market: Best Entry found on {mkt_res.get('best_odds', {}).get('Team_A_Win', {}).get('platform', 'N/A')}")
     
-    sentiment = nar_a.get('sentiment', 'Neutral')
-    logger.info(f"✅ Narrative: {home} Sentiment {sentiment} 📰")
+    logger.info(f"✅ Narrative Analysis: {home} (Score: {nar_a.get('score', 5)}) vs {away} (Score: {nar_b.get('score', 5)})")
     
-    # 2. Quant Engine Synthesis
+    # 2. Extract Data & Apply Multipliers
     base_xg_a = tac_res.get('team_a_xg', 1.5)
     base_xg_b = tac_res.get('team_b_xg', 1.1)
     
-    # Adjustments (Simplified logic moved here or kept in quant)
-    log_penalty = 0.85 if "High" in log_res.get('recommendation', '') else 1.0
-    sent_mult_a = 1 + (nar_a.get('score', 5) - 5) * 0.05
-    sent_mult_b = 1 + (nar_b.get('score', 5) - 5) * 0.05
+    # Logic: If Logistics finds high fatigue for Team B, reduce their xG
+    log_penalty = 0.90 if log_res.get('fatigue_score', 0) > 7 else 1.0
+    
+    # Logic: Narrative Sentiment scales xG linearly (+/- 10%)
+    sent_mult_a = 1 + (nar_a.get('score', 5) - 5) * 0.04
+    sent_mult_b = 1 + (nar_b.get('score', 5) - 5) * 0.04
     
     final_xg_a = base_xg_a * sent_mult_a
     final_xg_b = base_xg_b * sent_mult_b * log_penalty
     
-    # Mocking odds for quant (Slightly improved for demo edge)
-    mock_best_odds = {
-        'Team_A_Win': {'odds': 2.50, 'platform': 'DraftKings'}, 
-        'Draw': {'odds': 3.40, 'platform': 'FanDuel'}, 
-        'Team_B_Win': {'odds': 4.10, 'platform': 'BetMGM'}
-    }
+    # Connect REAL market odds to the Quant Engine
+    live_odds = mkt_res.get('best_odds')
     
     logger.info(f"🤖 Quant Engine processing: Adj xG {round(final_xg_a,2)} vs {round(final_xg_b,2)}")
-    quant_res = run_quant_engine(final_xg_a, final_xg_b, mock_best_odds, user_budget)
+    quant_res = run_quant_engine(final_xg_a, final_xg_b, live_odds, user_budget)
     
     return {
         "match": f"{home} vs {away}",
@@ -101,33 +107,40 @@ async def format_the_closer_report(briefing, num_bets=1):
         bet_types_kb = "Standard Bets: Moneyline, Spread, Totals."
 
     system_prompt = f"""
-    You are 'The Closer', a Senior Risk Analyst for a high-stakes World Cup betting syndicate.
-    Your goal is to synthesize data from 4 agents (Logistics, Tactics, Market, Narrative) and a Quant Engine.
+    # IDENTITY: 'The Closer' (Senior Portfolio Manager)
     
-    OUTPUT RULES:
-    1. Tone: Professional, Concise, Wall Street style.
-    2. Format (WHATSAPP MARKDOWN):
-       🏆 *OFFICIAL BET BRIEFING*
-       ⚽ *Match:* [Match Name]
-       
-       (If bets exist):
-       💰 *TOP OPPORTUNITIES:*
-       1. *[Bet Type]* @ *[Odds]* ([Bookmaker]) - Stake: *$[Amount]*
-       2. *[Bet Type]* @ *[Odds]* ([Bookmaker]) - Stake: *$[Amount]*
-       
-       (If NO bets exist):
-       🚫 *NO BET WARNING:* [Reason from Quant]
-       
-       *The Why:*
-       1. *Math:* [Sharp sentence on probabilities/edge].
-       2. *Intel:* [One sharp sentence from Narrative/Tactics].
-       3. *Logistics:* [One sharp sentence about travel/weather].
-       
-       *Confidence:* [High/Med/Low]
-       
-    3. BET SELECTION:
-       - Provide {num_bets} opportunities if they exist in 'top_plays'.
-       - Use *bolding* (asterisks) for key terms.
+    # MISSION
+    You are the final decision-maker for a Billion-Dollar Betting Syndicate. You synthesize intelligence from 4 elite intelligence branches (Logistics, Tactics, Market, Narrative) and the Quant Engine to issue the final 'Capital Deployment' order.
+
+    # REPORTING STRUCTURE (WHATSAPP MARKDOWN)
+    
+    🏆 *GOALMINE ELITE BRIEFING*
+    ⚽ *Fixture:* {{match}}
+    
+    (Provide Betting Intel here):
+    💎 *HIGH-ALPHA OPPORTUNITIES*
+    [List up to {num_bets} bets from 'top_plays']
+    - *[Selection]* (@ [Odds]) [[Platform]]
+    - *Stake:* $[Amount] (Kelly Adjusted)
+    
+    (If no plays, use):
+    ⚠️ *MARKET ADVISORY:* No Edge Detected. capital preservation mode active.
+    
+    ---
+    🧠 *INTELLIGENCE SYNTHESIS*
+    
+    🎯 *QUANT:* [Combine edge percentage and true probability in 1 sentence].
+    ⚔️ *TACTICS:* [Synthesize the mismatch and xG correction in 1 sentence].
+    🚛 *LOGISTICS:* [Detail the physiological penalty or home-field environmental edge].
+    📰 *NARRATIVE:* [The 'Scoop' and sentiment impact on performance].
+    
+    ---
+    🔥 *CONFIDENCE COEFFICIENT:* [PROBABILITY-WEIGHTED %]
+    
+    # COMMANDS
+    - Use code-like bolding for teams and odds.
+    - Keep sentences 'Wall Street Sharp'—dense with information, zero fluff.
+    - Always use the agent data provided to justify the capital risk.
     """
     
     user_prompt = f"""
@@ -154,25 +167,28 @@ async def answer_follow_up_question(memory, user_message, num_bets=1):
     if not memory: return None
 
     system_prompt = f"""
-    You are an Assistant Analyst for GoalMine AI.
-    You have access to the full 'God View' data for a specific match.
+    # IDENTITY: GoalMine Intelligence Liaison (Data Assistant)
     
-    GOD VIEW DATA:
+    # MISSION
+    You provide high-speed, accurate answers to specific user queries using the 'God View' intelligence packet provided below. You are the bridge between raw agent data and the user's curiosity.
+
+    # GOD VIEW INTELLIGENCE:
     {json.dumps(memory, indent=2)}
-    
-    Your goal is to answer the user's specific question based strictly on this data.
-    - Use *WHATSAPP BOLDING* (asterisks) for emphasis.
-    - If they ask about "xG", look at 'tactics'.
-    - If they ask about "weather", look at 'logistics'.
-    - If they ask for "bets" or "staking/budget", find the edge in the 'quant' data and recalculate amounts if a budget is mentioned.
-    
-    Format:
-    🎯 *Analysis Update*
-    [Your answer here]
-    
-    Keep answers short (under 75 words) and factual.
+
+    # ANALYTICAL GUIDELINES:
+    1. **DATA-FIRST**: If the data isn't in the 'God View', admit it—don't hallucinate.
+    2. **FIELD RETRIEVAL**: 
+       - For "xG" or "formations" -> Query **tactics**.
+       - For "weather" or "travel fatigue" -> Query **logistics**.
+       - For "public opinion" or "news" -> Query **narrative**.
+       - For "odds" or "value" -> Query **market** or **quant**.
+    3. **RECALCULATION**: If the user provides a budget (e.g., "$100"), use the 'true_probability' from the quant data to suggest a fractional Kelly stake.
+
+    # FORMATTING:
+    - Use code-style *WHATSAPP BOLDING* for all entities and numbers.
+    - Response must be concise (max 80 words).
+    - Tone: Sharp, Analytical, Responsive.
     """
-    
     user_prompt = f"User Question: {user_message}"
     
     try:
@@ -181,6 +197,50 @@ async def answer_follow_up_question(memory, user_message, num_bets=1):
     except Exception as e:
         logger.error(f"Q&A Failed: {e}")
         return None
+
+async def handle_general_conversation(user_message):
+    """
+    Handles non-betting, non-schedule chats.
+    Now enhanced with Tournament & Betting Context.
+    """
+    # Check for greeting
+    if any(w in user_message.lower().strip() for w in ["hi", "hello", "hola", "sup", "hey", "start", "yo"]):
+        from core.responses import Responses
+        return Responses.get_greeting()
+
+    # Get a snapshot of context for the LLM
+    now = datetime.now()
+    next_match = None
+    for m in SCHEDULE:
+        if datetime.fromisoformat(m['date_iso']) > now:
+            next_match = m
+            break
+            
+    context_str = f"""
+    MATCH CONTEXT:
+    Next Match: {next_match['team_home'] if next_match else 'N/A'} vs {next_match['team_away'] if next_match else 'N/A'}
+    Tournament Structure: {BET_TYPES.get('meta', {}).get('structure', 'Round robin + knockouts')}
+    
+    USER QUERY: {user_message}
+    """
+
+    system_prompt = """
+    You are the 'GoalMine AI' Analyst. You are an expert in World Cup 2026 and sports betting.
+    
+    MISSION: 
+    - Answer greetings and general World Cup questions using your internal knowledge + the provided context.
+    - If the user asks about the tournament structure or bets, use the data provided.
+    - BE HIGHLY CONVERSATIONAL. Don't use bullet points unless necessary. Feel like a sharp, friendly betting partner.
+    - If they want a specific match analysis, gently guide them: "Just say 'Analyze [Team] vs [Team]' and I'll launch the swarm."
+    - Keep it concise (under 60 words).
+    - Use *bolding* for teams and key terms.
+    """
+    try:
+        return await query_llm(system_prompt, context_str, config_key="narrative") 
+    except Exception as e:
+        logger.error(f"General Conv Failed: {e}")
+        from core.responses import Responses
+        return Responses.get_greeting()
 
 from datetime import datetime, timedelta
 
@@ -234,39 +294,76 @@ def get_next_scheduled_match():
             'home_team': next_match['team_home'],
             'away_team': next_match['team_away'],
             'date_iso': next_match['date_iso'],
-            'venue_from': 'MetLife_NY', 
-            'venue_to': 'Azteca_Mexico' 
+            'venue': next_match.get('venue', 'Estadio Azteca, Mexico City'),
+            'venue_from': 'MetLife Stadium, East Rutherford' 
         }
     return None
 
-def get_morning_brief_content():
-    todays = get_todays_matches()
+def get_next_match_content():
+    """
+    Returns only the absolute next match (What the user had before).
+    """
+    now = datetime.now()
+    next_match = None
+    for m in SCHEDULE:
+        if datetime.fromisoformat(m['date_iso']) > now:
+            next_match = m
+            break
     
-    if not todays:
-        # Find next upcoming match
-        now = datetime.now()
-        next_match = None
-        for m in SCHEDULE:
-            match_date = datetime.fromisoformat(m['date_iso'])
-            if match_date > now:
-                next_match = m
-                break
-        
-        if next_match:
-            date_str = datetime.fromisoformat(next_match['date_iso']).strftime('%A, %b %d')
-            return (f"⛔ No World Cup matches today.\n\n"
-                    f"🔜 **Next Clash:** {next_match['team_home']} vs {next_match['team_away']}\n"
-                    f"📅 {date_str}\n\n"
-                    f"Reply 'Analyze to get early intel on this matchup.")
-        else:
-            return "⛔ No upcoming matches found in the schedule."
-        
-    msg = "🌞 *Matchday Briefing*\n\n📅 **Today's Menu:**\n"
-    for i, m in enumerate(todays):
-        time = m['date_iso'].split("T")[1][:5]
-        msg += f"{i+1}. {m['team_home']} vs {m['team_away']} @ {time}\n"
+    if next_match:
+        time_str = format_to_12hr(next_match['date_iso'])
+        return (f"🔮 *Next Up:* {next_match['team_home']} vs {next_match['team_away']}.\n"
+                f"They kick off today at {time_str} in the Azteca stadium.\n\n"
+                f"Would you like me to analyze this match for you? Just say 'Analyze' or ask about another fixture.")
+    return "📅 Looking at the calendar, there are no upcoming matches scheduled right now."
+
+def get_schedule_menu(limit=4):
+    """
+    Returns a more conversational menu for the next {limit} matches.
+    """
+    now = datetime.now()
+    upcoming = [m for m in SCHEDULE if datetime.fromisoformat(m['date_iso']) > now][:limit]
     
-    msg += "\n🔮 *Action:* Reply with '1' or '2' to activate the Swarm."
+    if not upcoming:
+        return "📅 I've checked the schedule, and it looks like there aren't any matches coming up soon."
+
+    msg = f"⚽ *Upcoming Fixtures:*\n\n"
+    for m in upcoming:
+        time_str = format_to_12hr(m['date_iso'])
+        msg += f"• *{m['team_home']} vs {m['team_away']}* (today at {time_str})\n"
+    
+    msg += "\nWhich one should we look into? You can also ask for the 'Full Schedule' if you want to see the whole week."
+    return msg
+
+def get_schedule_brief(days=7):
+    """
+    Returns the comprehensive 7-day schedule summary.
+    """
+    now = datetime.now()
+    cutoff = now + timedelta(days=days)
+    upcoming = [m for m in SCHEDULE if now.date() <= datetime.fromisoformat(m['date_iso']).date() <= cutoff.date()]
+
+    if not upcoming:
+        return "📅 It looks like the calendar is clear for the next few days. No official matches scheduled yet!"
+
+    grouped = {}
+    for m in upcoming:
+        date_str = datetime.fromisoformat(m['date_iso']).strftime('%A, %b %d')
+        if date_str not in grouped: grouped[date_str] = []
+        grouped[date_str].append(m)
+
+    if days == 1:
+        msg = "☀️ *Good Morning! GoalMine AI is online.*\n\nHere is today's World Cup lineup:\n"
+    else:
+        msg = f"🗓️ *World Cup Schedule (Next {days} Days)*\n"
+
+    for date, matches in grouped.items():
+        msg += f"\n📅 *{date}*\n"
+        for m in matches:
+            time_str = format_to_12hr(m['date_iso'])
+            msg += f"• *{m['team_home']} vs {m['team_away']}* (@ {time_str})\n"
+    
+    msg += "\nTo get a deep-dive analysis on any of these, just say 'Analyze' followed by the teams."
     return msg
 
 def get_match_info_from_selection(selection_idx):
@@ -276,9 +373,9 @@ def get_match_info_from_selection(selection_idx):
         return {
             'home_team': m['team_home'],
             'away_team': m['team_away'],
-            # Start inferring venues or defaulting to a central average if missing
-            'venue_from': 'MetLife_NY', 
-            'venue_to': 'Azteca_Mexico' 
+            'date_iso': m['date_iso'],
+            'venue': m.get('venue', 'Estadio Azteca, Mexico City'),
+            'venue_from': 'MetLife Stadium, East Rutherford' 
         }
     return None
 
@@ -303,10 +400,10 @@ async def extract_match_details_from_text(text):
     {
       "home_team": "Name",
       "away_team": "Name",
-      "venue_from": "MetLife_NY",
-      "venue_to": "Azteca_Mexico"
+      "venue_from": "MetLife Stadium, East Rutherford",
+      "venue_to": "Estadio Azteca, Mexico City"
     }
-    (If venues are unknown, default venue_from='MetLife_NY' and venue_to='Azteca_Mexico').
+    (If venues are unknown, default venue_from='MetLife Stadium, East Rutherford' and venue_to='Estadio Azteca, Mexico City').
     """
     user_prompt = f"Extract from: {text}"
     
@@ -346,8 +443,16 @@ def validate_match_request(extracted_data):
         if match_found or match_found_reverse:
             # ENRICH DATA: Sync the exact date/venue from official schedule
             extracted_data['date_iso'] = m.get('date_iso')
-            extracted_data['home_team'] = m['team_home'] # Correct formatting
-            extracted_data['away_team'] = m['team_away']
+            extracted_data['venue'] = m.get('venue', 'Estadio Azteca, Mexico City') # Real Venue
+            
+            if match_found:
+                extracted_data['home_team'] = m['team_home']
+                extracted_data['away_team'] = m['team_away']
+            else:
+                # User asked in reverse, normalize to schedule order
+                extracted_data['home_team'] = m['team_home']
+                extracted_data['away_team'] = m['team_away']
+                
             return True
             
     return False
