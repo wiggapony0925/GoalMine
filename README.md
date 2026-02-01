@@ -8,9 +8,7 @@ It operates on a sophisticated architecture that merges **deterministic mathemat
 
 ## 1. System Architecture
 
-The core of GoalMine is an **Agent Swarm** orchestration pattern combined with **Fail-Safe Redundancy**. The system is built to handle live data ingestion, multi-agent consensus, and quantitative validation.
-
-![GoalMine Flow Architecture](goalmine_n8n_flow_diagram.png)
+GoalMine is built for **scalability** and **persistence**. The core is an **Agent Swarm** orchestration pattern combined with **Fail-Safe Redundancy**.
 
 ### 1.1 The Intelligence Flow
 
@@ -20,182 +18,168 @@ graph TD
         USER([User Interface (WhatsApp)])
         SCHED[("schedule.json (Calendar)")]
         BETS[("bet_types.json (Market Taxonomy)")]
+        RDT_CFG[("reddit_config.json")]
     end
 
-    subgraph Processing Step
+    subgraph Processing Layer
         WEBHOOK[Flask Gateway]
-        GATE{Gatekeeper AI}
-        ORCH[Orchestrator Service]
+        CONV[Conversation Handler]
+        MEM[("memory.json (Persistence)")]
     end
     
     subgraph Agent Swarm
         TAC[Tactics Agent] <--> MONKS[SportMonks API v3]
         LOG[Logistics Agent] <--> METEO[Open-Meteo API]
         MKT[Market Agent] <--> ODDS[The Odds API]
-        NAR[Narrative Agent] <--> GOOG[Google News System]
+        NAR[Narrative Agent] <--> GOOG[News] & REDDIT[Reddit]
     end
 
     subgraph Synthesis
         QUANT[Quant Engine (NumPy Matrix)]
-        CLOSER[The Closer (LLM Finalizer)]
+        ORCH[Orchestrator Service]
+        MODELS[("model_config.json")]
     end
 
     USER -->|Message| WEBHOOK
-    WEBHOOK --> GATE
+    WEBHOOK --> CONV
+    CONV <--> MEM
     
-    GATE -- "Chit Chat" --> USER
-    GATE -- "Betting Intent" --> ORCH
-    
-    SCHED --> ORCH
+    CONV -->|Trigger Analysis| ORCH
+    ORCH --> MODELS
     
     ORCH -->|Trigger| TAC
     ORCH -->|Trigger| LOG
     ORCH -->|Trigger| MKT
     ORCH -->|Trigger| NAR
     
-    TAC -->|xG / Squad Data| QUANT
-    LOG -->|Fatigue Score| QUANT
-    MKT -->|Live Odds| QUANT
-    NAR -->|Sentiment Score| QUANT
+    TAC --> QUANT
+    LOG --> QUANT
+    MKT --> QUANT
+    NAR --> QUANT
     
-    QUANT -->|Probability & Edge (Poisson)| CLOSER
-    BETS --> CLOSER
-    
-    CLOSER -->|Final Advisory| USER
+    QUANT -->|God View JSON| ORCH
+    ORCH -->|Final Synthetic Advisory| USER
 ```
 
 ---
 
 ## 2. Agent Capabilities & Fallback Protocols
 
-Each agent is designed with a **Primary Live Mode** and a **Crisis Fallback Mode**. If an external API fails, the Agent seamlessly switches to an internal estimation protocol, ensuring system reliability.
+Each agent is designed with a **Primary Live Mode** and a **Crisis Fallback Mode**, ensuring the system never fails even if APIs are down.
 
-### 2.1 The Gatekeeper
+### 2.1 The Gatekeeper (Intelligence Router)
 *   **Role**: Traffic Controller & Intent Classifier.
-*   **Technology**: Asynchronous LLM Classification.
-*   **Function**: Dynamically parses user natural language (e.g., "Analyze the France game" vs "Hello") to route requests efficiently.
+*   **Technology**: Asynchronous LLM Classification via `model_config.json`.
+*   **Function**: Dynamically parses user natural language (e.g., "Analyze the France game") and extracts metadata like **Budget** and **Bet Count**.
 
 ### 2.2 Logistics Agent
 *   **Role**: Environmental & Physiological Analyst.
 *   **Primary Data**: **Open-Meteo API** (Live Weather, Elevation Data).
-*   **Operational Logic**: Calculates "Altitude Shock" (e.g., Sea Level to Mexico City) and travel fatigue penalties.
-*   **Fallback**: "Geographic Estimator" (Uses historical climate averages for the region).
+*   **Operational Logic**: Calculates "Altitude Shock" (e.g., Sea Level to Mexico City) and temperature stress penalties.
+*   **Fallback**: "Geographic Estimator" (Uses historical climate averages).
 
 ### 2.3 Tactics Agent
 *   **Role**: Team Performance & Tactical Analyst.
 *   **Primary Data**: **SportMonks API v3** (Live Scores, Squads, Recent Form).
 *   **Operational Logic**:
     *   **Pre-Match**: Analyzes Roster Depth and Form (Last 5 Games).
-    *   **Live Monitoring**: reports real-time minutes and scorelines.
-    *   **Half-Time Strategy**: Identifies specific "Comeback" or "Next Goal" opportunities during the break.
+    *   **Live Monitoring**: Reports real-time minutes and scorelines.
 *   **Fallback**: "Internal Knowledge Base" (Estimates xG based on team tiers).
 
-### 2.4 Market Agent (`agents/market`)
+### 2.4 Market Agent
 *   **Persona**: "The Vegas Sharp"
 *   **Primary Data**: **The Odds API** (Live Lines from DraftKings, FanDuel).
-*   **Crisis Fallback**: "Vegas Estimator" (Sets its own fair lines if the market is down).
-*   **Function**: Identifies Arbitrage and "Trap Lines".
+*   **Function**: Identifies Arbitrage, Trap Lines, and "Sharp" money moves.
 
-### 2.5 Narrative Agent (`agents/narrative`)
-*   **Persona**: "Investigative Journalist"
-*   **Primary Data**: **Google News RSS** (Real-time Headlines).
-*   **Crisis Fallback**: "Archive Recall" (Historical reputation analysis).
+### 2.5 Narrative Agent (Social Sentiment)
+*   **Dual-Scan**: Checks **Google News RSS** and **Reddit** (via PRAW).
+*   **Config**: Uses `data/reddit_config.json` to monitor specific subreddits (r/soccer, r/worldcup).
 *   **Function**: Scrapes headers for Morale, Scandals, and Locker Room friction.
 
 ### 2.6 The Quant Engine (Math Core)
-*   **Technology**: **NumPy** (Matrix Operations) + **Pybettor** (Kelly Criterion).
-*   **Methodology**:
-    *   **Vectorized Poisson Matrix**: Instantly calculates probabilities for all scorelines (0-0 to 9-9).
-    *   **True Edge Detection**: Compares calculated true odds vs. bookmaker implied odds.
-    *   **Kelly Staking**: Recommends bankroll percentage based on Risk/Reward ratio.
-
-
-
-### 2.7 The Orchestrator & Quant Fusion
-*   **Role**: The Conductor.
-*   **Process**:
-    1.  **Parallel Execution**: Triggers all 4 Agents simultaneously (`asyncio.gather`).
-    2.  **Data Fusion**: Aggregates JSON outputs (Logistics Fatigue + Tactics xG + Market Odds + Narrative Sentiment).
-    3.  **Quant Weighting**: Applies mathematical penalties (e.g., *Multiplies Away Team xG by 0.85 if Altitude Fatigue > 8*).
-    4.  **The Closer**: The final LLM receives this synthesized "God View" JSON to write the final WhatsApp briefing.
-
-*   **Kick-Off Alerts**: Scans `schedule.json` every 15 minutes. If a game starts in < 60 mins, it texts the user: *"🚨 Alert: Match Starting!"*
-*   **Morning Brief**: At 8:00 AM, checks the **Real Calendar Date**. If games exist, it sends a briefing. If not, it stays silent.
-*   **Awareness**: If you text "Betting" on a day with no games, GoalMine replies: *"No games scheduled today. I can simulate one if you like."*
+*   **Logic**: Vectorized Poisson Matrix + Kelly Criterion Staking.
+*   **Dynamic Staking**: Automatically recalculates exact dollar amounts based on the user's specified budget.
 
 ---
 
-## ⚙️ Technical Stack
+## 3. Advanced Features
 
-*   **Core**: Python 3.14+, Flask (Webhook Gateway), Modular Service Architecture.
-*   **Structure**: `logs.py` (Central Logging), `services/conversation.py` (Business Logic), `app.py` (Routing).
-*   **Async**: `asyncio` for parallel agent execution.
-*   **LLM**: OpenAI GPT-4o via `AsyncOpenAI`.
-*   **APIs**: SportMonks (Tactics), Open-Meteo (Logistics), The Odds API (Market), Google News (Narrative).
+### 3.1 Model Routing (`data/model_config.json`)
+Allows you to swap AI models for each agent instantly. You can route simple tasks to `gpt-4o-mini` and complex synthesis to `gpt-4o`.
+
+### 3.2 Persistent Memory (`data/memory.json`)
+Saves the "God View" of matches per user. This allows the bot to answer follow-up questions (e.g., *"Why did you recommend that?"*) without re-running the expensive agent swarm.
+
+### 3.3 Dynamic Settings
+- **`bet_types.json`**: Define which markets the bot is authorized to recommend.
+- **`reddit_config.json`**: Manage your social intelligence streams effortlessly.
 
 ---
 
-### 7. 🧠 The "God View" JSON Payload
-This is the heart of the engine—the synthesized data block that the final LLM receives to generate its advice. It is designed to be **context-rich** and **action-oriented**.
+## 4. 🧠 The "God View" JSON Payload
+This is the heart of the engine—the synthesized data block that the final Orchestrator uses to generate advice.
 
 ```json
 {
   "match_context": {
     "fixture": "France vs Brazil",
-    "stage": "Semi-Final",
     "venue": "Azteca (High Altitude)",
-    "kickoff_weather": "28°C, 35% Humidity (Heat Stress Alert)"
+    "kickoff_weather": "28°C, 35% Humidity"
   },
   "tactical_intel": {
     "live_status": "HT",
     "score": "0-1",
-    "possession": "42% vs 58%",
-    "key_insight": "France lost midfield control. Mbappe isolated (0 touches in box).",
-    "roster_health": "Varane limping (42')."
-  },
-  "market_pulse": {
-    "pre_match_line": "France -110",
-    "live_line": "France +220 (Drastic drift)",
-    "smart_money_move": "Sharp money hitting Brazil -0.5 heavily."
-  },
-  "narrative_vibe": {
-    "home_sentiment": "Toxic (Coach arguing with bench)",
-    "away_sentiment": "Confident / Flow State"
+    "key_insight": "Mbappe isolated. Brazil controlling midfield."
   },
   "quant_verdict": {
     "win_prob": {"home": 32.1, "away": 45.4, "draw": 22.5},
-    "value_edge": "Bet Brazil 2nd Goal @ +140 (>5% EV)"
+    "value_edge": "Bet Brazil Win @ +140 (>5% EV)",
+    "top_plays": [
+      {"type": "Moneyline Brazil", "odds": 2.20, "stake": "$42.00"}
+    ]
   }
 }
 ```
 
-*   **Multi-Game Handling**: If multiple games are active, the Orchestrator generates a **List** of these JSON blocks (`[Match_A_Payload, Match_B_Payload]`).
-*   **The Closer** iterates through this list and prioritizes the match with the **Highest 'Value Edge'** to present first.
+---
+
+## ⚙️ Setup & Installation
 
 ### 1. Prerequisites
-*   Python 3.10+
+*   Python 3.14+
 *   Meta Developer Account (WhatsApp Cloud API)
+*   OpenAI API Key
 
 ### 2. Installation
 ```bash
 git clone https://github.com/YourUsername/GoalMine.git
 cd GoalMine
-python3 -m venv venv
-source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Environment Configuration
-Create a `.env` file (See `.env.example`).
-**CRITICAL**: You must provide `OPENAI_API_KEY` and specific data keys (`ODDS_API_KEY`, `SPORTMONKS_API_TOKEN`) for full "Live" mode.
+### 3. Environment Variables (.env)
+```bash
+OPENAI_API_KEY=sk-...
+ODDS_API_KEY=...
+SPORTMONKS_API_TOKEN=...
+REDDIT_CLIENT_ID=...
+REDDIT_CLIENT_SECRET=...
+```
 
 ### 4. Launch
 ```bash
 python app.py
 ```
-*You will see the "GoalMine AI" Banner and System Check logs.*
 
 ---
 
-**Status**: 🟢 Production Ready (Live Data + Fallback Logic Active)
+## 🧪 WhatsApp Usage
+- **"Analyze [Team]"**: Runs the full swarm intelligence.
+- **"Give me 3 bets"**: Multi-bet synthesis with Kelly staking.
+- **"I have $100 budget"**: Automatically updates all staking recommendations.
+- **"What's the weather?"**: Context-aware Q&A based on memory.
+
+---
+
+**Status**: 🟢 Production Ready (Live Data + Hybrid Sentiment)
 **Developer**: Jeffrey Fernandez

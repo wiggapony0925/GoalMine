@@ -1,22 +1,33 @@
 from core.llm import query_llm
 from .api.google_news import fetch_headlines
+from .api.reddit_api import RedditScanner
 
 class NarrativeAgent:
     """
     PERSONA: Narrative Agent (AI)
-    ROLE: Scrapes news and uses LLM to determine team morale/sentiment.
+    ROLE: Scrapes news and Reddit to determine team morale/sentiment.
     """
     def __init__(self):
         self.branch_name = "narrative"
+        self.reddit = RedditScanner()
 
     async def analyze(self, team_name):
+        # 1. Fetch Google News Headlines
         articles = fetch_headlines(team_name)
-        source = "LIVE_RSS_FEED"
         
-        if not articles:
-            source = "INTERNAL_ARCHIVE_RECALL"
+        # 2. Scan Reddit
+        reddit_data = await self.reddit.scan_team_sentiment(team_name)
+        reddit_headlines = [h['title'] for h in reddit_data.get('headlines', [])]
+        
+        source = "NEWS + REDDIT"
+        if not articles and not reddit_headlines:
+             source = "INTERNAL_ARCHIVE_RECALL"
 
-        headlines_text = "\n".join([f"- {a['title']}" for a in articles]) if articles else "No live headlines available. Retrieve known status."
+        # Combine Evidence
+        news_text = "\n".join([f"- [NEWS] {a['title']}" for a in articles]) if articles else ""
+        social_text = "\n".join([f"- [REDDIT] {h}" for h in reddit_headlines]) if reddit_headlines else ""
+        
+        evidence = f"{news_text}\n{social_text}" or "No live data. Analyze based on historical reputation."
         
         system_prompt = """
         IDENTITY: You are a 'Top Investigative Sports Journalist' (like Fabrizio Romano).
@@ -34,9 +45,9 @@ class NarrativeAgent:
         - "The Scoop" (A 2-sentence insider summary)
         """
         
-        user_prompt = f"Target Team: {team_name}\n\nEvidence:\n{headlines_text}\n\nInvestigate."
+        user_prompt = f"Target Team: {team_name}\n\nEvidence:\n{evidence}\n\nInvestigate."
         
-        llm_analysis = await query_llm(system_prompt.format(source=source), user_prompt)
+        llm_analysis = await query_llm(system_prompt.format(source=source), user_prompt, config_key="narrative")
         
         score = 5
         if "positive" in llm_analysis.lower() or "invincible" in llm_analysis.lower(): score = 8

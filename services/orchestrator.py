@@ -144,7 +144,7 @@ async def format_the_closer_report(briefing, num_bets=1):
     Generate the final WhatsApp message now.
     """
     
-    response = await query_llm(system_prompt, user_prompt, temperature=0.5)
+    response = await query_llm(system_prompt, user_prompt, config_key="orchestrator")
     return response
 
 async def answer_follow_up_question(memory, user_message, num_bets=1):
@@ -176,7 +176,7 @@ async def answer_follow_up_question(memory, user_message, num_bets=1):
     user_prompt = f"User Question: {user_message}"
     
     try:
-        response = await query_llm(system_prompt, user_prompt, temperature=0.3)
+        response = await query_llm(system_prompt, user_prompt, config_key="qa_assistant")
         return response
     except Exception as e:
         logger.error(f"Q&A Failed: {e}")
@@ -312,7 +312,7 @@ async def extract_match_details_from_text(text):
     
     try:
         # Clean response to ensure it's just JSON
-        resp = await query_llm(system_prompt, user_prompt, temperature=0.1)
+        resp = await query_llm(system_prompt, user_prompt, config_key="extractor", temperature=0.1)
         # Naive json parsing (cleanup markdown code blocks if present)
         resp = resp.replace("```json", "").replace("```", "").strip()
         data = json.loads(resp)

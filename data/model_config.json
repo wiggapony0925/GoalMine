@@ -1,0 +1,23 @@
+{
+    "default_model": "gpt-4o",
+    "gatekeeper": {
+        "model": "gpt-4o-mini",
+        "temperature": 0.1
+    },
+    "narrative": {
+        "model": "gpt-4o-mini",
+        "temperature": 0.5
+    },
+    "orchestrator": {
+        "model": "gpt-4o",
+        "temperature": 0.5
+    },
+    "extractor": {
+        "model": "gpt-4o-mini",
+        "temperature": 0.1
+    },
+    "qa_assistant": {
+        "model": "gpt-4o",
+        "temperature": 0.3
+    }
+}

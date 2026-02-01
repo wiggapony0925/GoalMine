@@ -1,6 +1,8 @@
 import re
 import random
 
+from core.llm import query_llm
+
 class Gatekeeper:
     """
     PERSONA: The Gatekeeper
@@ -56,7 +58,7 @@ class Gatekeeper:
         """
         
         try:
-            category = await query_llm(system_prompt, f"User Input: {message_body}", temperature=0.0)
+            category = await query_llm(system_prompt, f"User Input: {message_body}", config_key="gatekeeper")
             category = category.strip().upper().replace(".", "")
             
             if "SCHEDULE" in category: return "SCHEDULE", None
