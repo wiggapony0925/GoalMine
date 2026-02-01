@@ -1,5 +1,5 @@
 from core.llm import query_llm
-from .news_api import fetch_headlines
+from .api.google_news import fetch_headlines
 
 class NarrativeAgent:
     """
@@ -11,34 +11,42 @@ class NarrativeAgent:
 
     async def analyze(self, team_name):
         articles = fetch_headlines(team_name)
+        source = "LIVE_RSS_FEED"
+        
         if not articles:
-            return {"sentiment": "neutral", "score": 5, "summary": "No recent news found."}
+            source = "INTERNAL_ARCHIVE_RECALL"
 
-        # Prepare context for LLM
-        headlines_text = "\n".join([f"- {a['title']}: {a['description']}" for a in articles])
+        headlines_text = "\n".join([f"- {a['title']}" for a in articles]) if articles else "No live headlines available. Retrieve known status."
         
         system_prompt = """
-        You are the Narrative Agent for a high-stakes betting syndicate.
-        Analyze the following news headlines for a soccer team.
-        Determine the 'Sentiment Score' (0=Crisis/Toxic, 5=Neutral, 10=Peak Morale/Invincible).
-        Identify any 'Red Flags' (Injuries, Scandals, Manager Friction).
-        Return a structured summary.
+        IDENTITY: You are a 'Top Investigative Sports Journalist' (like Fabrizio Romano).
+        MISSION: Uncover the hidden psychological edges—Morale, Scandals, Locker Room Friction.
+        
+        SOURCE: {source}
+        
+        PROTOCOL:
+        1. **Sentiment Analysis**: Score from 0 (Toxic/Crisis) to 10 (Invincible).
+        2. **Red Flags**: Explicitly list any injuries, manager disputes, or fatigue rumors.
+        3. **Context**: Rely on the team's historical reputation and recent form.
+        
+        OUTPUT:
+        - Sentiment Score (float)
+        - "The Scoop" (A 2-sentence insider summary)
         """
         
-        user_prompt = f"Team: {team_name}\n\nNews Headlines:\n{headlines_text}\n\nAnalysis:"
+        user_prompt = f"Target Team: {team_name}\n\nEvidence:\n{headlines_text}\n\nInvestigate."
         
-        # AI Analysis
-        llm_analysis = await query_llm(system_prompt, user_prompt)
+        llm_analysis = await query_llm(system_prompt.format(source=source), user_prompt)
         
-        # Simple parsing (In prod, ask for JSON response format)
         score = 5
-        if "positive" in llm_analysis.lower(): score = 7
-        if "crisis" in llm_analysis.lower() or "injury" in llm_analysis.lower(): score = 3
-        if "peak" in llm_analysis.lower() or "invincible" in llm_analysis.lower(): score = 9
+        if "positive" in llm_analysis.lower() or "invincible" in llm_analysis.lower(): score = 8
+        if "toxic" in llm_analysis.lower() or "crisis" in llm_analysis.lower(): score = 3
         
         return {
             "branch": self.branch_name,
+            "source": source,
             "team": team_name,
             "score": score,
-            "summary": llm_analysis[:300] + "..." # Truncate for brevity
+            "articles_scanned": len(articles) if articles else 0,
+            "summary": llm_analysis[:300] + "..." 
         }

@@ -1,5 +1,5 @@
 from core.llm import query_llm
-from .the_odds_api import fetch_latest_odds
+from .api.the_odds_api import fetch_latest_odds
 
 class MarketAgent:
     """
@@ -10,28 +10,41 @@ class MarketAgent:
         self.branch_name = "market_sniper"
 
     async def analyze(self, odds_data=None):
-        # If orchestrator didn't pass data, fetch it now using the helper
+        data_source = "LIVE_ODDS_API"
+        
         if odds_data is None:
-            odds_data = fetch_latest_odds()
-
+            try:
+                odds_data = fetch_latest_odds()
+            except Exception:
+                odds_data = {"error": "API Failure"}
+        
         if isinstance(odds_data, dict) and "error" in odds_data:
-            return odds_data
+            data_source = "VEGAS_ESTIMATOR_FALLBACK"
 
         system_prompt = """
-        You are a professional Sports Better (Sharp).
-        Analyze the provided odds from various bookmakers (DraftKings, FanDuel, etc.).
-        Identify:
-        1. The Best Price for each outcome (Line Shopping).
-        2. Any 'Implied Probability' anomalies.
-        3. Recommended Bookmaker for this specific match.
+        IDENTITY: You are a 'Vegas Sharp'—a legendary sports bettor who moves lines.
+        MISSION: Find value. If the Feed is LIVE, find Arbitrage. If the Feed is DOWN, ESTIMATE the true line yourself.
+        
+        INPUT STATUS: {source}
+        
+        PROTOCOL:
+        1. **Live Analysis**: If odds exist, identify the specific book (DK/FanDuel) with the best price.
+        2. **Fallback Analysis**: If odds are missing, use your internal probability model to SET the line.
+        
+        OUTPUT (Compact Betting Notation):
+        - Best Home Odds: (Decimal)
+        - Best Away Odds: (Decimal)
+        - Implied Probability Gap: (Does the market underestimate the favorite?)
+        - Verdict: "Bet Home", "Bet Away", or "Stay Away"
         """
         
-        user_prompt = f"Odds Data: {str(odds_data)[:2000]}" # Truncate to avoid context limit
+        user_prompt = f"Available Odds Data: {str(odds_data)[:1500]}" 
         
-        llm_analysis = await query_llm(system_prompt, user_prompt)
+        llm_analysis = await query_llm(system_prompt.format(source=data_source), user_prompt)
         
         return {
             "branch": self.branch_name,
+            "data_source": data_source,
             "analysis": llm_analysis,
-            "best_books": "See detailed analysis."
+            "best_books": "Analysis pending in summary"
         }

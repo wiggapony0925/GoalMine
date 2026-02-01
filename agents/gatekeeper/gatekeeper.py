@@ -1,12 +1,9 @@
 import os
 import logging
+import asyncio
+from core.llm import query_llm
 
 logger = logging.getLogger(__name__)
-
-# Fallback for simple keyword matching if OpenAI is not available/configured
-CHIT_CHAT_KEYWORDS = ["hello", "hi", "hey", "thanks", "thank you", "good morning", "good evening", "goodbye"]
-OFF_TOPIC_KEYWORDS = ["poem", "joke", "recipe", "code", "weather", "politics"]
-BETTING_KEYWORDS = ["bet", "predict", "game", "match", "odds", "value", "won", "score", "schedule", "today", "tomorrow"]
 
 class Gatekeeper:
     """
@@ -16,43 +13,36 @@ class Gatekeeper:
     
     @staticmethod
     def classify_intent(message_body):
-        """
-        Classifies the intent of the incoming message.
-        Returns: 
-           - 'BETTING': Proceed to Agent Swarm
-           - 'CHIT_CHAT': Static friendly reply
-           - 'OFF_TOPIC': Strict refusal
-        """
-        msg = message_body.lower().strip()
-        
-        # 1. Check for specific commands first
-        if msg in ["1", "2", "analyze all"]:
-            return "BETTING", None # Context implies a follow-up to Push
+        return asyncio.run(Gatekeeper._classify_async(message_body))
 
-        # 2. Check Betting Intent (Prioritized)
-        for word in BETTING_KEYWORDS:
-            if word in msg:
-                # Basic Entity Extraction (Simplified)
-                # In a real app with LLM, we would extract "France", "Brazil", etc.
-                return "BETTING", msg 
-
-        # 3. Check Off Topic
-        for word in OFF_TOPIC_KEYWORDS:
-            if word in msg:
-                return "OFF_TOPIC", None
-                
-        # 4. Check Chit Chat
-        for word in CHIT_CHAT_KEYWORDS:
-            if word in msg:
-                return "CHIT_CHAT", None
+    @staticmethod
+    async def _classify_async(message_body):
+        system_prompt = """
+        You are a Firewall AI.
+        Classify the user's message into exactly one category:
+        1. BETTING: User wants analysis, odds, predictions, schedule, or match info.
+        2. CHIT_CHAT: Greetings, thanks, or small talk.
+        3. OFF_TOPIC: Politics, coding, weather (unrelated to football), jokes.
         
-        # Default to CHIT_CHAT or HELP if unsure
-        return "CHIT_CHAT", None
+        OUTPUT ONLY THE CATEGORY NAME.
+        """
+        
+        try:
+            category = await query_llm(system_prompt, f"User Input: {message_body}", temperature=0.1)
+            category = category.strip().upper().replace(".", "")
+            
+            if "BETTING" in category: return "BETTING", message_body
+            if "CHIT" in category: return "CHIT_CHAT", None
+            if "OFF" in category: return "OFF_TOPIC", None
+            
+            return "CHIT_CHAT", None
+        except Exception:
+            return "BETTING", message_body
 
     @staticmethod
     def get_response(intent):
         if intent == "CHIT_CHAT":
-            return "Ready to win? Tell me a match or ask for the daily schedule."
+            return "Ready to win? Tell me a match (e.g., 'France vs Brazil') or ask for the schedule."
         elif intent == "OFF_TOPIC":
             return "I focus only on World Cup alpha. Let's get back to business."
         return None

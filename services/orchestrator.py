@@ -126,24 +126,97 @@ async def format_the_closer_report(briefing):
     response = await query_llm(system_prompt, user_prompt, temperature=0.5)
     return response
 
+from datetime import datetime, timedelta
+
+# ... (Keep existing imports)
+
+
+def get_todays_matches():
+    """
+    Returns matches scheduled for 'today' (Real System Time).
+    """
+    target_date = datetime.now().date()
+    
+    todays_matches = []
+    for m in SCHEDULE:
+        # parsed iso format
+        match_date = datetime.fromisoformat(m['date_iso']).date()
+        if match_date == target_date:
+            todays_matches.append(m)
+            
+    return todays_matches
+
+def get_upcoming_matches():
+    """
+    Finds matches starting within the next 60-70 minutes (Real System Time).
+    """
+    now = datetime.now()
+    cutoff = now + timedelta(minutes=65)
+    
+    upcoming = []
+    for m in SCHEDULE:
+        match_start = datetime.fromisoformat(m['date_iso'])
+        if now < match_start <= cutoff:
+            upcoming.append(m)
+            
+    return upcoming
+
 def get_morning_brief_content():
-    today_matches = SCHEDULE[:2] 
-    if not today_matches:
+    todays = get_todays_matches()
+    
+    if not todays:
         return None
+        
     msg = "🌞 World Cup Daily Brief\nToday's Matches:\n\n"
-    for i, m in enumerate(today_matches):
+    for i, m in enumerate(todays):
         time = m['date_iso'].split("T")[1][:5]
-        msg += f"{m['team_home']} vs {m['team_away']} ({time})\n"
-    msg += "\nReply with '1', '2', or 'Analyze All' to start finding an edge."
+        msg += f"{i+1}. {m['team_home']} vs {m['team_away']} ({time})\n"
+    msg += "\nReply with '1' or '2' to get an edge before kick-off!"
     return msg
 
 def get_match_info_from_selection(selection_idx):
-    if selection_idx < len(SCHEDULE):
-        m = SCHEDULE[selection_idx]
+    todays = get_todays_matches()
+    if selection_idx < len(todays):
+        m = todays[selection_idx]
         return {
             'home_team': m['team_home'],
             'away_team': m['team_away'],
+            # Start inferring venues or defaulting to a central average if missing
             'venue_from': 'MetLife_NY', 
             'venue_to': 'Azteca_Mexico' 
         }
     return None
+
+async def extract_match_details_from_text(text):
+    """
+    Uses LLM to extract teams from natural language.
+    e.g. "Tell me about France vs Brazil" -> {'home_team': 'France', ...}
+    """
+    system_prompt = """
+    You are a Data Extraction Assistant.
+    Extract the two football teams mentioned in the user's text.
+    Also, identify the likely 'Venue' if mentioned, otherwise default to 'Unknown'.
+    For World Cup 2026, valid venues are US/Mexico/Canada cities.
+    
+    Output JSON ONLY:
+    {
+      "home_team": "Name",
+      "away_team": "Name",
+      "venue_from": "MetLife_NY",
+      "venue_to": "Azteca_Mexico"
+    }
+    (If venues are unknown, default venue_from='MetLife_NY' and venue_to='Azteca_Mexico' for the logistics engine to work).
+    """
+    
+    user_prompt = f"Extract from: {text}"
+    
+    try:
+        # Clean response to ensure it's just JSON
+        resp = await query_llm(system_prompt, user_prompt, temperature=0.1)
+        # Naive json parsing (cleanup markdown code blocks if present)
+        resp = resp.replace("```json", "").replace("```", "").strip()
+        data = json.loads(resp)
+        return data
+    except Exception as e:
+        logger.error(f"LLM Extraction failed: {e}")
+        return None
