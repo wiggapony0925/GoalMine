@@ -183,7 +183,7 @@ async def format_the_closer_report(briefing, num_bets=1):
         intelligence=json.dumps(intel_matrix, indent=2)
     )
     
-    user_prompt = f"GOD VIEW DATA:\n{json.dumps(briefing['quant']['top_plays'][:3], indent=2)}"
+    user_prompt = f"USER REQUESTED: {num_bets} betting play(s).\n\nGOD VIEW DATA:\n{json.dumps(briefing['quant']['top_plays'][:3], indent=2)}"
     
     try:
         return await query_llm(formatted_prompt, user_prompt, config_key="closer", temperature=0.5)

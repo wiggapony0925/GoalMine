@@ -1,5 +1,6 @@
 import re
 import json
+import asyncio
 from core.log import get_logger
 from services import orchestrator
 from agents.gatekeeper.gatekeeper import Gatekeeper
@@ -35,6 +36,19 @@ class ConversationHandler:
         # 2. CLASSIFY INTENT & EXTRACT DATA
         intent, extracted_data = await Gatekeeper.classify_intent(msg_body)
         logger.info(f"🎯 Intent: {intent}, Extracted: {extracted_data}")
+
+        # 2.1 FIRST TIME GREETING LOGIC
+        # We check for an explicit rules flag to ensure even returning users see the new v2 rules once.
+        is_greeting = any(w in msg_body.lower().strip() for w in ["hi", "hello", "hola", "hey", "sup", "yo", "start"])
+        has_seen_rules = user_state.get('has_seen_v2_rules', False)
+
+        if is_greeting and not has_seen_rules:
+            logger.info(f"🆕 Sending v2 Rules Greeting to {from_number}")
+            self.wa.send_message(from_number, Responses.get_greeting())
+            # Mark that they've seen this version of the rules
+            user_state['has_seen_v2_rules'] = True
+            self.db.save_memory(from_number, user_state)
+            return
         
         # --- SCENARIO A: CONFIRMATION ("Yeah", "Do it", "Sure") ---
         # If we have an active match and user confirms, run analysis
@@ -56,7 +70,7 @@ class ConversationHandler:
                 if extracted_data and extracted_data.get('budget'):
                     god_view['user_budget'] = extracted_data['budget']
                 answer = await self._strategic_betting_advisor(user_state, msg_body)
-                self.wa.send_message(from_number, answer)
+                await self._send_multi(from_number, answer)
                 return
 
         # --- SCENARIO C: NEW BETTING COMMAND ---
@@ -76,7 +90,7 @@ class ConversationHandler:
             if any(keyword in msg_body.lower() for keyword in strategic_keywords):
                 logger.info("💡 Strategic betting question detected.")
                 answer = await self._strategic_betting_advisor(user_state, msg_body)
-                self.wa.send_message(from_number, answer)
+                await self._send_multi(from_number, answer)
                 return
             
             # Regular follow-up question about the match
@@ -193,7 +207,7 @@ class ConversationHandler:
             
             # 4. The Closer speaks
             report = await orchestrator.format_the_closer_report(briefing, num_bets=num_bets)
-            self.wa.send_message(user_phone, report)
+            await self._send_multi(user_phone, report)
             
         except Exception as e:
             logger.error(f"Analysis failed: {e}")
@@ -295,6 +309,30 @@ class ConversationHandler:
             resp = orchestrator.get_next_match_content()
             
         self.wa.send_message(from_number, resp)
+
+    async def _send_multi(self, to_number, text):
+        """
+        Sends long messages split by '# BET' as separate WhatsApp messages.
+        This provides a cleaner, professional 'bet receipt' feel.
+        """
+        if not text:
+            return
+
+        # Check if '# BET' is present
+        if "# BET" in text:
+            # Split by '# BET' but keep the delimiter for each segment
+            # Pattern matches '# BET' followed by something, but we just use split and add it back
+            parts = re.split(r'(?=# BET \d+)', text)
+            
+            for part in parts:
+                clean_part = part.strip()
+                if clean_part:
+                    self.wa.send_message(to_number, clean_part)
+                    # Tiny sleep to ensure message order in WhatsApp (sometimes they flip)
+                    await asyncio.sleep(0.3)
+        else:
+            # Fallback for messages without BET headers
+            self.wa.send_message(to_number, text)
 
     def _is_confirmation(self, text):
         """

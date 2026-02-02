@@ -6,18 +6,17 @@ class Responses:
     """
     
     GREETING = (
-        "🤖 *Welcome to GoalMine AI* — Your elite World Cup 2026 Betting Engine.\n\n"
-        "I am a multi-agent swarm designed to find the edge in every fixture. I track official tournament data, logistics, and market movements to provide professional-grade analysis.\n\n"
-        "📍 *What I can do for you:*\n"
-        "• *Schedule:* Get today's games or the full week's lineup.\n"
-        "• *Analyze Match:* Ask 'Analyze France vs Brazil' to launch the swarm.\n"
-        "• *Betting Intel:* Ask about specific bet types or staking strategies.\n"
-        "• *General Info:* Questions about venues, teams, or WC history.\n\n"
+        "🤖 *Welcome to GoalMine AI* — Your elite World Cup 2026 **Money-Making Machine**.\n\n"
+        "I am a multi-agent swarm engineered for one purpose: **Alpha**. I bypass public narratives to find mathematical edges in the market.\n\n"
+        "📍 *Operational Capabilities:*\n"
+        "• *Deep-Swarm Analysis:* Say 'Analyze [Teams]' for a full tactical & market breakdown.\n"
+        "• *Strategic Parlays:* Ask 'Parlay this with [Team]' to find compounded value.\n"
+        "• *Budget Allocation:* Ask 'How should I spend $200 today?' for a Kelly-based plan.\n\n"
         "📜 *The Rules:*\n"
         "1. I only track official World Cup 2026 fixtures.\n"
-        "2. I strictly discuss Football (Soccer) and Betting.\n"
-        "3. Every morning at *5:00 AM*, I'll drop a briefing of the day's games and sharpest opportunities into your inbox.\n\n"
-        "How can I help you target alpha today?"
+        "2. I strictly discuss Football and Betting ROI.\n"
+        "3. Every morning at *5:00 AM*, I drop a 'Sharp' briefing into your inbox.\n\n"
+        "How can I help you extract value from the pitch today?"
     )
 
     MATCH_READING = [
