@@ -190,9 +190,13 @@ class ConversationHandler:
         
         if match_info and match_info.get('home_team'):
             await self._run_analysis(from_number, match_info, extracted_data)
-        elif last_match:
-            logger.info("Extraction failed but last_match exists. Using it.")
-            await self._run_analysis(from_number, last_match, extracted_data)
+        elif last_match and is_vague:
+           # Only use last_match if there was SOME intent to refer to it, processed in step 3. 
+           # If we are here, step 3 failed or wasn't triggered?
+           # Actually step 3 returns. So if we are here, is_vague was false or processed.
+           # This fallback (lines 193-195 previously) is dangerous.
+           # If extraction failed and it wasn't vague, we should ask for clarification, NOT guess the last match.
+           self.wa.send_message(from_number, Responses.UNKNOWN_TEAMS)
         else:
             self.wa.send_message(from_number, Responses.UNKNOWN_TEAMS)
 

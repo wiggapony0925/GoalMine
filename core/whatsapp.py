@@ -38,6 +38,12 @@ class WhatsAppClient:
             response = requests.post(url, headers=headers, json=data)
             response.raise_for_status()
             logger.info(f"Message sent to {to_number}")
+            
+            # [AUDIT LOG] Log what the bot said
+            from core.config import settings
+            if settings.get('app.detailed_request_logging'):
+                logger.info(f"🤖 BOT REPLY: {message_body[:200]}..." if len(message_body) > 200 else f"🤖 BOT REPLY: {message_body}")
+                
             return response.json()
         except requests.exceptions.RequestException as e:
             if e.response is not None:
