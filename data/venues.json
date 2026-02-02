@@ -1,0 +1,178 @@
+{
+    "Estadio Azteca, Mexico City": {
+        "lat": 19.3029,
+        "lon": -99.1505,
+        "elevation": 2200,
+        "tz_offset": -6,
+        "climate_june": {
+            "temp": 26,
+            "humidity": 45,
+            "desc": "Thin Air, Warm"
+        }
+    },
+    "Estadio Guadalajara, Guadalajara": {
+        "lat": 20.6811,
+        "lon": -103.4504,
+        "elevation": 1566,
+        "tz_offset": -6,
+        "climate_june": {
+            "temp": 31,
+            "humidity": 40,
+            "desc": "Hot, Dry"
+        }
+    },
+    "BC Place, Vancouver": {
+        "lat": 49.2767,
+        "lon": -123.1119,
+        "elevation": 10,
+        "tz_offset": -7,
+        "climate_june": {
+            "temp": 20,
+            "humidity": 60,
+            "desc": "Mild, Coastal"
+        }
+    },
+    "SoFi Stadium, Los Angeles": {
+        "lat": 33.9534,
+        "lon": -118.3387,
+        "elevation": 45,
+        "tz_offset": -7,
+        "climate_june": {
+            "temp": 24,
+            "humidity": 55,
+            "desc": "Perfect"
+        }
+    },
+    "BMO Field, Toronto": {
+        "lat": 43.6333,
+        "lon": -79.4186,
+        "elevation": 76,
+        "tz_offset": -4,
+        "climate_june": {
+            "temp": 24,
+            "humidity": 65,
+            "desc": "Pleasant"
+        }
+    },
+    "Gillette Stadium, Boston": {
+        "lat": 42.0909,
+        "lon": -71.2643,
+        "elevation": 37,
+        "tz_offset": -4,
+        "climate_june": {
+            "temp": 23,
+            "humidity": 65,
+            "desc": "Coastal Breeze"
+        }
+    },
+    "MetLife Stadium, East Rutherford": {
+        "lat": 40.8135,
+        "lon": -74.0745,
+        "elevation": 2,
+        "tz_offset": -4,
+        "climate_june": {
+            "temp": 27,
+            "humidity": 70,
+            "desc": "Humid"
+        }
+    },
+    "Levi's Stadium, San Francisco Bay Area": {
+        "lat": 37.403,
+        "lon": -121.97,
+        "elevation": 8,
+        "tz_offset": -7,
+        "climate_june": {
+            "temp": 22,
+            "humidity": 60,
+            "desc": "Cool Breeze"
+        }
+    },
+    "Lincoln Financial Field, Philadelphia": {
+        "lat": 39.9008,
+        "lon": -75.1675,
+        "elevation": 3,
+        "tz_offset": -4,
+        "climate_june": {
+            "temp": 28,
+            "humidity": 65,
+            "desc": "Warm, Humid"
+        }
+    },
+    "NRG Stadium, Houston": {
+        "lat": 29.6847,
+        "lon": -95.4107,
+        "elevation": 14,
+        "tz_offset": -6,
+        "climate_june": {
+            "temp": 33,
+            "humidity": 75,
+            "desc": "Oppressive Heat"
+        }
+    },
+    "AT&T Stadium, Dallas": {
+        "lat": 32.7473,
+        "lon": -97.0945,
+        "elevation": 180,
+        "tz_offset": -6,
+        "climate_june": {
+            "temp": 33,
+            "humidity": 60,
+            "desc": "Very Hot"
+        }
+    },
+    "Estadio Monterrey, Monterrey": {
+        "lat": 25.669,
+        "lon": -100.245,
+        "elevation": 540,
+        "tz_offset": -6,
+        "climate_june": {
+            "temp": 34,
+            "humidity": 60,
+            "desc": "Extreme Heat"
+        }
+    },
+    "Hard Rock Stadium, Miami": {
+        "lat": 25.958,
+        "lon": -80.238,
+        "elevation": 3,
+        "tz_offset": -4,
+        "climate_june": {
+            "temp": 32,
+            "humidity": 85,
+            "desc": "Tropical Sauna"
+        }
+    },
+    "Mercedes-Benz Stadium, Atlanta": {
+        "lat": 33.755,
+        "lon": -84.401,
+        "elevation": 315,
+        "tz_offset": -4,
+        "climate_june": {
+            "temp": 30,
+            "humidity": 70,
+            "desc": "Hot, Humid"
+        }
+    },
+    "Lumen Field, Seattle": {
+        "lat": 47.595,
+        "lon": -122.332,
+        "elevation": 4,
+        "tz_offset": -7,
+        "climate_june": {
+            "temp": 21,
+            "humidity": 60,
+            "desc": "Mild"
+        }
+    },
+    "Arrowhead Stadium, Kansas City": {
+        "lat": 39.0489,
+        "lon": -94.4839,
+        "elevation": 264,
+        "tz_offset": -6,
+        "climate_june": {
+            "temp": 29,
+            "humidity": 65,
+            "desc": "Continental Heat"
+        }
+    }
+}

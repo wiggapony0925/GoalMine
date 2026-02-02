@@ -8,6 +8,7 @@ from agents.market.market import MarketAgent
 from agents.narrative.narrative import NarrativeAgent
 from agents.quant.quant import run_quant_engine # Still function based for now
 from core.llm import query_llm
+from data.scripts.data import SCHEDULE, BET_TYPES
 
 logger = logging.getLogger("GoalMine")
 
@@ -17,16 +18,6 @@ tactics_agent = TacticsAgent()
 market_agent = MarketAgent()
 narrative_agent = NarrativeAgent()
 
-def load_json_data(path):
-    try:
-        with open(path, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
-
-SCHEDULE = load_json_data('data/schedule.json')
-BET_TYPES = load_json_data('data/bet_types.json')
-
 def format_to_12hr(date_iso):
     """Converts ISO timestamp to 12-hour format: 5:00 PM."""
     dt = datetime.fromisoformat(date_iso)
@@ -35,14 +26,14 @@ def format_to_12hr(date_iso):
 async def generate_betting_briefing(match_info, user_budget=100):
     """
     Orchestrates the analysis across all agents in PARALLEL.
-    NOW USING OO AGENTS.
+    Uses graceful degradation - continues with available data even if some APIs fail.
     """
     home = match_info.get('home_team', 'Team A')
     away = match_info.get('away_team', 'Team B')
     
     logger.info(f"🚀 GoalMine Swarm Activated: {home} vs {away}")
     
-    # 1. Start Agents in Parallel
+    # 1. Start Agents in Parallel with error handling
     task_log = logistics_agent.analyze(
         match_info.get('venue_from', 'MetLife Stadium, East Rutherford'), 
         match_info.get('venue', 'Estadio Azteca, Mexico City')
@@ -52,18 +43,81 @@ async def generate_betting_briefing(match_info, user_budget=100):
     task_nar_a = narrative_agent.analyze(home)
     task_nar_b = narrative_agent.analyze(away)
     
-    # Execute all
-    results = await asyncio.gather(task_log, task_tac, task_mkt, task_nar_a, task_nar_b)
+    # Execute all with graceful degradation
+    results = await asyncio.gather(task_log, task_tac, task_mkt, task_nar_a, task_nar_b, return_exceptions=True)
     
     log_res, tac_res, mkt_res, nar_a, nar_b = results
     
-    logger.info(f"✅ Logistics: Fatigue Score {log_res.get('fatigue_score', 'N/A')}")
-    logger.info(f"✅ Tactics: xG {tac_res.get('team_a_xg', 'N/A')} vs {tac_res.get('team_b_xg', 'N/A')}")
-    logger.info(f"✅ Market: Best Entry found on {mkt_res.get('best_odds', {}).get('Team_A_Win', {}).get('platform', 'N/A')}")
+    # 2. Handle failures with fallback data
+    # Logistics fallback
+    if isinstance(log_res, Exception):
+        logger.error(f"❌ Logistics Agent failed: {log_res}")
+        log_res = {
+            "branch": "logistics",
+            "fatigue_score": 5,
+            "summary": "Logistics data unavailable - using neutral baseline",
+            "status": "FALLBACK"
+        }
+    else:
+        logger.info(f"✅ Logistics: Fatigue Score {log_res.get('fatigue_score', 'N/A')}")
+        logger.debug(f"📊 Logistics Full Response: {json.dumps(log_res, indent=2)}")
     
-    logger.info(f"✅ Narrative Analysis: {home} (Score: {nar_a.get('score', 5)}) vs {away} (Score: {nar_b.get('score', 5)})")
+    # Tactics fallback
+    if isinstance(tac_res, Exception):
+        logger.error(f"❌ Tactics Agent failed: {tac_res}")
+        tac_res = {
+            "branch": "tactics",
+            "team_a_xg": 1.5,
+            "team_b_xg": 1.2,
+            "summary": "Tactical data unavailable - using league averages",
+            "status": "FALLBACK"
+        }
+    else:
+        logger.info(f"✅ Tactics: xG {tac_res.get('team_a_xg', 'N/A')} vs {tac_res.get('team_b_xg', 'N/A')}")
+        logger.debug(f"📊 Tactics Full Response: {json.dumps(tac_res, indent=2)}")
     
-    # 2. Extract Data & Apply Multipliers
+    # Market fallback
+    if isinstance(mkt_res, Exception):
+        logger.error(f"❌ Market Agent failed: {mkt_res}")
+        mkt_res = {
+            "branch": "market",
+            "best_odds": {},
+            "summary": "Market data unavailable - odds not available",
+            "status": "FALLBACK"
+        }
+    else:
+        logger.info(f"✅ Market: Best Entry found on {mkt_res.get('best_odds', {}).get('Team_A_Win', {}).get('platform', 'N/A')}")
+        logger.debug(f"📊 Market Full Response: {json.dumps(mkt_res, indent=2)}")
+    
+    # Narrative A fallback
+    if isinstance(nar_a, Exception):
+        logger.error(f"❌ Narrative Agent ({home}) failed: {nar_a}")
+        nar_a = {
+            "branch": "narrative",
+            "team": home,
+            "score": 5,
+            "summary": "Narrative data unavailable - neutral sentiment assumed",
+            "status": "FALLBACK"
+        }
+    else:
+        logger.info(f"✅ Narrative ({home}): Score {nar_a.get('score', 5)}")
+        logger.debug(f"📊 Narrative ({home}) Full Response: {json.dumps(nar_a, indent=2)}")
+    
+    # Narrative B fallback
+    if isinstance(nar_b, Exception):
+        logger.error(f"❌ Narrative Agent ({away}) failed: {nar_b}")
+        nar_b = {
+            "branch": "narrative",
+            "team": away,
+            "score": 5,
+            "summary": "Narrative data unavailable - neutral sentiment assumed",
+            "status": "FALLBACK"
+        }
+    else:
+        logger.info(f"✅ Narrative ({away}): Score {nar_b.get('score', 5)}")
+        logger.debug(f"📊 Narrative ({away}) Full Response: {json.dumps(nar_b, indent=2)}")
+    
+    # 3. Extract Data & Apply Multipliers (using fallback data if needed)
     base_xg_a = tac_res.get('team_a_xg', 1.5)
     base_xg_b = tac_res.get('team_b_xg', 1.1)
     
@@ -81,84 +135,54 @@ async def generate_betting_briefing(match_info, user_budget=100):
     live_odds = mkt_res.get('best_odds')
     
     logger.info(f"🤖 Quant Engine processing: Adj xG {round(final_xg_a,2)} vs {round(final_xg_b,2)}")
-    quant_res = run_quant_engine(final_xg_a, final_xg_b, live_odds, user_budget)
+    quant_res = run_quant_engine(final_xg_a, final_xg_b, live_odds, user_budget, home, away)
     
-    return {
+    # 4. Build God View JSON
+    god_view = {
         "match": f"{home} vs {away}",
         "logistics": log_res,
         "tactics": tac_res,
         "market": mkt_res,
         "narrative": {"home": nar_a, "away": nar_b},
         "quant": quant_res,
-        "final_xg": {"home": round(final_xg_a, 2), "away": round(final_xg_b, 2)}
+        "final_xg": {"home": round(final_xg_a, 2), "away": round(final_xg_b, 2)},
+        "timestamp": datetime.utcnow().isoformat(),
+        "agents_status": {
+            "logistics": "OK" if not isinstance(results[0], Exception) else "FALLBACK",
+            "tactics": "OK" if not isinstance(results[1], Exception) else "FALLBACK",
+            "market": "OK" if not isinstance(results[2], Exception) else "FALLBACK",
+            "narrative_home": "OK" if not isinstance(results[3], Exception) else "FALLBACK",
+            "narrative_away": "OK" if not isinstance(results[4], Exception) else "FALLBACK"
+        }
     }
+    
+    # 5. Log complete God View JSON
+    logger.info("=" * 80)
+    logger.info("🔮 GOD VIEW JSON (Complete Analysis)")
+    logger.info("=" * 80)
+    logger.info(json.dumps(god_view, indent=2))
+    logger.info("=" * 80)
+    
+    return god_view
 
 async def format_the_closer_report(briefing, num_bets=1):
     """
     PERSONA: The Closer
-    The Final Boss. Senior Hedge Fund Manager. 
     Synthesis of all agent data into a final text output.
     """
-    # Load Betting Knowledge Base
+    from prompts.system_prompts import CLOSER_PROMPT
+    
+    match_name = briefing.get('match', 'Upcoming Match')
+    formatted_prompt = CLOSER_PROMPT.format(match=match_name, num_bets=num_bets)
+    user_prompt = f"GOD VIEW JSON:\n{json.dumps(briefing, indent=2)}"
+    
     try:
-        with open('data/bet_types.json', 'r') as f:
-            bet_types_kb = json.load(f)
-    except FileNotFoundError:
-        bet_types_kb = "Standard Bets: Moneyline, Spread, Totals."
+        return await query_llm(formatted_prompt, user_prompt, config_key="closer", temperature=0.7)
+    except Exception as e:
+        logger.error(f"The Closer failed: {e}")
+        return "Analysis complete, but report formatting failed."
 
-    system_prompt = f"""
-    # IDENTITY: 'The Closer' (Senior Portfolio Manager)
-    
-    # MISSION
-    You are the final decision-maker for a Billion-Dollar Betting Syndicate. You synthesize intelligence from 4 elite intelligence branches (Logistics, Tactics, Market, Narrative) and the Quant Engine to issue the final 'Capital Deployment' order.
 
-    # REPORTING STRUCTURE (WHATSAPP MARKDOWN)
-    
-    🏆 *GOALMINE ELITE BRIEFING*
-    ⚽ *Fixture:* {{match}}
-    
-    (Provide Betting Intel here):
-    💎 *HIGH-ALPHA OPPORTUNITIES*
-    [List up to {num_bets} bets from 'top_plays']
-    - *[Selection]* (@ [Odds]) [[Platform]]
-    - *Stake:* $[Amount] (Kelly Adjusted)
-    
-    (If no plays, use):
-    ⚠️ *MARKET ADVISORY:* No Edge Detected. capital preservation mode active.
-    
-    ---
-    🧠 *INTELLIGENCE SYNTHESIS*
-    
-    🎯 *QUANT:* [Combine edge percentage and true probability in 1 sentence].
-    ⚔️ *TACTICS:* [Synthesize the mismatch and xG correction in 1 sentence].
-    🚛 *LOGISTICS:* [Detail the physiological penalty or home-field environmental edge].
-    📰 *NARRATIVE:* [The 'Scoop' and sentiment impact on performance].
-    
-    ---
-    🔥 *CONFIDENCE COEFFICIENT:* [PROBABILITY-WEIGHTED %]
-    
-    # COMMANDS
-    - Use code-like bolding for teams and odds.
-    - Keep sentences 'Wall Street Sharp'—dense with information, zero fluff.
-    - Always use the agent data provided to justify the capital risk.
-    """
-    
-    user_prompt = f"""
-    Match: {briefing['match']}
-    
-    AGENT REPORTS:
-    1. Logistics: {briefing['logistics']}
-    2. Tactics: {briefing['tactics']}
-    3. Market: {briefing['market']}
-    4. Narrative: {briefing['narrative']}
-    5. QUANT ENGINE RESULT (IMPORTANT): {briefing['quant']}
-    
-    The user is looking for {num_bets} bet(s).
-    Generate the final WhatsApp message now.
-    """
-    
-    response = await query_llm(system_prompt, user_prompt, config_key="orchestrator")
-    return response
 
 async def answer_follow_up_question(memory, user_message, num_bets=1):
     """
@@ -166,33 +190,13 @@ async def answer_follow_up_question(memory, user_message, num_bets=1):
     """
     if not memory: return None
 
-    system_prompt = f"""
-    # IDENTITY: GoalMine Intelligence Liaison (Data Assistant)
+    from prompts.system_prompts import FOLLOW_UP_QA_PROMPT
     
-    # MISSION
-    You provide high-speed, accurate answers to specific user queries using the 'God View' intelligence packet provided below. You are the bridge between raw agent data and the user's curiosity.
-
-    # GOD VIEW INTELLIGENCE:
-    {json.dumps(memory, indent=2)}
-
-    # ANALYTICAL GUIDELINES:
-    1. **DATA-FIRST**: If the data isn't in the 'God View', admit it—don't hallucinate.
-    2. **FIELD RETRIEVAL**: 
-       - For "xG" or "formations" -> Query **tactics**.
-       - For "weather" or "travel fatigue" -> Query **logistics**.
-       - For "public opinion" or "news" -> Query **narrative**.
-       - For "odds" or "value" -> Query **market** or **quant**.
-    3. **RECALCULATION**: If the user provides a budget (e.g., "$100"), use the 'true_probability' from the quant data to suggest a fractional Kelly stake.
-
-    # FORMATTING:
-    - Use code-style *WHATSAPP BOLDING* for all entities and numbers.
-    - Response must be concise (max 80 words).
-    - Tone: Sharp, Analytical, Responsive.
-    """
+    formatted_prompt = FOLLOW_UP_QA_PROMPT.format(context=json.dumps(memory, indent=2))
     user_prompt = f"User Question: {user_message}"
     
     try:
-        response = await query_llm(system_prompt, user_prompt, config_key="qa_assistant")
+        response = await query_llm(formatted_prompt, user_prompt, config_key="qa_assistant")
         return response
     except Exception as e:
         logger.error(f"Q&A Failed: {e}")
@@ -201,13 +205,15 @@ async def answer_follow_up_question(memory, user_message, num_bets=1):
 async def handle_general_conversation(user_message):
     """
     Handles non-betting, non-schedule chats.
-    Now enhanced with Tournament & Betting Context.
     """
     # Check for greeting
     if any(w in user_message.lower().strip() for w in ["hi", "hello", "hola", "sup", "hey", "start", "yo"]):
         from core.responses import Responses
         return Responses.get_greeting()
 
+    from prompts.system_prompts import CONVERSATION_ASSISTANT_PROMPT
+    from data.scripts.data import SCHEDULE, BET_TYPES
+    
     # Get a snapshot of context for the LLM
     now = datetime.now()
     next_match = None
@@ -224,19 +230,8 @@ async def handle_general_conversation(user_message):
     USER QUERY: {user_message}
     """
 
-    system_prompt = """
-    You are the 'GoalMine AI' Analyst. You are an expert in World Cup 2026 and sports betting.
-    
-    MISSION: 
-    - Answer greetings and general World Cup questions using your internal knowledge + the provided context.
-    - If the user asks about the tournament structure or bets, use the data provided.
-    - BE HIGHLY CONVERSATIONAL. Don't use bullet points unless necessary. Feel like a sharp, friendly betting partner.
-    - If they want a specific match analysis, gently guide them: "Just say 'Analyze [Team] vs [Team]' and I'll launch the swarm."
-    - Keep it concise (under 60 words).
-    - Use *bolding* for teams and key terms.
-    """
     try:
-        return await query_llm(system_prompt, context_str, config_key="narrative") 
+        return await query_llm(CONVERSATION_ASSISTANT_PROMPT, context_str, config_key="narrative") 
     except Exception as e:
         logger.error(f"General Conv Failed: {e}")
         from core.responses import Responses
@@ -384,36 +379,24 @@ async def extract_match_details_from_text(text):
     Uses LLM to extract teams from natural language.
     e.g. "Tell me about France vs Brazil" -> {'home_team': 'France', ...}
     """
-    system_prompt = """
-    You are a Data Extraction Assistant for World Cup 2026.
-    Extract the two football teams mentioned in the user's text.
-    
-    RULES:
-    1. Handle Abbreviations: "Mex" -> "Mexico", "Arg" -> "Argentina", "US/USA" -> "USA".
-    2. Correct Spelling: "Braizl" -> "Brazil".
-    3. Return FULL English Country Names.
-    
-    Also, identify the likely 'Venue' if mentioned, otherwise default to 'Unknown'.
-    For World Cup 2026, valid venues are US/Mexico/Canada cities.
-    
-    Output JSON ONLY:
-    {
-      "home_team": "Name",
-      "away_team": "Name",
-      "venue_from": "MetLife Stadium, East Rutherford",
-      "venue_to": "Estadio Azteca, Mexico City"
-    }
-    (If venues are unknown, default venue_from='MetLife Stadium, East Rutherford' and venue_to='Estadio Azteca, Mexico City').
-    """
+    from prompts.system_prompts import TEAM_EXTRACTION_PROMPT
     user_prompt = f"Extract from: {text}"
-    
     try:
         # Clean response to ensure it's just JSON
-        resp = await query_llm(system_prompt, user_prompt, config_key="extractor", temperature=0.1)
+        resp = await query_llm(TEAM_EXTRACTION_PROMPT, user_prompt, config_key="extractor", temperature=0.1)
         # Naive json parsing (cleanup markdown code blocks if present)
         resp = resp.replace("```json", "").replace("```", "").strip()
         data = json.loads(resp)
-        return data
+        teams = data.get('teams', [])
+        if not teams:
+            return None
+            
+        return {
+            "home_team": teams[0] if len(teams) > 0 else None,
+            "away_team": teams[1] if len(teams) > 1 else None,
+            "venue_from": "MetLife Stadium, East Rutherford",
+            "venue_to": "Estadio Azteca, Mexico City"
+        }
     except Exception as e:
         logger.error(f"LLM Extraction failed: {e}")
         return None

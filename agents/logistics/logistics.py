@@ -1,114 +1,90 @@
 import math
 import logging
+import json
+from datetime import datetime
 from core.llm import query_llm
-from .api.open_meteo import get_forecast
+from data.scripts.data import get_venue_info
 
-VENUES = {
-    'Estadio Azteca, Mexico City': {'lat': 19.3029, 'lon': -99.1505},
-    'Estadio Guadalajara, Guadalajara': {'lat': 20.6811, 'lon': -103.4504},
-    'BC Place, Vancouver': {'lat': 49.2767, 'lon': -123.1119},
-    'SoFi Stadium, Los Angeles': {'lat': 33.9534, 'lon': -118.3387},
-    'BMO Field, Toronto': {'lat': 43.6333, 'lon': -79.4186},
-    'Gillette Stadium, Boston': {'lat': 42.0909, 'lon': -71.2643},
-    'MetLife Stadium, East Rutherford': {'lat': 40.8135, 'lon': -74.0745},
-    'Levi\'s Stadium, San Francisco Bay Area': {'lat': 37.403, 'lon': -121.97},
-    'Lincoln Financial Field, Philadelphia': {'lat': 39.9008, 'lon': -75.1675},
-    'NRG Stadium, Houston': {'lat': 29.6847, 'lon': -95.4107},
-    'AT&T Stadium, Dallas': {'lat': 32.7473, 'lon': -97.0945},
-    'Estadio Monterrey, Monterrey': {'lat': 25.669, 'lon': -100.245},
-    'Hard Rock Stadium, Miami': {'lat': 25.958, 'lon': -80.238},
-    'Mercedes-Benz Stadium, Atlanta': {'lat': 33.755, 'lon': -84.401},
-    'Lumen Field, Seattle': {'lat': 47.595, 'lon': -122.332}
-}
+logger = logging.getLogger("LogisticsAgent")
 
 class LogisticsAgent:
     """
-    PERSONA: Logistics AI Agent
-    ROLE: Analyzes flight data, weather patterns, and physiological impact.
+    PERSONA: The High-Performance Director
+    ROLE: Calculates 'Physiological Load' based on travel, biological clocks, and biology.
     """
     def __init__(self):
         self.branch_name = "logistics"
 
-    def haversine_distance(self, lat1, lon1, lat2, lon2):
-        R = 6371
+    def _haversine(self, lat1, lon1, lat2, lon2):
+        R = 6371  # Earth radius in km
         dLat = math.radians(lat2 - lat1)
         dLon = math.radians(lon2 - lon1)
         a = math.sin(dLat/2) * math.sin(dLat/2) + \
             math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * \
             math.sin(dLon/2) * math.sin(dLon/2)
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-        return R * c
+        return round(R * c, 1)
 
-    async def analyze(self, venue1_key, venue2_key, cumulative_matches=1):
-        v1 = VENUES.get(venue1_key, VENUES['MetLife Stadium, East Rutherford'])
-        v2 = VENUES.get(venue2_key, VENUES['Estadio Azteca, Mexico City'])
-        
-        distance = self.haversine_distance(v1['lat'], v1['lon'], v2['lat'], v2['lon'])
-        
-        weather_context = "Data Unavailable"
-        alt_diff = 0
-        source = "LIVE_METEO"
-        
-        try:
-            weather_v2 = get_forecast(v2['lat'], v2['lon'])
-            weather_v1 = get_forecast(v1['lat'], v1['lon'])
-            alt_diff = weather_v2['elevation'] - weather_v1['elevation']
-            weather_context = f"Temp: {weather_v2['avg_temp_c']}°C, Cond: {weather_v2['condition']}, Elev: {weather_v2['elevation']}m"
-        except Exception:
-            source = "GEOGRAPHIC_ESTIMATE"
-            weather_context = "Live Weather Offline. Estimate based on June Averages for this Latitude."
-
-        system_prompt = """
-        # IDENTITY: GoalMine Mission Control (Logistics & Performance AI)
-        
-        # MISSION
-        Synthesize geographic, environmental, and travel data to calculate the 'Physiological Toll' on professional athletes. Your analysis determines the hidden physical fatigue that standard betting markets often miss.
-
-        # DATA SOURCE: {source}
-
-        # OPERATIONAL FACTORS
-        1. **ALTITUDE SHOCK**: 
-           - Every 500m gain above sea level increases VO2 max strain.
-           - Above 2,000m (e.g., Mexico City), unacclimatized teams face a -15% performance penalty in the final 20 minutes.
-        2. **CIRCADIAN DISRUPTION (Jet Lag)**:
-           - Flights crossing >2 time zones or >2,000km distances induce 'Heavy Legs' syndrome.
-           - Eastward travel is harder to recover from than Westward.
-        3. **THERMAL STRAIN**:
-           - Temperatures >28°C (82°F) trigger metabolic cooling penalties.
-           - High humidity (>70%) prevents evaporation—fatigue accumulates 2x faster.
-        4. **WORKLOAD ACCUMULATION**:
-           - High-density schedules (3 games in 10 days) lead to nonlinear injury risk spikes.
-
-        # OUTPUT REQUIREMENTS
-        - **Fatigue Score**: (Scale 0-10, where 10 is 'Exhausted/High Risk').
-        - **Logistics Edge**: Who benefits from the travel/weather? (Home/Away/None).
-        - **Operational Summary**: A sharp, technical brief on the primary environmental inhibitor.
+    async def analyze(self, prev_venue_name, next_venue_name, days_rest=4):
         """
+        Calculates fatigue index based on travel logistics between venues.
+        """
+        # 1. RETRIEVE HARD DATA
+        v1_name, v1 = get_venue_info(prev_venue_name)
+        v2_name, v2 = get_venue_info(next_venue_name)
+
+        # 2. CALCULATE VECTORS
+        distance = self._haversine(v1['lat'], v1['lon'], v2['lat'], v2['lon'])
+        elev_diff = v2.get('elevation', 0) - v1.get('elevation', 0)
+        tz_diff = v2.get('tz_offset', 0) - v1.get('tz_offset', 0)
+        
+        # 3. CIRCADIAN DIRECTIONALITY
+        # Traveling East (+ hours deltas are harder)
+        direction = "Westward (Easier)" if tz_diff < 0 else "Eastward (Harder)"
+        if tz_diff == 0: direction = "Neutral"
+
+        # 4. CLIMATE CONTEXT (Historical Norms for June)
+        climate = v2.get('climate_june', {'temp': 25, 'desc': 'Average'})
+        
+        from prompts.system_prompts import LOGISTICS_PROMPT
         
         user_prompt = f"""
-        Route: {venue1_key} -> {venue2_key} ({distance:.1f} km).
-        Elevation Delta: {alt_diff}m.
-        Conditions: {weather_context}.
-        Recent Workload: {cumulative_matches} matches / 2 weeks.
+        # JOURNEY LOG
+        Route: {v1_name} -> {v2_name}
+        Distance: {distance} km
+        Travel Direction: {direction} (Time Change: {tz_diff} hours)
+        
+        # DESTINATION CONDITIONS
+        Altitude: {v2.get('elevation')}m (Delta: {elev_diff}m)
+        Historical June Climate: {climate['temp']}°C, {climate['desc']}
+        
+        # RECOVERY CONTEXT
+        Days since last match: {days_rest}
         """
+
+        raw_response = await query_llm(LOGISTICS_PROMPT, user_prompt, config_key="logistics")
         
-        llm_insight = await query_llm(system_prompt.format(source=source), user_prompt)
+        # 6. PARSING CLEANUP (in case LLM includes markdown)
+        clean_json = raw_response.replace("```json", "").replace("```", "").strip()
         
-        # Structured extraction of fatigue score
-        fatigue_score = 5
+        # 7. PARSE & RETURN
         try:
-            # Look for number in brackets or after colon
-            import re
-            score_match = re.search(r"Fatigue Score:\s*(\d+)", llm_insight)
-            if score_match: fatigue_score = int(score_match.group(1))
-        except: pass
+            analysis_json = json.loads(clean_json)
+        except Exception as e:
+            logger.error(f"Failed to parse Logistics LLM response: {e}. Raw: {raw_response}")
+            # Fallback if LLM creates malformed JSON
+            analysis_json = {
+                "fatigue_score": 5, 
+                "primary_risk": "Unknown", 
+                "analysis": "Error parsing detailed analysis. Defaulting to baseline fatigue."
+            }
 
         return {
             "branch": self.branch_name,
-            "fatigue_score": fatigue_score,
-            "travel_km": round(distance, 1),
-            "altitude_change": round(alt_diff, 1),
-            "weather_source": source,
-            "recommendation": llm_insight[:200] + "...",
-            "full_analysis": llm_insight
+            "route": f"{v1_name.split(',')[0]} > {v2_name.split(',')[0]}",
+            "distance_km": distance,
+            "tz_shift": tz_diff,
+            "fatigue_score": analysis_json.get('fatigue_score', 5),
+            "risk": analysis_json.get('primary_risk', 'None'),
+            "summary": analysis_json.get('analysis', "N/A")
         }

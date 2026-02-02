@@ -1,84 +1,136 @@
+import re
+import logging
+import json
 from core.llm import query_llm
 from .api.sportmonks import fetch_team_stats
 
+logger = logging.getLogger("TacticsAgent")
+
 class TacticsAgent:
     """
-    PERSONA: Lead Tactical Analyst (AI)
-    ROLE: Examination of Expected Goals (xG), injury impact, and tactical form.
+    PERSONA: The Tactical Architect (AI Analyst)
+    ROLE: Merges 'Hard Data' (Baseline xG) with 'Soft Factors' (Tactical Mismatches).
     """
     def __init__(self):
         self.branch_name = "tactics"
 
     async def analyze(self, team_a_id, team_b_id):
-        data_a, data_b = None, None
-        data_source = "LIVE_API"
+        # 1. DATA ACQUISITION
+        data_a, data_b = self._fetch_data_safely(team_a_id, team_b_id)
         
-        try:
-            data_a = fetch_team_stats(team_a_id)
-            data_b = fetch_team_stats(team_b_id)
-        except Exception as e:
-            data_source = "INTERNAL_KNOWLEDGE_FALLBACK"
+        # 2. DETERMINISTIC MODEL (The "Hard" Baseline)
+        # We calculate the 'Paper Expectation' before looking at tactics.
+        # Formula: (Team A Attack Strength + Team B Defense Weakness) / 2
+        base_xg_a = (data_a.get('xg_for_avg', 1.35) + data_b.get('xg_against_avg', 1.35)) / 2
+        base_xg_b = (data_b.get('xg_for_avg', 1.15) + data_a.get('xg_against_avg', 1.15)) / 2
 
-        system_prompt = """
-        # IDENTITY: The Tactical Architect (AI Pep Guardiola)
-        
-        # MISSION
-        Deconstruct the tactical matchup between two national teams. Your goal is to identify the 'Tactical Mismatch' that will dictate the flow of the game—and the betting value.
+        # 3. TACTICAL CONTEXT INJECTION
+        # We define specific styles to help the LLM visualize the game.
+        style_a = data_a.get('style', 'Balanced')
+        style_b = data_b.get('style', 'Balanced')
 
-        # DATA FEED STATUS: {source}
-
-        # ANALYTICAL PROTOCOL
-        1. **PHASE ANALYSIS**: 
-           - How does Team A's build-up play interact with Team B's high press?
-           - Identify the 'Transition Danger'—is one team vulnerable to quick counter-attacks?
-        2. **PERSONNEL IMPACT**: 
-           - Analyze the 'lineup_data'. Are there missing 'Pivots' or 'Creative Engines'?
-           - A missing defensive anchor (DM) shifts the Over/Under probability significantly.
-        3. **COACHING BIAS**: 
-           - Does the manager have a 'Pragmatic' (Park the bus) or 'Expansive' (Possession-heavy) reputation?
-           - How does the manager react when chasing a lead?
-        4. **GAME STATE LOGIC**: 
-           - **Pre-Match**: Focus on structural advantages and rest-defense.
-           - **In-Play**: Focus on momentum shifts and substitutions.
-
-        # OUTPUT REQUIREMENTS (MARKDOWN)
-        - **Tactical Configuration**: (e.g., 4-3-3 High Press vs 5-4-1 Low Block).
-        - **The Mismatch**: Where will the game be won or lost (e.g., "Battle on the Left Flank").
-        - **Projected Script**: Predict the match flow (e.g., "Early dominance by A, followed by B's counter-surge").
-        - **xG Correction**: Suggest a +/- 0.25 adjustment to baseline xG based on tactical context.
-        """
+        from prompts.system_prompts import TACTICS_PROMPT
         
         user_prompt = f"""
-        MATCH CONTEXT:
-        Team A (Home): {team_a_id}
-        Team B (Away): {team_b_id}
+        Analyze {data_a['name']} vs {data_b['name']}.
         
-        LIVE DATA A: {data_a}
-        LIVE DATA B: {data_b}
+        Team A Lineup Notes: {data_a.get('key_players', 'Standard')}
+        Team B Lineup Notes: {data_b.get('key_players', 'Standard')}
+        
+        Recent Form A: {data_a.get('form', 'Unknown')}
+        Recent Form B: {data_b.get('form', 'Unknown')}
         """
         
-        response = await query_llm(system_prompt.format(source=data_source), user_prompt)
+        # 4. EXECUTE ANALYSIS
+        formatted_sys = TACTICS_PROMPT.format(
+            style_a=style_a, style_b=style_b,
+            base_a=base_xg_a, base_b=base_xg_b
+        )
         
-        # Structured xG Extraction
-        team_a_xg, team_b_xg = 1.5, 1.1 # Professional Base Averages
+        response = await query_llm(formatted_sys, user_prompt, config_key="tactics", json_mode=True)
+        
+        # 5. PARSE & SYNTHESIZE
+        # With json_mode=True, we're guaranteed valid JSON
         try:
-            import re
-            # Look for "xG Correction: +0.25" etc
-            correction = re.search(r"xG Correction:\s*([+-]?\d*\.?\d+)", response)
-            if correction:
-                adj = float(correction.group(1))
-                team_a_xg += adj
-                team_b_xg -= adj # Zero-sum tactical shift for this demo logic
-        except: pass
+            analysis = json.loads(response)
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON parsing failed despite json_mode: {e}")
+            # Fallback to regex parser
+            analysis = self._parse_tactical_json(response)
+        
+        # Apply the tactical modifiers to the mathematical baseline
+        final_xg_a = max(0.1, base_xg_a + analysis['xg_adjustment_a'])
+        final_xg_b = max(0.1, base_xg_b + analysis['xg_adjustment_b'])
 
         return {
             'branch': self.branch_name,
-            'source': data_source,
-            'team_a_xg': round(team_a_xg, 2),
-            'team_b_xg': round(team_b_xg, 2),
-            'tactical_analysis': response,
-            'lineups': {
-                'home': data_a.get('lineup', []) if data_a else [],
-                'away': data_b.get('lineup', []) if data_b else []
-            }
+            'matchup_styles': f"{style_a} vs {style_b}",
+            'base_xg': {'a': round(base_xg_a, 2), 'b': round(base_xg_b, 2)},
+            'team_a_xg': round(final_xg_a, 2),
+            'team_b_xg': round(final_xg_b, 2),
+            'tactical_adjustments': {
+                'a': analysis['xg_adjustment_a'],
+                'b': analysis['xg_adjustment_b']
+            },
+            'tactical_analysis': analysis['tactical_summary'],
+            'key_battle': analysis['key_battle'],
+            'game_openness': analysis['game_openness']
         }
+
+    def _fetch_data_safely(self, id_a, id_b):
+        """Fetches data or returns 'League Average' defaults on failure."""
+        try:
+            raw_a = fetch_team_stats(id_a)
+            raw_b = fetch_team_stats(id_b)
+            return raw_a, raw_b
+        except Exception as e:
+            logger.warning(f"Tactics Data Fetch Failed: {e}. Using league averages.")
+            # Fallback Data Structure
+            default_a = {
+                'name': id_a, 'xg_for_avg': 1.35, 'xg_against_avg': 1.35, 
+                'style': 'Balanced', 'form': 'Average', 'key_players': 'Standard XI'
+            }
+            default_b = {
+                'name': id_b, 'xg_for_avg': 1.15, 'xg_against_avg': 1.15, 
+                'style': 'Balanced', 'form': 'Average', 'key_players': 'Standard XI'
+            }
+            return default_a, default_b
+
+    def _parse_tactical_json(self, response_text):
+        """
+        Extracts JSON from LLM response using Regex to find the JSON block.
+        Includes default fallbacks if the LLM ignores instructions.
+        """
+        # Default fallback
+        data = {
+            "tactical_summary": "Standard tactical matchup with balanced approaches.",
+            "key_battle": "Midfield Control",
+            "xg_adjustment_a": 0.0,
+            "xg_adjustment_b": 0.0,
+            "game_openness": "Standard"
+        }
+        
+        try:
+            # Clean markdown code blocks if present
+            clean_text = response_text.replace("```json", "").replace("```", "").strip()
+            
+            # Regex to find the JSON structure specifically
+            match = re.search(r"\{.*\}", clean_text, re.DOTALL)
+            if match:
+                json_str = match.group(0)
+                parsed = json.loads(json_str)
+                data.update(parsed)
+        except Exception as e:
+            logger.warning(f"Failed to parse tactical JSON: {e}. Using fallback regex.")
+            # If JSON parse fails, we can try a backup regex for specific numbers
+            try:
+                # Fallback: Find "xg_adjustment_a": 0.3 pattern
+                adj_a = re.search(r'"xg_adjustment_a":\s*([+-]?\d*\.?\d+)', response_text)
+                if adj_a: data['xg_adjustment_a'] = float(adj_a.group(1))
+                
+                adj_b = re.search(r'"xg_adjustment_b":\s*([+-]?\d*\.?\d+)', response_text)
+                if adj_b: data['xg_adjustment_b'] = float(adj_b.group(1))
+            except Exception as e2:
+                logger.warning(f"Regex fallback also failed: {e2}. Using defaults.")
+            
+        return data

@@ -12,51 +12,54 @@ class NarrativeAgent:
         self.reddit = RedditScanner()
 
     async def analyze(self, team_name):
-        # 1. Fetch Google News Headlines
-        articles = fetch_headlines(team_name)
+        # 1. Fetch Google News Headlines (Dual-Scan Strategy)
+        # Scan for physical fitness/injuries
+        injury_articles = fetch_headlines(team_name, query_type="injury", region="GB")
+        # Scan for psychological/locker room drama
+        drama_articles = fetch_headlines(team_name, query_type="narrative", region="GB")
+        
+        all_articles = injury_articles + drama_articles
         
         # 2. Scan Reddit
         reddit_data = await self.reddit.scan_team_sentiment(team_name)
-        reddit_headlines = [h['title'] for h in reddit_data.get('headlines', [])]
         
-        source = "NEWS + REDDIT"
-        if not articles and not reddit_headlines:
+        # 3. Deep Scan top News Link (New 'Link Look-In' Feature)
+        deep_content = None
+        if all_articles:
+            from .api.web_scraper import extract_article_text
+            # Scan the top article from EITHER category to get deep context
+            top_link = all_articles[0].get('link')
+            deep_content = extract_article_text(top_link)
+
+        source = "GOOGLE NEWS (GB) + REDDIT (DEEP_SCAN_ENABLED)"
+        if not all_articles and not reddit_data.get('headlines'):
              source = "INTERNAL_ARCHIVE_RECALL"
 
         # Combine Evidence
-        news_text = "\n".join([f"- [NEWS] {a['title']}" for a in articles]) if articles else ""
-        social_text = "\n".join([f"- [REDDIT] {h}" for h in reddit_headlines]) if reddit_headlines else ""
-        
-        evidence = f"{news_text}\n{social_text}" or "No live data. Analyze based on historical reputation."
-        
-        system_prompt = """
-        # IDENTITY: The Narrative Scout (AI Fabrizio Romano)
-        
-        # MISSION
-        Uncover the hidden psychological edges—'The Human Factor'. You analyze news, Reddit, and social signals to find morale spikes or locker room crises that the numbers can't see.
+        news_entries = []
+        for i, a in enumerate(all_articles):
+            entry = f"- [NEWS ({a['type'].upper()})] {a['title']}"
+            if i == 0 and deep_content:
+                entry += f" | DEEP_ANALYSIS: {deep_content[:800]}" # Feed first 800 chars of article
+            news_entries.append(entry)
 
-        # EVIDENCE SOURCE: {source}
-
-        # INTELLIGENCE TIERS
-        1. **MORALE & MOMENTUM**: 
-           - Is the team in 'Crisis Mode' (manager under fire, fans protesting) or 'Unstoppable Momentum' (national pride, key stars returning)?
-        2. **THE 'DISTRACTION' FACTOR**: 
-           - Look for off-field scandals, contract disputes, or travel complaints. 
-           - High-profile distractions = -5% focus penalty for the favorite.
-        3. **PUBLIC SENTIMENT (Reddit/Social)**: 
-           - Is the public 'Irrational'? (e.g., Over-hyping a team because of one star player).
-           - Identify 'Quiet Confidence' vs 'Panic'.
-
-        # OUTPUT REQUIREMENTS (MARKDOWN)
-        - **Sentiment Score**: (0.0 to 10.0 | Critical to Invincible).
-        - **The Scoop**: A 2-sentence 'insider' style summary of the most impactful narrative.
-        - **Red Flags**: List any specific 'Narrative Landmines' (Injuries, Beefs, Scandals).
-        - **Narrative Multiplier**: Suggest if the team will 'Overperform' or 'Internalize Pressure'.
-        """
+        reddit_entries = []
+        for h in reddit_data.get('headlines', []):
+            entry = f"- [REDDIT] TITLE: {h['title']}"
+            if h.get('body'):
+                entry += f" | CONTENT: {h['body'][:400]}"
+            if h.get('comments'):
+                comment_text = " // ".join(h['comments'])
+                entry += f" | TOP_COMMENTS: {comment_text}"
+            reddit_entries.append(entry)
+        
+        evidence = "\n".join(news_entries + reddit_entries) or "No live data. Analyze based on historical reputation."
+        
+        from prompts.system_prompts import NARRATIVE_PROMPT
         
         user_prompt = f"Target Team: {team_name}\n\nEvidence:\n{evidence}\n\nInvestigate."
         
-        llm_analysis = await query_llm(system_prompt.format(source=source), user_prompt, config_key="narrative")
+        llm_analysis = await query_llm(NARRATIVE_PROMPT.format(source=source), user_prompt, config_key="narrative")
         
         score = 5
         if "positive" in llm_analysis.lower() or "invincible" in llm_analysis.lower(): score = 8
@@ -67,6 +70,6 @@ class NarrativeAgent:
             "source": source,
             "team": team_name,
             "score": score,
-            "articles_scanned": len(articles) if articles else 0,
+            "articles_scanned": len(all_articles),
             "summary": llm_analysis[:300] + "..." 
         }

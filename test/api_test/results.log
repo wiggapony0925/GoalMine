@@ -1,0 +1,14 @@
+INFO:RedditTest:🚀 Starting Reddit API/Scraper Test...
+WARNING:GoalMine:Could not load reddit config, using defaults: [Errno 2] No such file or directory: 'data/reddit_config.json'
+INFO:GoalMine:✅ Reddit No-Key Scraper Initialized
+INFO:RedditTest:🔍 Scanning sentiment for: Mexico
+INFO:RedditTest:✅ Success! Found 1 headlines for Mexico.
+INFO:RedditTest:  - Mexico City hotel prices soar nearly 1000% ahead of World Cup (Score: 234)
+INFO:RedditTest:🔍 Scanning sentiment for: Argentina
+INFO:RedditTest:✅ Success! Found 2 headlines for Argentina.
+INFO:RedditTest:  - Argentina, England, Netherlands, Algeria to base 2026 World Cup camps in Kansas City metro: Sources (Score: 78)
+INFO:RedditTest:  - World Cup Decision? Lionel Messi Meets With Argentina Boss to Discuss 2026 Plans (Score: 116)
+INFO:RedditTest:🔍 Scanning sentiment for: France
+INFO:RedditTest:✅ Success! Found 2 headlines for France.
+INFO:RedditTest:  - EXCL: Jean-Philippe Mateta undergoing medical ahead of proposed transfer from Crystal Palace to AC Milan. Agreement in place between clubs for 28yo France striker to join #ACMilan for price in excess of €30m to #CPFC. W/-Phillipe Mateta set to join AC Milan from Crystal Palace in excess of €30m deal (Score: 699)
+INFO:RedditTest:  - Scenes in Harlem, New York as Senegal are crowned African champions. Senegal's next competitive fixture will be their World Cup opener at NYNJ Stadium, against France. (Score: 50)

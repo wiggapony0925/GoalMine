@@ -1,0 +1,50 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env.local
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+test/
+tests/
+*.test.py
+pytest_cache/
+.coverage
+htmlcov/
+
+# Logs (will be generated fresh in container)
+*.log
+logs/
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.docker/
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Misc
+.DS_Store
+Thumbs.db
+*.bak

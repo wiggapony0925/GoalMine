@@ -1,0 +1,63 @@
+version: '3.8'
+
+# =============================================================================
+# GoalMine AI - Docker Compose Configuration
+# =============================================================================
+
+services:
+  goalmine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: goalmine-ai
+    restart: unless-stopped
+
+    # Environment variables from .env file
+    env_file:
+      - .env
+
+    # Port mapping (host:container)
+    ports:
+      - "8000:8000"
+
+    # Health check
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    # Resource limits (adjust based on your server)
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# =============================================================================
+# Future Expansion (Optional)
+# =============================================================================
+# If you ever need Redis for caching or rate limiting:
+#
+#   redis:
+#     image: redis:alpine
+#     container_name: goalmine-redis
+#     restart: unless-stopped
+#     ports:
+#       - "6379:6379"
+#     volumes:
+#       - redis_data:/data
+#
+# volumes:
+#   redis_data:

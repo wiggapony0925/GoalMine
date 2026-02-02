@@ -2,18 +2,55 @@
     "subreddits": [
         "soccer",
         "worldcup",
-        "premierleague",
-        "sports",
-        "betting"
+        "football",
+        "soccerbetting",
+        "FantasyPL",
+        "bootroom",
+        "FootballTactics"
     ],
-    "keywords": [
-        "injury",
-        "lineup",
-        "morale",
-        "tactical",
-        "rumor",
-        "training",
-        "crisis",
-        "unfit"
-    ]
+    "keywords": {
+        "morale_signals": [
+            "dressing room",
+            "locker room",
+            "lost the players",
+            "toxic",
+            "unhappy",
+            "dispute",
+            "frozen out",
+            "squad harmony"
+        ],
+        "fitness_signals": [
+            "hamstring",
+            "acl",
+            "knock",
+            "doubt",
+            "unfit",
+            "training alone",
+            "medical",
+            "late fitness test"
+        ],
+        "tactical_narratives": [
+            "park the bus",
+            "high line",
+            "overloaded",
+            "exposed",
+            "dropped",
+            "benched",
+            "substitution"
+        ],
+        "scandal_distractions": [
+            "contract talks",
+            "transfer request",
+            "scandal",
+            "arrest",
+            "leaked",
+            "unauthorized",
+            "travel delay"
+        ]
+    },
+    "metadata": {
+        "version": "1.2",
+        "deep_scan_limit": 3,
+        "comment_sort": "top"
+    }
 }
