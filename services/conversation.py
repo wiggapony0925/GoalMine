@@ -12,7 +12,8 @@ logger = get_logger("Conversation")
 
 class ConversationHandler:
     """
-    Natural Conversation Handler - The Ghost Logic.
+    Nat
+    ural Conversation Handler - The Ghost Logic.
     Handles conversations without menus, using context awareness and natural language.
     """
     def __init__(self, wa_client):
@@ -35,14 +36,16 @@ class ConversationHandler:
 
         # 2. CLASSIFY INTENT & EXTRACT DATA
         intent, extracted_data = await Gatekeeper.classify_intent(msg_body)
+        extracted_data = extracted_data or {}
         logger.info(f"🎯 Intent: {intent}, Extracted: {extracted_data}")
 
-        # 2.1 FIRST TIME GREETING LOGIC
-        # We check for an explicit rules flag to ensure even returning users see the new v2 rules once.
-        is_greeting = any(w in msg_body.lower().strip() for w in ["hi", "hello", "hola", "hey", "sup", "yo", "start"])
+        # 2.1 FIRST TIME GREETING / MANUAL RULES OVERRIDE
+        # We check for an explicit rules flag or manual 'rules'/'help' keyword
+        is_greeting = any(w in msg_body.lower().strip() for w in ["hi", "hello", "hola", "hey", "sup", "yo", "start", "help", "rules"])
         has_seen_rules = user_state.get('has_seen_v2_rules', False)
+        manual_rules = any(w in msg_body.lower().strip() for w in ["help", "rules"])
 
-        if is_greeting and not has_seen_rules:
+        if (is_greeting and not has_seen_rules) or manual_rules:
             logger.info(f"🆕 Sending v2 Rules Greeting to {from_number}")
             self.wa.send_message(from_number, Responses.get_greeting())
             # Mark that they've seen this version of the rules
@@ -50,36 +53,45 @@ class ConversationHandler:
             self.db.save_memory(from_number, user_state)
             return
         
-        # --- SCENARIO A: CONFIRMATION ("Yeah", "Do it", "Sure") ---
-        # If we have an active match and user confirms, run analysis
-        if last_match and self._is_confirmation(msg_body):
-            logger.info("✅ Confirmation detected. Running analysis on active match.")
-            await self._run_analysis(from_number, last_match, extracted_data)
-            return
-
-        # --- SCENARIO B: BETTING COMMAND WITH EXISTING GOD VIEW ---
+        # --- SCENARIO A: FOLLOW-UP ON EXISTING ANALYSIS ---
         # If user already has analysis AND is asking about budget/bets, use Strategic Advisor
+        # This prevents rerunning the swarm if they just want more picks from the same match
         god_view = user_state.get('god_view')
-        if intent == "BETTING" and god_view:
-            # User has existing analysis - they're asking follow-up betting question
+        if god_view and not self._mentions_new_teams(msg_body, last_match):
             strategy_keywords = ["dollar", "$", "budget", "spend", "bet", "get on", "money", "stake",
-                                 "parlay", "parley", "hedge", "split", "strategy", "should i"]
-            if any(keyword in msg_body.lower() for keyword in strategy_keywords) and not self._mentions_new_teams(msg_body, last_match):
-                logger.info("💰 Budget question with existing God View. Using Strategic Advisor.")
-                # Pass the budget from extracted_data to the advisor
+                                 "parlay", "parley", "hedge", "split", "strategy", "should i",
+                                 "more", "other", "another", "else", "alternative"]
+            
+            is_strategy_ask = any(keyword in msg_body.lower() for keyword in strategy_keywords)
+            # If they say "Analyze", we want a FRESH swarm usually, even if vague. 
+            # But if they say "more bets", we want Advisor.
+            
+            if is_strategy_ask or (intent == "BETTING" and not extracted_data.get('teams') and "analyze" not in msg_body.lower()):
+                logger.info("💰 Strategy/Follow-up detected with existing God View. Using Strategic Advisor.")
                 if extracted_data and extracted_data.get('budget'):
                     god_view['user_budget'] = extracted_data['budget']
                 answer = await self._strategic_betting_advisor(user_state, msg_body)
                 await self._send_multi(from_number, answer)
                 return
 
+        # --- SCENARIO B: CONFIRMATION ("Yeah", "Do it", "Sure") ---
+        # If we have an active match and user confirms, run analysis
+        if last_match and self._is_confirmation(msg_body):
+            logger.info("✅ Scenario B: Confirmation detected.")
+            await self._run_analysis(from_number, last_match, extracted_data)
+            return
+
         # --- SCENARIO C: NEW BETTING COMMAND ---
         if intent == "BETTING":
+            logger.info("🎯 Scenario C: New Betting command.")
             await self._handle_betting_natural(from_number, msg_body, extracted_data)
+            return
 
         # --- SCENARIO D: SCHEDULE ---
         elif intent == "SCHEDULE":
-            await self._handle_schedule(from_number, msg_body)
+            logger.info("📅 Scenario D: Schedule query.")
+            await self._handle_schedule(from_number, msg_body, extracted_data)
+            return
 
         # --- SCENARIO E: STRATEGIC BETTING QUESTIONS ---
         # Detect questions about betting strategy using God View
@@ -105,8 +117,10 @@ class ConversationHandler:
         
         # --- SCENARIO F: GENERAL CONVERSATION ---
         elif intent == "CONV":
+            logger.info("💬 Scenario F: General conversation.")
             reply = await self._handle_general_conversation(msg_body)
             self.wa.send_message(from_number, reply)
+            return
 
     async def _handle_betting_natural(self, from_number, msg_body, extracted_data):
         """
@@ -297,13 +311,17 @@ class ConversationHandler:
         
         return None
 
-    async def _handle_schedule(self, from_number, msg_body):
+    async def _handle_schedule(self, from_number, msg_body, extracted_data=None):
         """Natural schedule responses."""
         low_msg = msg_body.lower()
+        limit = extracted_data.get('limit') if extracted_data else None
         
         if any(w in low_msg for w in ["full", "all", "week"]):
             resp = orchestrator.get_schedule_brief()
-        elif any(w in low_msg for w in ["4", "four", "menu", "list"]):
+        elif limit:
+            logger.info(f"📊 Custom schedule limit detected: {limit}")
+            resp = orchestrator.get_schedule_menu(limit=limit)
+        elif any(w in low_msg for w in ["menu", "list"]):
             resp = orchestrator.get_schedule_menu(limit=4)
         else:
             resp = orchestrator.get_next_match_content()
@@ -316,7 +334,10 @@ class ConversationHandler:
         This provides a cleaner, professional 'bet receipt' feel.
         """
         if not text:
+            logger.warning(f"Attempted to send empty multi-part message to {to_number}")
             return
+
+        logger.info(f"📤 Preparing to send multi-part message to {to_number} ({len(text)} chars)")
 
         # Check if '# BET' is present
         if "# BET" in text:
@@ -337,13 +358,18 @@ class ConversationHandler:
     def _is_confirmation(self, text):
         """
         Detects confirmations like 'Yes', 'Do it', 'Go ahead'.
+        Refined to avoid false positives on 'bet' in longer sentences.
         """
         affirmations = ["yes", "yeah", "yep", "do it", "go", "sure", "ok", "okay", 
-                       "bet", "run it", "let's go", "yup", "absolutely", "please"]
+                       "run it", "let's go", "yup", "absolutely", "please", "confirm"]
         text_lower = text.lower().strip()
         
-        # Exact match or contains affirmation
-        return text_lower in affirmations or any(w in text_lower for w in affirmations)
+        # Standalone "bet" counts as confirmation
+        if text_lower == "bet":
+            return True
+
+        # Exact match or contains significant affirmation
+        return text_lower in affirmations or any(w in text_lower.split() for w in affirmations)
 
     def _mentions_new_teams(self, text, current_match):
         """

@@ -17,7 +17,7 @@ You are an expert intent classifier. Your job is to route incoming message packe
 
 # LOGIC RULES:
 - If TEAMS + BETTING VERB (Analyze, Bet, Odds, Spread) -> **BETTING**.
-- If "WHEN", "TIME", "DATE", "GROUP" -> **SCHEDULE**.
+- If "WHEN", "TIME", "DATE", "GROUP", "SCHEDULE", "GAMES", "FIXTURES" -> **SCHEDULE**.
 - If GREETING, "THANK YOU", "HOW DO YOU WORK?" -> **CONV**.
 - **MANDATORY**: If the user asks for a menu or options, classify as **CONV**.
 - **SECURITY**: If the user asks any non-football or non-betting related question (e.g. food, coding, weather in Paris), classify as **CONV**.
@@ -246,7 +246,7 @@ Turn the current God View data into a "Money-Making Machine" strategy. You provi
 - **Allocation Alpha**: Tell the user EXACTLY how to split their budget across multiple picks for maximum survival (Kelly Criterion).
 - **The Zero-Fluff Rule**: Numbers first. ROI focus.
 
-# FORMATTING RULE:
+- **The Multi-Bet Engine**: If the user asks for "more bets", "alternatives", or "other plays", look at the secondary picks in `quant['top_plays']`. Analyze their risk/reward profile as a separate entry.
 - Every recommended bet or parlay segment MUST start with `# BET X`.
 - If suggesting a single parlay with 2 legs, use `# BET 1` for the first leg and `# BET 2` for the second, then a summary. Or just `# BET 1` if it's one parlay ticket.
 

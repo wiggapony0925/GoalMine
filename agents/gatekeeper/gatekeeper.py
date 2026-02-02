@@ -32,8 +32,11 @@ class Gatekeeper:
             return "BETTING", {"selection": message_body}
 
         # Schedule / Next Match
-        if any(w in msg for w in ["schedule", "games", "today", "tomorrow", "next", "upcoming", "menu", "list", "when", "what time"]):
-            return "SCHEDULE", None
+        if any(w in msg for w in ["schedule", "squedule", "sqedule", "games", "today", "tomorrow", "next", "upcoming", "menu", "list", "when", "what time", "fixtures", "fixture", "who plays"]):
+            # For schedule, try to extract a number (e.g. "next 5 matches")
+            limit_match = re.search(r'(\d+)', msg)
+            limit = int(limit_match.group(1)) if limit_match else None
+            return "SCHEDULE", {"limit": limit}
             
         # Explicit Betting / Analysis (including standalone "analyze")
         if any(w in msg for w in [" vs ", " v ", "against", "odds", "bet", "staking", "budget"]) or msg in ["analyze", "analyse", "run it", "do it"]:
@@ -58,7 +61,9 @@ class Gatekeeper:
             category = category.strip().upper()
             
             if "SCHEDULE" in category: 
-                return "SCHEDULE", None
+                limit_match = re.search(r'(\d+)', msg)
+                limit = int(limit_match.group(1)) if limit_match else None
+                return "SCHEDULE", {"limit": limit}
             if "BETTING" in category:
                 extracted = await Gatekeeper._extract_match_details(message_body)
                 return "BETTING", extracted

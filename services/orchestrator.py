@@ -18,6 +18,10 @@ tactics_agent = TacticsAgent()
 market_agent = MarketAgent()
 narrative_agent = NarrativeAgent()
 
+# Internal Cache to prevent redundant swarm triggers (6 hour TTL)
+SWARM_CACHE = {}
+CACHE_TTL_HOURS = 6
+
 def format_to_12hr(date_iso):
     """Converts ISO timestamp to 12-hour format: 5:00 PM."""
     dt = datetime.fromisoformat(date_iso)
@@ -26,11 +30,30 @@ def format_to_12hr(date_iso):
 async def generate_betting_briefing(match_info, user_budget=100):
     """
     Orchestrates the analysis across all agents in PARALLEL.
-    Uses graceful degradation - continues with available data even if some APIs fail.
+    Checks SWARM_CACHE first to avoid redundant API/LLM costs.
     """
     home = match_info.get('home_team', 'Team A')
     away = match_info.get('away_team', 'Team B')
+    match_key = f"{home}_vs_{away}".lower().replace(" ", "_")
     
+    # Check Cache
+    if match_key in SWARM_CACHE:
+        cache_entry = SWARM_CACHE[match_key]
+        cache_time = datetime.fromisoformat(cache_entry['timestamp'])
+        age = (datetime.utcnow() - cache_time).total_seconds() / 3600
+        
+        if age < CACHE_TTL_HOURS:
+            logger.info(f"♻️ Cache Hit for {home} vs {away} (Age: {round(age, 2)}h). Skipping swarm.")
+            cached_briefing = cache_entry['data'].copy()
+            # Update dynamic fields
+            cached_briefing['quant'] = run_quant_engine(
+                cached_briefing['final_xg']['home'], 
+                cached_briefing['final_xg']['away'], 
+                cached_briefing['market'].get('best_odds'), 
+                user_budget, home, away
+            )
+            return cached_briefing
+
     logger.info(f"🚀 GoalMine Swarm Activated: {home} vs {away}")
     
     # 1. Start Agents in Parallel with error handling
@@ -162,6 +185,12 @@ async def generate_betting_briefing(match_info, user_budget=100):
         }
     }
     
+    # 5. Cache for future requests
+    SWARM_CACHE[match_key] = {
+        "timestamp": god_view["timestamp"],
+        "data": god_view
+    }
+    
     return god_view
 
 async def format_the_closer_report(briefing, num_bets=1):
@@ -280,18 +309,24 @@ def get_schedule_menu(limit=4):
     """
     Returns a more conversational menu for the next {limit} matches.
     """
+    limit = min(limit, 15) # Cap at 15 for WhatsApp readability
     now = datetime.now()
     upcoming = [m for m in SCHEDULE if datetime.fromisoformat(m['date_iso']) > now][:limit]
     
     if not upcoming:
         return "📅 I've checked the schedule, and it looks like there aren't any matches coming up soon."
 
-    msg = f"⚽ *Upcoming Fixtures:*\n\n"
+    msg = f"⚽ *Next {len(upcoming)} Fixtures:*\n\n"
     for m in upcoming:
+        dt = datetime.fromisoformat(m['date_iso'])
         time_str = format_to_12hr(m['date_iso'])
-        msg += f"• *{m['team_home']} vs {m['team_away']}* (today at {time_str})\n"
+        date_str = dt.strftime('%b %d')
+        
+        # Only say "today" if it's actually today
+        day_label = "today" if dt.date() == now.date() else f"on {date_str}"
+        msg += f"• *{m['team_home']} vs {m['team_away']}* ({day_label} at {time_str})\n"
     
-    msg += "\nWhich one should we look into? You can also ask for the 'Full Schedule' if you want to see the whole week."
+    msg += "\nWhich one should we look into? Just say 'Analyze' followed by the teams."
     return msg
 
 def get_schedule_brief(days=7):
@@ -302,8 +337,16 @@ def get_schedule_brief(days=7):
     cutoff = now + timedelta(days=days)
     upcoming = [m for m in SCHEDULE if now.date() <= datetime.fromisoformat(m['date_iso']).date() <= cutoff.date()]
 
+    # Fallback: If no matches in the next week, show the next 5 match days regardless of date
     if not upcoming:
-        return "📅 It looks like the calendar is clear for the next few days. No official matches scheduled yet!"
+        upcoming = [m for m in SCHEDULE if datetime.fromisoformat(m['date_iso']) > now][:15]
+        if not upcoming:
+            return "📅 It looks like the calendar is clear. No future official matches found in the schedule!"
+        msg_prefix = "📅 *Next Scheduled Matches:*\n"
+    elif days == 1:
+        msg_prefix = "☀️ *Good Morning! GoalMine AI is online.*\n\nHere is today's World Cup lineup:\n"
+    else:
+        msg_prefix = f"🗓️ *World Cup Schedule (Next {days} Days)*\n"
 
     grouped = {}
     for m in upcoming:
@@ -311,11 +354,7 @@ def get_schedule_brief(days=7):
         if date_str not in grouped: grouped[date_str] = []
         grouped[date_str].append(m)
 
-    if days == 1:
-        msg = "☀️ *Good Morning! GoalMine AI is online.*\n\nHere is today's World Cup lineup:\n"
-    else:
-        msg = f"🗓️ *World Cup Schedule (Next {days} Days)*\n"
-
+    msg = msg_prefix
     for date, matches in grouped.items():
         msg += f"\n📅 *{date}*\n"
         for m in matches:

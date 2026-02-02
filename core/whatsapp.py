@@ -60,12 +60,49 @@ class WhatsAppClient:
                 logger.error(f"Network Error sending WhatsApp message: {e}")
             return None
 
-    def send_template_message(self, to_number, template_name, language_code="en_US"):
+    def send_template_message(self, to_number, template_name, components, language_code="en_US"):
         """
-        Sends a pre-approved template message (required for business initiated conversations).
+        Sends a pre-approved template message.
+        'components' should be a list of strings for variables {{1}}, {{2}}, etc.
         """
-        # Implementation for template sending
-        pass
+        if not self.token or not self.phone_number_id:
+            logger.warning("WhatsApp Credentials missing. Template not sent.")
+            return None
+
+        url = f"{self.base_url}/{self.phone_number_id}/messages"
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json",
+        }
+        
+        # Format variables for the body
+        parameters = [{"type": "text", "text": str(val)} for val in components]
+        
+        data = {
+            "messaging_product": "whatsapp",
+            "to": to_number,
+            "type": "template",
+            "template": {
+                "name": template_name,
+                "language": {"code": language_code},
+                "components": [
+                    {
+                        "type": "body",
+                        "parameters": parameters
+                    }
+                ]
+            }
+        }
+
+        try:
+            response = requests.post(url, headers=headers, json=data)
+            response.raise_for_status()
+            logger.info(f"Template '{template_name}' sent to {to_number}")
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            error_data = e.response.text if e.response else str(e)
+            logger.error(f"Failed to send template: {error_data}")
+            return None
         
     def mark_as_read(self, message_id):
         """
