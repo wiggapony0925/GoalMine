@@ -1,8 +1,9 @@
-import logging
+import json
+from core.log import get_logger
 from core.llm import query_llm
 from .api.the_odds_api import fetch_latest_odds
 
-logger = logging.getLogger("MarketAgent")
+logger = get_logger("Market")
 
 class MarketAgent:
     """
@@ -45,12 +46,25 @@ class MarketAgent:
             arb_exists="YES (Risk-Free Profit!)" if market_math['is_arbitrage'] else "No"
         )
         
-        llm_analysis = await query_llm(formatted_system_prompt, user_prompt, config_key="market")
+        llm_response = await query_llm(formatted_system_prompt, user_prompt, config_key="market", json_mode=True)
+        
+        try:
+            analysis_json = json.loads(llm_response)
+        except Exception as e:
+            logger.error(f"Market LLM JSON Parse failed: {e}")
+            analysis_json = {
+                "market_analysis": llm_response[:200],
+                "trap_alert": "Unknown",
+                "best_bet": "Pass",
+                "bookie": "N/A",
+                "value_score": "C",
+                "edge_percentage": 0.0
+            }
         
         return {
             "branch": self.branch_name,
             "data_source": data_source,
-            "analysis": llm_analysis,
+            "analysis": analysis_json,
             "best_odds": market_math['best_odds'],
             "market_math": market_math
         }

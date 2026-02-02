@@ -1,6 +1,10 @@
+import json
+from core.log import get_logger
 from core.llm import query_llm
 from .api.google_news import fetch_headlines
 from .api.reddit_api import RedditScanner
+
+logger = get_logger("Narrative")
 
 class NarrativeAgent:
     """
@@ -59,17 +63,27 @@ class NarrativeAgent:
         
         user_prompt = f"Target Team: {team_name}\n\nEvidence:\n{evidence}\n\nInvestigate."
         
-        llm_analysis = await query_llm(NARRATIVE_PROMPT.format(source=source), user_prompt, config_key="narrative")
+        llm_response = await query_llm(NARRATIVE_PROMPT.format(source=source), user_prompt, config_key="narrative", json_mode=True)
         
-        score = 5
-        if "positive" in llm_analysis.lower() or "invincible" in llm_analysis.lower(): score = 8
-        if "toxic" in llm_analysis.lower() or "crisis" in llm_analysis.lower(): score = 3
+        try:
+            analysis_json = json.loads(llm_response)
+        except Exception as e:
+            analysis_json = {
+                "sentiment_score": 5.0,
+                "headline_scoop": "Narrative Agent failed to parse data.",
+                "morale_impact": "Stable",
+                "narrative_adjustment": 0.0,
+                "insider_summary": llm_response[:200]
+            }
         
         return {
             "branch": self.branch_name,
             "source": source,
             "team": team_name,
-            "score": score,
-            "articles_scanned": len(all_articles),
-            "summary": llm_analysis[:300] + "..." 
+            "score": analysis_json.get('sentiment_score', 5.0),
+            "morale": analysis_json.get('morale_impact', 'Stable'),
+            "adjustment": analysis_json.get('narrative_adjustment', 0.0),
+            "headline": analysis_json.get('headline_scoop', 'N/A'),
+            "summary": analysis_json.get('insider_summary', 'N/A'),
+            "raw_analysis": analysis_json
         }

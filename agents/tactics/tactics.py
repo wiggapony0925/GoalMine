@@ -1,10 +1,10 @@
 import re
-import logging
 import json
+from core.log import get_logger
 from core.llm import query_llm
 from .api.sportmonks import fetch_team_stats
 
-logger = logging.getLogger("TacticsAgent")
+logger = get_logger("Tactics")
 
 class TacticsAgent:
     """
@@ -50,17 +50,17 @@ class TacticsAgent:
         response = await query_llm(formatted_sys, user_prompt, config_key="tactics", json_mode=True)
         
         # 5. PARSE & SYNTHESIZE
-        # With json_mode=True, we're guaranteed valid JSON
         try:
             analysis = json.loads(response)
         except json.JSONDecodeError as e:
             logger.error(f"JSON parsing failed despite json_mode: {e}")
-            # Fallback to regex parser
             analysis = self._parse_tactical_json(response)
         
         # Apply the tactical modifiers to the mathematical baseline
-        final_xg_a = max(0.1, base_xg_a + analysis['xg_adjustment_a'])
-        final_xg_b = max(0.1, base_xg_b + analysis['xg_adjustment_b'])
+        adj_a = analysis.get('xg_adjustment_a', 0.0)
+        adj_b = analysis.get('xg_adjustment_b', 0.0)
+        final_xg_a = max(0.1, base_xg_a + adj_a)
+        final_xg_b = max(0.1, base_xg_b + adj_b)
 
         return {
             'branch': self.branch_name,
@@ -69,12 +69,13 @@ class TacticsAgent:
             'team_a_xg': round(final_xg_a, 2),
             'team_b_xg': round(final_xg_b, 2),
             'tactical_adjustments': {
-                'a': analysis['xg_adjustment_a'],
-                'b': analysis['xg_adjustment_b']
+                'a': adj_a,
+                'b': adj_b
             },
-            'tactical_analysis': analysis['tactical_summary'],
-            'key_battle': analysis['key_battle'],
-            'game_openness': analysis['game_openness']
+            'tactical_analysis': analysis.get('tactical_logic', analysis.get('tactical_summary', "N/A")),
+            'key_battle': analysis.get('key_battle', "N/A"),
+            'game_script': analysis.get('game_script', analysis.get('game_openness', "N/A")),
+            'reasoning': analysis.get('tactical_logic', "N/A")
         }
 
     def _fetch_data_safely(self, id_a, id_b):

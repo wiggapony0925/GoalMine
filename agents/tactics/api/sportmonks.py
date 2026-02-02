@@ -1,8 +1,8 @@
 import os
 import requests
-import logging
+from core.log import get_logger
 
-logger = logging.getLogger("GoalMine")
+logger = get_logger("API.SportMonks")
 
 def fetch_team_stats(team_name):
     """

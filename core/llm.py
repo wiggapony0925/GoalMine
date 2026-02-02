@@ -1,11 +1,11 @@
 import os
-import logging
 import json
 from openai import AsyncOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from data.scripts.data import MODEL_CONFIG
+from core.log import get_logger
 
-logger = logging.getLogger("GoalMine")
+logger = get_logger("LLM")
 
 # Initialize client once
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))

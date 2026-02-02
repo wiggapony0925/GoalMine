@@ -1,7 +1,7 @@
-import logging
 import asyncio
 import json
 from datetime import datetime
+from core.log import get_logger
 from agents.logistics.logistics import LogisticsAgent
 from agents.tactics.tactics import TacticsAgent
 from agents.market.market import MarketAgent
@@ -10,7 +10,7 @@ from agents.quant.quant import run_quant_engine # Still function based for now
 from core.llm import query_llm
 from data.scripts.data import SCHEDULE, BET_TYPES
 
-logger = logging.getLogger("GoalMine")
+logger = get_logger("Orchestrator")
 
 # Initialize Agents
 logistics_agent = LogisticsAgent()
@@ -117,19 +117,27 @@ async def generate_betting_briefing(match_info, user_budget=100):
         logger.info(f"✅ Narrative ({away}): Score {nar_b.get('score', 5)}")
         logger.debug(f"📊 Narrative ({away}) Full Response: {json.dumps(nar_b, indent=2)}")
     
-    # 3. Extract Data & Apply Multipliers (using fallback data if needed)
+    # 3. Extract Data & Apply Multipliers
+    # Tactics provides the tactically-adjusted baseline (xG)
     base_xg_a = tac_res.get('team_a_xg', 1.5)
     base_xg_b = tac_res.get('team_b_xg', 1.1)
     
-    # Logic: If Logistics finds high fatigue for Team B, reduce their xG
-    log_penalty = 0.90 if log_res.get('fatigue_score', 0) > 7 else 1.0
+    # Logic: Logistics Fatigue Penalty
+    # We apply a penalty based on fatigue score and stamina impact
+    log_penalty_b = 1.0
+    f_score_b = log_res.get('fatigue_score', 0)
+    if f_score_b > 7:
+        log_penalty_b = 0.85 # Serious drop
+    elif f_score_b > 5:
+        log_penalty_b = 0.93 # Moderate drop
+        
+    # Logic: Narrative Sentiment scales xG linearly (+/- 8% max)
+    # Adjustment is now guided by the Narrative Agent's own adjustment field if available
+    sent_adj_a = nar_a.get('adjustment', (nar_a.get('score', 5) - 5) * 0.02)
+    sent_adj_b = nar_b.get('adjustment', (nar_b.get('score', 5) - 5) * 0.02)
     
-    # Logic: Narrative Sentiment scales xG linearly (+/- 10%)
-    sent_mult_a = 1 + (nar_a.get('score', 5) - 5) * 0.04
-    sent_mult_b = 1 + (nar_b.get('score', 5) - 5) * 0.04
-    
-    final_xg_a = base_xg_a * sent_mult_a
-    final_xg_b = base_xg_b * sent_mult_b * log_penalty
+    final_xg_a = max(0.1, base_xg_a + sent_adj_a)
+    final_xg_b = max(0.1, (base_xg_b + sent_adj_b) * log_penalty_b)
     
     # Connect REAL market odds to the Quant Engine
     live_odds = mkt_res.get('best_odds')
@@ -148,94 +156,50 @@ async def generate_betting_briefing(match_info, user_budget=100):
         "final_xg": {"home": round(final_xg_a, 2), "away": round(final_xg_b, 2)},
         "timestamp": datetime.utcnow().isoformat(),
         "agents_status": {
-            "logistics": "OK" if not isinstance(results[0], Exception) else "FALLBACK",
-            "tactics": "OK" if not isinstance(results[1], Exception) else "FALLBACK",
-            "market": "OK" if not isinstance(results[2], Exception) else "FALLBACK",
-            "narrative_home": "OK" if not isinstance(results[3], Exception) else "FALLBACK",
-            "narrative_away": "OK" if not isinstance(results[4], Exception) else "FALLBACK"
+            "logistics": "OK" if log_res.get('branch') else "FALLBACK",
+            "tactics": "OK" if tac_res.get('branch') else "FALLBACK",
+            "market": "OK" if mkt_res.get('branch') else "FALLBACK"
         }
     }
-    
-    # 5. Log complete God View JSON
-    logger.info("=" * 80)
-    logger.info("🔮 GOD VIEW JSON (Complete Analysis)")
-    logger.info("=" * 80)
-    logger.info(json.dumps(god_view, indent=2))
-    logger.info("=" * 80)
     
     return god_view
 
 async def format_the_closer_report(briefing, num_bets=1):
     """
-    PERSONA: The Closer
-    Synthesis of all agent data into a final text output.
+    Synthesizes the God View into the final Elite Briefing.
     """
     from prompts.system_prompts import CLOSER_PROMPT
     
-    match_name = briefing.get('match', 'Upcoming Match')
-    formatted_prompt = CLOSER_PROMPT.format(match=match_name, num_bets=num_bets)
-    user_prompt = f"GOD VIEW JSON:\n{json.dumps(briefing, indent=2)}"
+    # Construct a high-density "Intelligence Summary" for the Closer LLM
+    intel_matrix = {
+        "quant": f"{briefing['final_xg']['home']} vs {briefing['final_xg']['away']} xG",
+        "tactics": briefing['tactics'].get('tactical_analysis', 'Balanced'),
+        "logistics": briefing['logistics'].get('summary', 'Neutral'),
+        "narrative": f"Home morale: {briefing['narrative']['home'].get('morale')} | Away: {briefing['narrative']['away'].get('morale')}"
+    }
+    
+    formatted_prompt = CLOSER_PROMPT.format(
+        match=briefing['match'],
+        intelligence=json.dumps(intel_matrix, indent=2)
+    )
+    
+    user_prompt = f"GOD VIEW DATA:\n{json.dumps(briefing['quant']['top_plays'][:3], indent=2)}"
     
     try:
-        return await query_llm(formatted_prompt, user_prompt, config_key="closer", temperature=0.7)
+        return await query_llm(formatted_prompt, user_prompt, config_key="closer", temperature=0.5)
     except Exception as e:
         logger.error(f"The Closer failed: {e}")
-        return "Analysis complete, but report formatting failed."
-
-
-
-async def answer_follow_up_question(memory, user_message, num_bets=1):
-    """
-    Handles 'Chat with Data' requests.
-    """
-    if not memory: return None
-
-    from prompts.system_prompts import FOLLOW_UP_QA_PROMPT
-    
-    formatted_prompt = FOLLOW_UP_QA_PROMPT.format(context=json.dumps(memory, indent=2))
-    user_prompt = f"User Question: {user_message}"
-    
-    try:
-        response = await query_llm(formatted_prompt, user_prompt, config_key="qa_assistant")
-        return response
-    except Exception as e:
-        logger.error(f"Q&A Failed: {e}")
-        return None
+        return "Intelligence gathered, but the briefing failed to generate."
 
 async def handle_general_conversation(user_message):
     """
-    Handles non-betting, non-schedule chats.
+    Redirects to ConversationHandler's specialized logic.
     """
-    # Check for greeting
-    if any(w in user_message.lower().strip() for w in ["hi", "hello", "hola", "sup", "hey", "start", "yo"]):
-        from core.responses import Responses
-        return Responses.get_greeting()
-
     from prompts.system_prompts import CONVERSATION_ASSISTANT_PROMPT
-    from data.scripts.data import SCHEDULE, BET_TYPES
-    
-    # Get a snapshot of context for the LLM
-    now = datetime.now()
-    next_match = None
-    for m in SCHEDULE:
-        if datetime.fromisoformat(m['date_iso']) > now:
-            next_match = m
-            break
-            
-    context_str = f"""
-    MATCH CONTEXT:
-    Next Match: {next_match['team_home'] if next_match else 'N/A'} vs {next_match['team_away'] if next_match else 'N/A'}
-    Tournament Structure: {BET_TYPES.get('meta', {}).get('structure', 'Round robin + knockouts')}
-    
-    USER QUERY: {user_message}
-    """
-
     try:
-        return await query_llm(CONVERSATION_ASSISTANT_PROMPT, context_str, config_key="narrative") 
-    except Exception as e:
-        logger.error(f"General Conv Failed: {e}")
-        from core.responses import Responses
-        return Responses.get_greeting()
+        return await query_llm(CONVERSATION_ASSISTANT_PROMPT, user_message, config_key="closer")
+    except:
+        return "I'm focusing on the World Cup right now. How can I help with your bets?"
 
 from datetime import datetime, timedelta
 

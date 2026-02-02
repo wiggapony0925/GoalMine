@@ -1,7 +1,7 @@
 import requests
-import logging
+from core.log import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("API.OpenMeteo")
 
 def get_forecast(lat, lon):
     """

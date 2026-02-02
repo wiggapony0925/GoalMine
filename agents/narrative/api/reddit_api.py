@@ -1,11 +1,11 @@
 import os
 import json
-import logging
 import requests
 from typing import List, Dict
 from data.scripts.data import REDDIT_CONFIG
+from core.log import get_logger
 
-logger = logging.getLogger("GoalMine")
+logger = get_logger("API.Reddit")
 
 class RedditScanner:
     """

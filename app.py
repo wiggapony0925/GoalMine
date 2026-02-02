@@ -5,19 +5,19 @@ load_dotenv()
 from flask import Flask, request
 from apscheduler.schedulers.background import BackgroundScheduler
 
-import logs
+from core.log import setup_logging, register_request_logger, print_start_banner
 from core.whatsapp import WhatsAppClient
 from services.conversation import ConversationHandler
 from services import orchestrator
 
 # --- SETUP ---
-logger = logs.setup_logging()
+logger = setup_logging()
 
 app = Flask(__name__)
-logs.register_request_logger(app, logger)
+register_request_logger(app)
 
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
-logs.print_start_banner()
+print_start_banner()
 
 # --- SERVICES ---
 wa_client = WhatsAppClient()

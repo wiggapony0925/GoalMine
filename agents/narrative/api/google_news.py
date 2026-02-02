@@ -1,9 +1,9 @@
-import logging
 import requests
 import xml.etree.ElementTree as ET
 from urllib.parse import quote
+from core.log import get_logger
 
-logger = logging.getLogger("GoalMine")
+logger = get_logger("API.GoogleNews")
 
 def fetch_headlines(team_name, query_type="general", region="GB"):
     """

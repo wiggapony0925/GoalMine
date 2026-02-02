@@ -1,11 +1,11 @@
 import os
-import logging
 import json
 from datetime import datetime
 from typing import Dict, Optional, List, Any
 from supabase import create_client
+from core.log import get_logger
 
-logger = logging.getLogger("GoalMine")
+logger = get_logger("Database")
 
 class Database:
     """
@@ -131,7 +131,6 @@ class Database:
         """
         try:
             self.client.table('sessions').delete().eq("phone", str(user_phone)).execute()
-            self.client.table('active_sessions').delete().eq("phone", str(user_phone)).execute()
             logger.info(f"🧹 Memory cleared for {user_phone}")
         except Exception as e:
             logger.error(f"Memory clear error for {user_phone}: {e}")

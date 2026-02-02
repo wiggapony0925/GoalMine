@@ -1,11 +1,11 @@
 import math
-import logging
 import json
 from datetime import datetime
+from core.log import get_logger
 from core.llm import query_llm
 from data.scripts.data import get_venue_info
 
-logger = logging.getLogger("LogisticsAgent")
+logger = get_logger("Logistics")
 
 class LogisticsAgent:
     """
@@ -86,5 +86,7 @@ class LogisticsAgent:
             "tz_shift": tz_diff,
             "fatigue_score": analysis_json.get('fatigue_score', 5),
             "risk": analysis_json.get('primary_risk', 'None'),
-            "summary": analysis_json.get('analysis', "N/A")
+            "stamina_impact": analysis_json.get('stamina_impact', 'Minimal'),
+            "summary": analysis_json.get('analysis_summary', analysis_json.get('analysis', "N/A")),
+            "reasoning": analysis_json.get('reasoning', "N/A")
         }

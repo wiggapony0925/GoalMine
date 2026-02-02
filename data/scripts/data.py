@@ -4,10 +4,10 @@ All JSON configuration files are loaded here to provide a single source of truth
 """
 import json
 import os
-import logging
 from datetime import datetime
+from core.log import get_logger
 
-logger = logging.getLogger("GoalMine")
+logger = get_logger("Data")
 
 def load_json_file(filename, default=None):
     """

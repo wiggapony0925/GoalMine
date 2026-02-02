@@ -1,8 +1,8 @@
 import re
-import logging
+from core.log import get_logger
 from core.llm import query_llm
 
-logger = logging.getLogger("GoalMine")
+logger = get_logger("Gatekeeper")
 
 class Gatekeeper:
     """

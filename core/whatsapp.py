@@ -1,8 +1,8 @@
 import os
 import requests
-import logging
+from core.log import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("WhatsApp")
 
 class WhatsAppClient:
     """
@@ -40,16 +40,24 @@ class WhatsAppClient:
             logger.info(f"Message sent to {to_number}")
             return response.json()
         except requests.exceptions.RequestException as e:
-            if e.response is not None and e.response.status_code == 401:
-                logger.error("❌ WHATSAPP AUTH ERROR (401 Unauthorized)")
-                logger.error("👉 TROUBLESHOOTING:")
-                logger.error("   1. Your WHATSAPP_TOKEN has likely expired. Temporary tokens only last 24 hours.")
-                logger.error("   2. Go to Meta Developer Portal -> WhatsApp -> API Setup to generate a new token.")
-                logger.error("   3. Check if your PHONE_NUMBER_ID in .env matches the portal.")
+            if e.response is not None:
+                status = e.response.status_code
+                if status == 401:
+                    logger.error("❌ WHATSAPP AUTH ERROR (401 Unauthorized)")
+                    logger.error("👉 TROUBLESHOOTING:")
+                    logger.error("   1. Your WHATSAPP_TOKEN has likely expired. Temporary tokens only last 24 hours.")
+                    logger.error("   2. Go to Meta Developer Portal -> WhatsApp -> API Setup to generate a new token.")
+                    logger.error("   3. Check if your PHONE_NUMBER_ID in .env matches the portal.")
+                elif status == 400:
+                    logger.error(f"❌ WHATSAPP BAD REQUEST (400): {e.response.text}")
+                    logger.error("👉 TROUBLESHOOTING:")
+                    logger.error("   1. Check if the recipient number is a 'Test Number' in your Meta Portal.")
+                    logger.error("   2. Ensure the phone number format is correct (no + or leading zeros).")
+                    logger.error("   3. Check if THE PHONE_NUMBER_ID is correct.")
+                else:
+                    logger.error(f"WhatsApp API Error ({status}): {e.response.text}")
             else:
-                logger.error(f"Error sending WhatsApp message: {e}")
-                if e.response:
-                    logger.error(f"Response: {e.response.text}")
+                logger.error(f"Network Error sending WhatsApp message: {e}")
             return None
 
     def send_template_message(self, to_number, template_name, language_code="en_US"):

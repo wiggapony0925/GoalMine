@@ -1,8 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
-import logging
+from core.log import get_logger
 
-logger = logging.getLogger("GoalMine")
+logger = get_logger("API.Scraper")
 
 def extract_article_text(url):
     """

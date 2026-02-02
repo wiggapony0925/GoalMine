@@ -8,9 +8,12 @@ from dotenv import load_dotenv
 # Load env variables
 load_dotenv()
 
-# Configure logging
-# We keep logging low to let the "Chat" output shine
-logging.basicConfig(level=logging.ERROR) 
+# Load env variables
+load_dotenv()
+
+from core.log import setup_logging
+# Initialize centralized logging
+setup_logging()
 logger = logging.getLogger("UserJourneyTest")
 
 from services.conversation import ConversationHandler

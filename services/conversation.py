@@ -1,13 +1,13 @@
 import re
 import json
-import logging
+from core.log import get_logger
 from services import orchestrator
 from agents.gatekeeper.gatekeeper import Gatekeeper
 from core.database import Database
 from data.scripts.responses import Responses
 from core.llm import query_llm
 
-logger = logging.getLogger("GoalMine")
+logger = get_logger("Conversation")
 
 class ConversationHandler:
     """
