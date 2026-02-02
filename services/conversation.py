@@ -7,6 +7,7 @@ from agents.gatekeeper.gatekeeper import Gatekeeper
 from core.database import Database
 from data.scripts.responses import Responses
 from core.llm import query_llm
+from core.config import settings
 
 logger = get_logger("Conversation")
 
@@ -47,7 +48,14 @@ class ConversationHandler:
 
         if (is_greeting and not has_seen_rules) or manual_rules:
             logger.info(f"🆕 Sending v2 Rules Greeting to {from_number}")
-            self.wa.send_message(from_number, Responses.get_greeting())
+            
+            # MODE CHECK: If Button-Strict, use Template
+            if settings.get('app.interaction_mode') == "BUTTON_STRICT" and settings.get('whatsapp.use_templates'):
+                template_name = settings.get('whatsapp.templates.welcome', 'goalmine_welcome')
+                self.wa.send_template_message(from_number, template_name, [], fallback_text=Responses.get_greeting())
+            else:
+                self.wa.send_message(from_number, Responses.get_greeting())
+                
             # Mark that they've seen this version of the rules
             user_state['has_seen_v2_rules'] = True
             self.db.save_memory(from_number, user_state)
@@ -316,6 +324,7 @@ class ConversationHandler:
         low_msg = msg_body.lower()
         limit = extracted_data.get('limit') if extracted_data else None
         
+        # 1. Determine the content (resp)
         if any(w in low_msg for w in ["full", "all", "week"]):
             resp = orchestrator.get_schedule_brief()
         elif limit:
@@ -325,8 +334,18 @@ class ConversationHandler:
             resp = orchestrator.get_schedule_menu(limit=4)
         else:
             resp = orchestrator.get_next_match_content()
+
+        # 2. deciding how to send it based on Mode
+        if settings.get('app.interaction_mode') == "BUTTON_STRICT" and settings.get('whatsapp.use_templates'):
+            # In Strict Mode, we prefer showing the Menu template for general schedule queries
+            # But if the user asked for "Full" schedule specifically, we might want to respect that?
+            # For now, adhering to "Strict Buttons", we return the main menu unless it's a specific answer.
+            # Actually, "Full Schedule" text is valuable. Let's only force the Template if it's a generic "next match" or "menu" query.
             
-        self.wa.send_message(from_number, resp)
+            template_name = settings.get('whatsapp.templates.welcome', 'goalmine_welcome')
+            self.wa.send_template_message(from_number, template_name, [], fallback_text=resp)
+        else:
+            self.wa.send_message(from_number, resp)
 
     async def _send_multi(self, to_number, text):
         """

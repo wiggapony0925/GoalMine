@@ -9,6 +9,7 @@ from core.log import setup_logging, register_request_logger, print_start_banner
 from core.whatsapp import WhatsAppClient
 from services.conversation import ConversationHandler
 from services import orchestrator
+from core.config import settings
 
 # --- SETUP ---
 logger = setup_logging()
@@ -25,30 +26,65 @@ conv_handler = ConversationHandler(wa_client)
 
 # --- SCHEDULER ---
 def push_morning_brief():
-    """ 8am Daily Brief """
+    """ Daily Brief from settings """
     logger.info("Pushing Morning Brief...")
-    msg = orchestrator.get_schedule_brief(days=1)
+    
+    # 1. Get raw data needed for template / text
+    matches = orchestrator.get_todays_matches()
+    num_edges = len(matches) # Simplified for now
+    today_str = datetime.now().strftime("%b %d")
+    top_match = f"{matches[0]['team_home']} vs {matches[0]['team_away']}" if matches else "N/A"
 
-    if msg:
-        test_user = "9294255178"
-        wa_client.send_message(test_user, msg)
+    test_user = "9294255178"
+    
+    # Generate Fallback Text
+    fallback = orchestrator.get_schedule_brief(days=1)
+
+    if settings.get('whatsapp.use_templates'):
+        template_name = settings.get('whatsapp.templates.briefing', 'goalmine_alpha_briefing')
+        wa_client.send_template_message(
+            test_user, 
+            template_name, 
+            [today_str, num_edges, top_match],
+            fallback_text=fallback
+        )
     else:
-        logger.info("No matches today. Skipping brief.")
-
+        if fallback:
+            wa_client.send_message(test_user, fallback)
 
 def check_upcoming_matches_alert():
-    """ Runs every 15 mins for Kick-off Alerts """
+    """ Runs based on settings interval for Kick-off Alerts """
     upcoming = orchestrator.get_upcoming_matches()
+    test_user = "9294255178"
 
     for m in upcoming:
-        test_user = "9294255178"
-        msg = f"🚨 KICK-OFF ALERT: {m['team_home']} vs {m['team_away']} starts in 1 hour!\nReply 'Analyze {m['team_home']}' for a last-minute edge."
-        wa_client.send_message(test_user, msg)
+        # Generate Fallback Text
+        fallback = f"🚨 KICK-OFF ALERT: {m['team_home']} vs {m['team_away']} starts in 1 hour!\nReply 'Analyze {m['team_home']}' for a last-minute edge."
+        
+        if settings.get('whatsapp.use_templates'):
+            template_name = settings.get('whatsapp.templates.kickoff', 'goalmine_kickoff_alert')
+            wa_client.send_template_message(
+                test_user, 
+                template_name, 
+                [m['team_home'], m['team_away']],
+                fallback_text=fallback
+            )
+        else:
+            wa_client.send_message(test_user, fallback)
 
 
 scheduler = BackgroundScheduler()
-scheduler.add_job(push_morning_brief, 'cron', hour=5, minute=0)
-scheduler.add_job(check_upcoming_matches_alert, 'interval', minutes=15)
+scheduler.add_job(
+    push_morning_brief, 
+    'cron', 
+    hour=settings.get('scheduling.morning_brief_hour', 5), 
+    minute=settings.get('scheduling.morning_brief_minute', 0)
+)
+scheduler.add_job(
+    check_upcoming_matches_alert, 
+    'interval', 
+    minutes=settings.get('scheduling.kickoff_alert_interval_mins', 15)
+)
 scheduler.start()
 
 # --- ROUTES ---
@@ -59,6 +95,11 @@ def home():
 
 @app.route("/webhook", methods=["GET", "POST"])
 async def webhook():
+    # Maintenance Check
+    if settings.get('app.maintenance_mode'):
+        logger.warning("🚫 Webhook hit while in Maintenance Mode. Ignoring.")
+        return "Service Temporarily Unavailable", 503
+
     logger.info(f"📩 Webhook Hit: {request.method}")
     # 1. Verification Request
     if request.method == "GET":

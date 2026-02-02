@@ -5,6 +5,8 @@ from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_excep
 from data.scripts.data import MODEL_CONFIG
 from core.log import get_logger
 
+from core.config import settings
+
 logger = get_logger("LLM")
 
 # Initialize client once
@@ -25,30 +27,19 @@ async def query_llm(
     json_mode: bool = False
 ) -> str:
     """
-    Robust LLM Query with:
-    1. Automatic Retries (Tenacity) - 3 attempts with exponential backoff
-    2. JSON Mode Enforcement (Critical for Agents)
-    3. Centralized Model Routing
-    4. Validation for JSON responses
-    
-    Args:
-        system_prompt: System instructions for the LLM
-        user_content: User query/content
-        model: Override model (optional)
-        temperature: Override temperature (optional)
-        config_key: Config key for model routing (e.g., 'market', 'tactics')
-        json_mode: If True, enforces JSON output and validates it
-    
-    Returns:
-        str: LLM response (validated JSON string if json_mode=True)
+    Robust LLM Query with central configuration.
     """
     
     # 1. Configuration Routing
-    # Defaults
-    final_model = "gpt-4o" 
-    final_temp = 0.7
+    # Defaults from settings.json or hardcoded
+    final_model = settings.get('llm.model', 'gpt-4o')
+    final_temp = settings.get('llm.temperature', 0.7)
+    
+    # Special case for Gatekeeper
+    if config_key == "gatekeeper":
+        final_temp = settings.get('llm.gatekeeper_temperature', 0.1)
 
-    # Load specific config if provided (e.g., 'market' agent needs low temp)
+    # Load specific legacy config if provided (node-based config)
     if config_key and config_key in MODEL_CONFIG:
         node = MODEL_CONFIG[config_key]
         if isinstance(node, dict):
@@ -78,6 +69,9 @@ async def query_llm(
 
     try:
         # 3. Execution
+        if settings.get('app.detailed_request_logging'):
+            logger.info(f"📤 LLM Request [{final_model}]: {system_prompt[:50]}... | User: {user_content[:50]}...")
+
         response = await client.chat.completions.create(
             model=final_model,
             messages=[
@@ -89,6 +83,9 @@ async def query_llm(
         )
         
         content = response.choices[0].message.content.strip()
+        
+        if settings.get('app.detailed_request_logging'):
+             logger.info(f"📥 LLM Response: {content[:100]}...")
 
         # 4. Validation
         if json_mode:

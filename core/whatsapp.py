@@ -60,10 +60,11 @@ class WhatsAppClient:
                 logger.error(f"Network Error sending WhatsApp message: {e}")
             return None
 
-    def send_template_message(self, to_number, template_name, components, language_code="en_US"):
+    def send_template_message(self, to_number, template_name, components, fallback_text=None, language_code="en_US"):
         """
         Sends a pre-approved template message.
         'components' should be a list of strings for variables {{1}}, {{2}}, etc.
+        If it fails, it will attempt to send 'fallback_text' if provided.
         """
         if not self.token or not self.phone_number_id:
             logger.warning("WhatsApp Credentials missing. Template not sent.")
@@ -75,7 +76,6 @@ class WhatsAppClient:
             "Content-Type": "application/json",
         }
         
-        # Format variables for the body
         parameters = [{"type": "text", "text": str(val)} for val in components]
         
         data = {
@@ -85,23 +85,22 @@ class WhatsAppClient:
             "template": {
                 "name": template_name,
                 "language": {"code": language_code},
-                "components": [
-                    {
-                        "type": "body",
-                        "parameters": parameters
-                    }
-                ]
+                "components": [{"type": "body", "parameters": parameters}]
             }
         }
 
         try:
             response = requests.post(url, headers=headers, json=data)
             response.raise_for_status()
-            logger.info(f"Template '{template_name}' sent to {to_number}")
+            logger.info(f"✅ Template '{template_name}' sent to {to_number}")
             return response.json()
         except requests.exceptions.RequestException as e:
             error_data = e.response.text if e.response else str(e)
-            logger.error(f"Failed to send template: {error_data}")
+            logger.warning(f"⚠️ Template '{template_name}' failed: {error_data}")
+            
+            if fallback_text:
+                logger.info(f"🔄 Attempting fallback to standard message for {to_number}")
+                return self.send_message(to_number, fallback_text)
             return None
         
     def mark_as_read(self, message_id):

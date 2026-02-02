@@ -42,8 +42,12 @@ def setup_logging():
     logging.basicConfig(level=logging.WARNING)
 
     # 3. GoalMine Master Logger
+    from core.config import settings
+    log_level_str = settings.get('app.log_level', 'INFO').upper()
+    log_level = getattr(logging, log_level_str, logging.INFO)
+
     main_logger = logging.getLogger("GoalMine")
-    main_logger.setLevel(logging.INFO)
+    main_logger.setLevel(log_level)
     main_logger.propagate = False
 
     # 4. Handlers
@@ -55,18 +59,29 @@ def setup_logging():
 
     # Console Handler: Optimized for clean terminal viewing
     console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
+    console_handler.setLevel(log_level)
     console_handler.setFormatter(GoalMineFormatter())
 
     main_logger.addHandler(file_handler)
     main_logger.addHandler(console_handler)
 
     # Suppress external noise
-    for noisy_lib in ["werkzeug", "openai", "httpx", "httpcore", "apscheduler", "supabase", "postgrest"]:
-        logging.getLogger(noisy_lib).setLevel(logging.WARNING)
-    
-    # Extra quiet for werkzeug (Flask logs)
-    logging.getLogger("werkzeug").setLevel(logging.ERROR)
+    # Suppress external noise UNLESS detailed logging is on
+    from core.config import settings
+    if not settings.get('app.detailed_request_logging'):
+        for noisy_lib in ["werkzeug", "openai", "httpx", "httpcore", "apscheduler", "supabase", "postgrest"]:
+            logging.getLogger(noisy_lib).setLevel(logging.WARNING)
+        
+        # Extra quiet for werkzeug (Flask logs)
+        logging.getLogger("werkzeug").setLevel(logging.ERROR)
+    else:
+        # If detailed logging is on, set them to INFO so we see API calls
+        for noisy_lib in ["openai", "httpx", "httpcore", "apscheduler", "supabase", "postgrest"]:
+            logging.getLogger(noisy_lib).setLevel(logging.INFO)
+            # Ensure they propagate to our handlers
+            logging.getLogger(noisy_lib).addHandler(file_handler)
+            if log_level == logging.DEBUG:
+                 logging.getLogger(noisy_lib).addHandler(console_handler)
 
     return main_logger
 
@@ -102,19 +117,21 @@ def register_request_logger(app):
     
     @app.after_request
     def log_response(response):
+        from core.config import settings
         # We only care about matching/webhook logs to keep terminal noise down
-        if "webhook" in request.path:
+        if "webhook" in request.path or settings.get('app.detailed_request_logging'):
             status = response.status_code
             symbol = "🟢" if status < 400 else "🔴"
-            logger.info(f"{symbol} Webhook {request.method} {request.path} -> {status}")
+            logger.info(f"{symbol} Net {request.method} {request.path} -> {status}")
         return response
 
 def print_start_banner():
     """
     Prints a premium startup banner.
     """
-    # Only print once (if using Flask debug mode)
-    if os.environ.get("WERKZEUG_RUN_MAIN") == "true" or not os.environ.get("FLASK_DEBUG"):
+    # Only print inside the Reloader process (when live) to avoid double print on startup
+    # or if strictly not in debug mode (production).
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         ascii_banner = pyfiglet.figlet_format("GoalMine AI")
         print(Fore.CYAN + ascii_banner)
         print(Fore.GREEN + "🚀 GoalMine AI Prediction Engine — v2.0 'Ghost Logic' Active")

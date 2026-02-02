@@ -9,6 +9,7 @@ from agents.narrative.narrative import NarrativeAgent
 from agents.quant.quant import run_quant_engine # Still function based for now
 from core.llm import query_llm
 from data.scripts.data import SCHEDULE, BET_TYPES
+from core.config import settings
 
 logger = get_logger("Orchestrator")
 
@@ -18,9 +19,9 @@ tactics_agent = TacticsAgent()
 market_agent = MarketAgent()
 narrative_agent = NarrativeAgent()
 
-# Internal Cache to prevent redundant swarm triggers (6 hour TTL)
+# Internal Cache to prevent redundant swarm triggers
 SWARM_CACHE = {}
-CACHE_TTL_HOURS = 6
+CACHE_TTL_HOURS = settings.get('strategy.swarm_cache_ttl_hours', 6)
 
 def format_to_12hr(date_iso):
     """Converts ISO timestamp to 12-hour format: 5:00 PM."""
@@ -56,18 +57,44 @@ async def generate_betting_briefing(match_info, user_budget=100):
 
     logger.info(f"🚀 GoalMine Swarm Activated: {home} vs {away}")
     
-    # 1. Start Agents in Parallel with error handling
-    task_log = logistics_agent.analyze(
-        match_info.get('venue_from', 'MetLife Stadium, East Rutherford'), 
-        match_info.get('venue', 'Estadio Azteca, Mexico City')
-    )
-    task_tac = tactics_agent.analyze(home, away)
-    task_mkt = market_agent.analyze(home, away)
-    task_nar_a = narrative_agent.analyze(home)
-    task_nar_b = narrative_agent.analyze(away)
+    # 1. Start Agents in Parallel with toggle checks
+    tasks = []
+    
+    # Logistics
+    if settings.get('agents.logistics', True):
+        tasks.append(logistics_agent.analyze(
+            match_info.get('venue_from', 'MetLife Stadium, East Rutherford'), 
+            match_info.get('venue', 'Estadio Azteca, Mexico City')
+        ))
+    else:
+        logger.info("⏸️ Logistics Agent disabled via settings.")
+        tasks.append(asyncio.sleep(0, result={"branch": "logistics", "status": "DISABLED", "fatigue_score": 5}))
+
+    # Tactics
+    if settings.get('agents.tactics', True):
+        tasks.append(tactics_agent.analyze(home, away))
+    else:
+        logger.info("⏸️ Tactics Agent disabled via settings.")
+        tasks.append(asyncio.sleep(0, result={"branch": "tactics", "status": "DISABLED", "team_a_xg": 1.5, "team_b_xg": 1.2}))
+
+    # Market
+    if settings.get('agents.market', True):
+        tasks.append(market_agent.analyze(home, away))
+    else:
+        logger.info("⏸️ Market Agent disabled via settings.")
+        tasks.append(asyncio.sleep(0, result={"branch": "market", "status": "DISABLED", "best_odds": "N/A"}))
+
+    # Narrative
+    if settings.get('agents.narrative', True):
+        tasks.append(narrative_agent.analyze(home))
+        tasks.append(narrative_agent.analyze(away))
+    else:
+        logger.info("⏸️ Narrative Agent disabled via settings.")
+        tasks.append(asyncio.sleep(0, result={"branch": "narrative", "status": "DISABLED", "score": 5}))
+        tasks.append(asyncio.sleep(0, result={"branch": "narrative", "status": "DISABLED", "score": 5}))
     
     # Execute all with graceful degradation
-    results = await asyncio.gather(task_log, task_tac, task_mkt, task_nar_a, task_nar_b, return_exceptions=True)
+    results = await asyncio.gather(*tasks, return_exceptions=True)
     
     log_res, tac_res, mkt_res, nar_a, nar_b = results
     
@@ -184,6 +211,9 @@ async def generate_betting_briefing(match_info, user_budget=100):
             "market": "OK" if mkt_res.get('branch') else "FALLBACK"
         }
     }
+    
+    # [TRANSPARENCY LOG] Print the full God View for admin auditing
+    logger.info(f"🔮 GOD VIEW MATRIX [{home} vs {away}]:\n{json.dumps(god_view, indent=2)}")
     
     # 5. Cache for future requests
     SWARM_CACHE[match_key] = {

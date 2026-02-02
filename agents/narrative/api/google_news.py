@@ -35,8 +35,8 @@ def fetch_headlines(team_name, query_type="general", region="GB"):
     search_q = f'{base_query} AND {topic_terms} when:3d'
     
     # 3. ADD NEGATIVE KEYWORDS (Remove Noise)
-    # Exclude: TV listings, highlights, ticket sales, betting odds
-    search_q += ' -watch -tv -channel -tickets -betting -highlights'
+    # Exclude: TV listings, highlights, ticket sales, betting odds, and OTHER SPORTS (Cricket)
+    search_q += ' -watch -tv -channel -tickets -betting -highlights -cricket -t20'
     
     # URL Encode
     encoded_q = quote(search_q)

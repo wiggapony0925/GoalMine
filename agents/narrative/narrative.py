@@ -3,6 +3,7 @@ from core.log import get_logger
 from core.llm import query_llm
 from .api.google_news import fetch_headlines
 from .api.reddit_api import RedditScanner
+from core.config import settings
 
 logger = get_logger("Narrative")
 
@@ -58,6 +59,13 @@ class NarrativeAgent:
             reddit_entries.append(entry)
         
         evidence = "\n".join(news_entries + reddit_entries) or "No live data. Analyze based on historical reputation."
+        
+        # [DETAILED LOGGING] Raw Data Dump
+        if settings.get('app.detailed_request_logging'):
+            logger.info(f"📰 GOOGLE RAW ({team_name}): {json.dumps(all_articles, indent=2)}")
+            logger.info(f"👽 REDDIT RAW ({team_name}): {json.dumps(reddit_data, indent=2)}")
+            if deep_content:
+                logger.info(f"🕵️ DEEP SCAN CONTENT ({team_name}): {deep_content[:500]}...")
         
         from prompts.system_prompts import NARRATIVE_PROMPT
         
