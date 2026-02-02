@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from core.database import Database
+from core.initializer.database import Database
 
 def test_connection():
     load_dotenv()

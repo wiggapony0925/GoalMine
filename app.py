@@ -6,8 +6,9 @@ from flask import Flask, request
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from core.log import setup_logging, register_request_logger, print_start_banner
-from core.whatsapp import WhatsAppClient
-from services.conversation import ConversationHandler
+from core.initializer.whatsapp import WhatsAppClient
+from services.conversationalFlow.conversation import ConversationHandler
+from services.buttonConversationalFlow.button_conversation import ButtonConversationHandler
 from services import orchestrator
 from core.config import settings
 
@@ -22,7 +23,15 @@ print_start_banner()
 
 # --- SERVICES ---
 wa_client = WhatsAppClient()
-conv_handler = ConversationHandler(wa_client)
+# Dynamic Handler Selection
+if settings.get('app.interaction_mode') == "BUTTON_STRICT":
+    from core.initializer.database import Database
+    db_client = Database()
+    conv_handler = ButtonConversationHandler(wa_client, db_client)
+    logger.info("🛡️ STRICT MODE ACTIVATED: Using ButtonConversationHandler")
+else:
+    conv_handler = ConversationHandler(wa_client)
+    logger.info("💬 CONVERSATIONAL MODE: Using standard ConversationHandler")
 
 # --- SCHEDULER ---
 def push_morning_brief():
@@ -125,11 +134,38 @@ async def webhook():
                 and body["entry"][0]["changes"][0]["value"].get("messages")
             ):
                 changes = body["entry"][0]["changes"][0]["value"]
-                from_number = changes["messages"][0]["from"]
-                msg_body = changes["messages"][0]["text"]["body"]
+                message_data = changes["messages"][0]
+                from_number = message_data["from"]
+                msg_type = message_data.get("type")
+                
+                msg_body = ""
+                
+                # EXTRACT CONTENT BASED ON TYPE
+                if msg_type == "text":
+                    msg_body = message_data["text"]["body"]
+                
+                elif msg_type == "interactive":
+                    interactive = message_data["interactive"]
+                    int_type = interactive.get("type")
+                    
+                    if int_type == "button_reply":
+                        # User clicked a button
+                        msg_body = interactive["button_reply"]["id"]
+                        logger.info(f"🖱️ Button Clicked: {interactive['button_reply']['title']} (ID: {msg_body})")
+                        
+                    elif int_type == "list_reply":
+                        # User selected from a list
+                        msg_body = interactive["list_reply"]["id"]
+                        logger.info(f"📜 List Selection: {interactive['list_reply']['title']} (ID: {msg_body})")
+                
+                # Mark as Read (Blue Tick)
+                msg_id = message_data.get("id")
+                if msg_id:
+                    wa_client.mark_as_read(msg_id)
 
-                # Delegate to Conversation Handler
-                await conv_handler.handle_incoming_message(from_number, msg_body)
+                # Delegate to Conversation Handler if we found content
+                if msg_body:
+                    await conv_handler.handle_incoming_message(from_number, msg_body)
 
             return "EVENT_RECEIVED", 200
         else:

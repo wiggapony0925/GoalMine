@@ -1,6 +1,6 @@
 import json
 from core.log import get_logger
-from core.llm import query_llm
+from core.initializer.llm import query_llm
 from .api.the_odds_api import fetch_latest_odds
 
 logger = get_logger("Market")

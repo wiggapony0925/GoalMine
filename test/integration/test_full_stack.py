@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 
 from services.conversation import ConversationHandler
 from services import orchestrator
-from core.database import Database
-from core.whatsapp import WhatsAppClient
+from core.initializer.database import Database
+from core.initializer.whatsapp import WhatsAppClient
 # from prompts.system_prompts import * # Directory was deleted by user
 
 # Mock WhatsApp to capture messages instead of sending them

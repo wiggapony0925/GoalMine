@@ -116,11 +116,35 @@ class Database:
         """
         Legacy method for backward compatibility.
         Loads the MOST RECENT user session data.
+        
+        [TTL CHECK] Enforces data freshness policy.
         """
         try:
-            res = self.client.table('sessions').select("god_view").eq("phone", str(user_phone)).order("created_at", desc=True).limit(1).execute()
+            # Modified to select created_at
+            res = self.client.table('sessions').select("god_view, created_at").eq("phone", str(user_phone)).order("created_at", desc=True).limit(1).execute()
+            
             if res.data:
-                return res.data[0].get("god_view")
+                record = res.data[0]
+                god_view = record.get("god_view")
+                created_at_str = record.get("created_at") # ISO format from Supabase
+                
+                # TTL Check
+                from core.config import settings
+                ttl_hours = settings.get('retention.god_view_ttl_hours', 4) # Default 4h life
+                
+                if created_at_str:
+                    # Handle both Z-terminated and offset-aware ISO strings
+                    created_at_dt = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
+                    # Ensure now() is timezone aware (UTC) to match Supabase
+                    now = datetime.now(datetime.timezone.utc) if created_at_dt.tzinfo else datetime.utcnow()
+                    
+                    age_hours = (now - created_at_dt).total_seconds() / 3600.0
+                    
+                    if age_hours > ttl_hours:
+                        logger.info(f"💀 Memory Expired for {user_phone} (Age: {round(age_hours, 1)}h > Limit: {ttl_hours}h). Starting fresh.")
+                        return None
+                
+                return god_view
         except Exception as e:
             logger.error(f"Supabase Load Error for {user_phone}: {e}")
         return None

@@ -14,7 +14,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("PromptLogicTest")
 
 from agents.gatekeeper.gatekeeper import Gatekeeper
-from services.orchestrator import extract_match_details_from_text, answer_follow_up_question
 from services.conversation import ConversationHandler
 
 class TestPromptLogic(unittest.IsolatedAsyncioTestCase):
@@ -37,42 +36,6 @@ class TestPromptLogic(unittest.IsolatedAsyncioTestCase):
             logger.info(f"Input: '{msg}' -> Intent: {intent}")
             self.assertEqual(intent, expected)
 
-    async def test_team_extraction_accuracy(self):
-        """Test if the extraction prompt handles nicknames and abbreviations."""
-        scenarios = [
-            ("Mex vs SA", ["Mexico", "South Africa"]),
-            ("The Aztecs against the Bafana Bafana", ["Mexico", "South Africa"]),
-            ("USA v Brazil", ["USA", "Brazil"]),
-            ("Predict the Arg game", ["Argentina"]),
-        ]
-        
-        for msg, expected_teams in scenarios:
-            data = await extract_match_details_from_text(msg)
-            # Extracted data now has home_team/away_team
-            found_teams = [data.get('home_team'), data.get('away_team')]
-            # Clean None
-            found_teams = [t for t in found_teams if t and t != "Name"]
-            
-            logger.info(f"Input: '{msg}' -> Found: {found_teams}")
-            for expected in expected_teams:
-                self.assertTrue(any(expected.lower() in t.lower() for t in found_teams), f"Failed to find {expected} in {found_teams}")
-
-    async def test_follow_up_qa_logic(self):
-        """Test if the follow-up assistant correctly uses God View data."""
-        mock_memory = {
-            "match": "Mexico vs South Africa",
-            "tactics": {"team_a_xg": 1.55, "team_b_xg": 1.25, "tactical_analysis": "Mexico creative midfield."},
-            "logistics": {"fatigue_score": 7, "risk": "Altitude"},
-            "quant": {"probabilities": {"draw": 28.3}}
-        }
-        
-        question = "What is the fatigue risk?"
-        answer = await answer_follow_up_question(mock_memory, question)
-        
-        logger.info(f"Q: '{question}' -> A: {answer}")
-        self.assertIn("7", answer)
-        # Case-insensitive check
-        self.assertIn("altitude", answer.lower())
 
     async def test_strategic_advisor_parlay(self):
         """Test if the strategic advisor can handle parlay advice."""

@@ -1,7 +1,7 @@
 import re
 import json
 from core.log import get_logger
-from core.llm import query_llm
+from core.initializer.llm import query_llm
 from .api.sportmonks import fetch_team_stats
 
 logger = get_logger("Tactics")

@@ -2,7 +2,7 @@ import math
 import json
 from datetime import datetime
 from core.log import get_logger
-from core.llm import query_llm
+from core.initializer.llm import query_llm
 from data.scripts.data import get_venue_info
 
 logger = get_logger("Logistics")

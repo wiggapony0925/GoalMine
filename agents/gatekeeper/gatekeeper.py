@@ -1,6 +1,6 @@
 import re
 from core.log import get_logger
-from core.llm import query_llm
+from core.initializer.llm import query_llm
 
 logger = get_logger("Gatekeeper")
 

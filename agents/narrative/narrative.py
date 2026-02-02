@@ -1,6 +1,6 @@
 import json
 from core.log import get_logger
-from core.llm import query_llm
+from core.initializer.llm import query_llm
 from .api.google_news import fetch_headlines
 from .api.reddit_api import RedditScanner
 from core.config import settings

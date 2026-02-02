@@ -7,7 +7,7 @@ from agents.tactics.tactics import TacticsAgent
 from agents.market.market import MarketAgent
 from agents.narrative.narrative import NarrativeAgent
 from agents.quant.quant import run_quant_engine # Still function based for now
-from core.llm import query_llm
+from core.initializer.llm import query_llm
 from data.scripts.data import SCHEDULE, BET_TYPES
 from core.config import settings
 
@@ -195,25 +195,31 @@ async def generate_betting_briefing(match_info, user_budget=100):
     logger.info(f"🤖 Quant Engine processing: Adj xG {round(final_xg_a,2)} vs {round(final_xg_b,2)}")
     quant_res = run_quant_engine(final_xg_a, final_xg_b, live_odds, user_budget, home, away)
     
-    # 4. Build God View JSON
-    god_view = {
-        "match": f"{home} vs {away}",
-        "logistics": log_res,
-        "tactics": tac_res,
-        "market": mkt_res,
-        "narrative": {"home": nar_a, "away": nar_b},
-        "quant": quant_res,
-        "final_xg": {"home": round(final_xg_a, 2), "away": round(final_xg_b, 2)},
-        "timestamp": datetime.utcnow().isoformat(),
-        "agents_status": {
-            "logistics": "OK" if log_res.get('branch') else "FALLBACK",
-            "tactics": "OK" if tac_res.get('branch') else "FALLBACK",
-            "market": "OK" if mkt_res.get('branch') else "FALLBACK"
-        }
-    }
+    # 4. Build Optimized God View JSON (Using centralized builder)
+    from data.scripts.godview_builder import build_god_view
+    
+    god_view = build_god_view(
+        home_team=home,
+        away_team=away,
+        match_key=match_key,
+        logistics_data=log_res,
+        tactics_data=tac_res,
+        market_data=mkt_res,
+        narrative_home=nar_a,
+        narrative_away=nar_b,
+        quant_data=quant_res,
+        final_xg_home=final_xg_a,
+        final_xg_away=final_xg_b,
+        base_xg_home=base_xg_a,
+        base_xg_away=base_xg_b,
+        narrative_adj_home=sent_adj_a,
+        narrative_adj_away=sent_adj_b,
+        logistics_penalty=log_penalty_b
+    )
     
     # [TRANSPARENCY LOG] Print the full God View for admin auditing
     logger.info(f"🔮 GOD VIEW MATRIX [{home} vs {away}]:\n{json.dumps(god_view, indent=2)}")
+
     
     # 5. Cache for future requests
     SWARM_CACHE[match_key] = {
@@ -405,6 +411,46 @@ def get_match_info_from_selection(selection_idx):
             'venue': m.get('venue', 'Estadio Azteca, Mexico City'),
             'venue_from': 'MetLife Stadium, East Rutherford' 
         }
+    return None
+
+
+def get_next_matches(limit=3):
+    """
+    Returns the next {limit} matches as a list of dictionaries.
+    Useful for constructing menus/buttons.
+    """
+    now = datetime.now()
+    upcoming = []
+    
+    # Sort schedule by date to be safe
+    sorted_schedule = sorted(SCHEDULE, key=lambda x: datetime.fromisoformat(x['date_iso']))
+    
+    for m in sorted_schedule:
+        match_dt = datetime.fromisoformat(m['date_iso'])
+        if match_dt > now:
+            upcoming.append(m)
+            if len(upcoming) >= limit:
+                break
+                
+    return upcoming
+
+def find_match_by_home_team(team_name):
+    """
+    Finds a match where the home team matches the provided name (case-insensitive).
+    """
+    if not team_name: return None
+    
+    target = team_name.lower().strip()
+    
+    for m in SCHEDULE:
+        if m['team_home'].lower().strip() == target:
+            return {
+                'home_team': m['team_home'],
+                'away_team': m['team_away'],
+                'date_iso': m['date_iso'],
+                'venue': m.get('venue', 'Estadio Azteca, Mexico City'),
+                'venue_from': 'MetLife Stadium, East Rutherford' 
+            }
     return None
 
 async def extract_match_details_from_text(text):

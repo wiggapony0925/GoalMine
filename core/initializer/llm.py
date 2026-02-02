@@ -30,25 +30,28 @@ async def query_llm(
     Robust LLM Query with central configuration.
     """
     
-    # 1. Configuration Routing
-    # Defaults from settings.json or hardcoded
-    final_model = settings.get('llm.model', 'gpt-4o')
+    # 1. Configuration Routing (Prioritize settings.json > model_config.json)
+    # Defaults
+    final_model = settings.get('llm.default_model', 'gpt-4o')
     final_temp = settings.get('llm.temperature', 0.7)
     
-    # Special case for Gatekeeper
-    if config_key == "gatekeeper":
-        final_temp = settings.get('llm.gatekeeper_temperature', 0.1)
+    # Check settings.json for agent-specific config first
+    if config_key:
+        agent_config = settings.get(f'llm.{config_key}')
+        if isinstance(agent_config, dict):
+            final_model = agent_config.get("model", final_model)
+            final_temp = agent_config.get("temperature", final_temp)
+        
+        # Fallback to legacy model_config.json if not in settings
+        elif config_key in MODEL_CONFIG:
+            node = MODEL_CONFIG[config_key]
+            if isinstance(node, dict):
+                final_model = node.get("model", final_model)
+                final_temp = node.get("temperature", final_temp)
+            else:
+                final_model = node  # Simple string config
 
-    # Load specific legacy config if provided (node-based config)
-    if config_key and config_key in MODEL_CONFIG:
-        node = MODEL_CONFIG[config_key]
-        if isinstance(node, dict):
-            final_model = node.get("model", final_model)
-            final_temp = node.get("temperature", final_temp)
-        else:
-            final_model = node  # Simple string config
-
-    # Apply overrides
+    # Apply direct overrides
     if model:
         final_model = model
     if temperature is not None:

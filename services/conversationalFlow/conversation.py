@@ -4,9 +4,9 @@ import asyncio
 from core.log import get_logger
 from services import orchestrator
 from agents.gatekeeper.gatekeeper import Gatekeeper
-from core.database import Database
+from core.initializer.database import Database
 from data.scripts.responses import Responses
-from core.llm import query_llm
+from core.initializer.llm import query_llm
 from core.config import settings
 
 logger = get_logger("Conversation")
@@ -25,6 +25,9 @@ class ConversationHandler:
         """
         Pure Natural Language Processor with context awareness.
         """
+        # Track current user for unified bet generation
+        self._current_user_phone = from_number
+        
         # 1. LOAD CONTEXT (Short-term memory)
         user_state = self.db.load_memory(from_number) or {}
         last_match = user_state.get('match')  # Last analyzed match
@@ -258,15 +261,22 @@ class ConversationHandler:
     async def _strategic_betting_advisor(self, user_state, question):
         """
         Advanced betting strategist using God View JSON.
+        Now uses the UNIFIED bet generation engine.
         """
-        from prompts.system_prompts import STRATEGIC_ADVISOR_PROMPT
+        from core.generate_bets import generate_strategic_advice
         
         try:
-            god_view_str = json.dumps(user_state, indent=2)
-            formatted_prompt = STRATEGIC_ADVISOR_PROMPT.format(god_view=god_view_str)
+            # Extract user phone from state if available, or use a default approach
+            # In practice, this should be passed from handle_incoming_message
+            # For now, we'll need to refactor to pass user_phone down
+            # Temporary: Extract from the flow
+            logger.warning("⚠️ user_phone not available in current flow. Using unified engine requires phone.")
             
-            logger.info(f"💡 Strategic Advisor Query: {question[:100]}...")
-            answer = await query_llm(formatted_prompt, question, temperature=0.7, config_key="closer")
+            # Use the unified engine with conversational mode
+            answer = await generate_strategic_advice(
+                user_phone=self._current_user_phone,  # Will need to be set in handle_incoming_message
+                question=question
+            )
             return answer
         except Exception as e:
             logger.error(f"Strategic Betting Advisor failed: {e}")
@@ -340,14 +350,42 @@ class ConversationHandler:
             resp = orchestrator.get_next_match_content()
 
         # 2. deciding how to send it based on Mode
-        if settings.get('app.interaction_mode') == "BUTTON_STRICT" and settings.get('whatsapp.use_templates'):
-            # In Strict Mode, we prefer showing the Menu template for general schedule queries
-            # But if the user asked for "Full" schedule specifically, we might want to respect that?
-            # For now, adhering to "Strict Buttons", we return the main menu unless it's a specific answer.
-            # Actually, "Full Schedule" text is valuable. Let's only force the Template if it's a generic "next match" or "menu" query.
+        # 2. deciding how to send it based on Mode
+        if settings.get('app.interaction_mode') == "BUTTON_STRICT":
+            # [INTERACTIVE LIST] Dynamic Schedule Menu
+            # Fetch real upcoming matches to populate the list
+            upcoming = orchestrator.get_upcoming_matches()[:8] # Max 10 rows allow
             
-            template_name = settings.get('whatsapp.templates.welcome', 'goalmine_welcome')
-            self.wa.send_template_message(from_number, template_name, [], fallback_text=resp)
+            if upcoming:
+                rows = []
+                for m in upcoming:
+                    # Row ID format: "Analyze {Home}" to trigger existing flow
+                    row_id = f"Analyze {m['team_home']}" 
+                    rows.append({
+                        "id": row_id[:200], # ID limit
+                        "title": f"{m['team_home']} vs {m['team_away']}"[:24], # Title max 24 chars
+                        "description": f"{m['date_iso'][:10]} @ {m['venue']}"[:72]
+                    })
+                
+                interactive_obj = {
+                    "type": "list",
+                    "header": {"type": "text", "text": "📅 Match Schedule"},
+                    "body": {"text": "Select a match below to launch the GoalMine Swarm:"},
+                    "footer": {"text": "GoalMine AI v2.0"},
+                    "action": {
+                        "button": "View Matches",
+                        "sections": [
+                            {
+                                "title": "Upcoming Fixtures",
+                                "rows": rows
+                            }
+                        ]
+                    }
+                }
+                self.wa.send_interactive_message(from_number, interactive_obj)
+            else:
+                 # Fallback if no games
+                self.wa.send_message(from_number, "No matches found in the immediate schedule.")
         else:
             self.wa.send_message(from_number, resp)
 

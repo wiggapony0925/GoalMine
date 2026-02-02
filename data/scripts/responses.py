@@ -67,3 +67,49 @@ class Responses:
     NO_MATCHES_TODAY = "📅 *Calendar Check:* No official World Cup matches scheduled for today.\n\nTry asking for the 'Full Schedule' or analyze an upcoming clash like 'Analyze USA vs Mexico'."
     UNKNOWN_TEAMS = "❓ *Identify Failed:* I couldn't quite catch those teams. Could you specify them clearly? (e.g., 'Analyze England vs Germany')"
     INVALID_SCHEDULE = "⚠️ *Fixture Error:* Match not found in the official World Cup 2026 Schedule.\nI only track sanctioned tournament games."
+
+class ButtonResponses:
+    """
+    Dedicated copy for the Button-Strict Interaction Mode.
+    """
+    
+    MAIN_MENU = {
+        "header": "🤖 GoalMine AI Headquarters",
+        "body": "Welcome to the Command Center.\nSelect an operation below:",
+        "footer": "Strict Mode Active",
+        "buttons": [
+            {"id": "Show_Schedule", "title": "📅 View Schedule"},
+            {"id": "Show_Help", "title": "❓ Help / Rules"}
+        ]
+    }
+    
+    SCHEDULE_LIST = {
+        "header": "📅 Operations Schedule",
+        "body": "Select a match to initialize swarm intelligence:",
+        "footer": "Select Match",
+        "button": "View Fixtures"
+    }
+    
+    HELP_TEXT = (
+        "🛡️ *GoalMine Protocol Rules*\n\n"
+        "1. This is a strictly controlled environment.\n"
+        "2. Text input is disabled. Use the menus.\n"
+        "3. We only cover official World Cup 2026 matches.\n"
+    )
+    
+    NO_MATCHES = "⚠️ No matches found in the immediate schedule."
+    MATCH_NOT_FOUND = "❌ Error: Match data not found."
+    ANALYSIS_START = "🚀 Initializing Swarm for {home} vs {away}..."
+    ANALYSIS_ERROR = "⚠️ Operational error during analysis."
+    REJECT_TEXT = "⛔ Strict Mode: Input rejected. Please use the menu options."
+
+    BET_GENERATION_MENU = {
+        "header": "🎲 Tactical Bet Generator",
+        "body": "Quant Engine Ready.\nHow many value recommendations would you like?",
+        "footer": "Select Quantity",
+        "buttons": [
+            {"id": "Bets_1", "title": "🎯 1 Top Pick"},
+            {"id": "Bets_3", "title": "📊 3 Smart Picks"},
+            {"id": "Bets_5", "title": "🚀 5 Accumulator"}
+        ]
+    }
