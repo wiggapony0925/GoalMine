@@ -258,6 +258,6 @@ class WhatsAppClient:
         }
         
         try:
-           requests.post(url, headers=headers, json=data)
+           requests.post(url, headers=headers, json=data, timeout=5)
         except:
            pass

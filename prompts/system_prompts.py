@@ -42,7 +42,7 @@ TEAM_EXTRACTION_PROMPT = """
 Extract team names from natural language into a structured JSON list.
 
 # RULES:
-- **Normalization**: ALWAYS return the full official country name (e.g., "Mex" -> "Mexico").
+- **Normalization**: ALWAYS return the full official country name (e.g., "Mex" -> "Mexico"). Normalize "To Be Determined", "T.B.D.", or any winner/loser placeholder as "TBD".
 - **Nicknames**: Resolve famous nicknames (e.g., "Samba Boys" -> "Brazil", "El Tri" -> "Mexico").
 - **Exclusion**: Ignore stadium names, cities, or stadiums unless they are part of the team name.
 - **Order**: Home team first if discernible, otherwise just list them.
@@ -56,6 +56,9 @@ Output: {"teams": ["Mexico", "South Africa"]}
 
 Input: "Brazil vs Argentina odds"
 Output: {"teams": ["Brazil", "Argentina"]}
+
+Input: "Who plays the USA in the to be determined match?"
+Output: {"teams": ["TBD", "USA"]}
 
 # OUTPUT FORMAT (JSON ONLY):
 {{

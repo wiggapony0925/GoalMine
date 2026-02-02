@@ -434,16 +434,47 @@ def get_next_matches(limit=3):
                 
     return upcoming
 
+def _normalize_team(name):
+    """Normalizes team names for robust matching, handling TBD synonyms."""
+    if not name: return ""
+    n = name.lower().strip()
+    if n in ["tbd", "to be determined", "t.b.d", "unknown", "placeholder"]:
+        return "tbd"
+    return n
+
 def find_match_by_home_team(team_name):
     """
-    Finds a match where the home team matches the provided name (case-insensitive).
+    Finds a match where the home team matches the provided name (fuzzy).
     """
     if not team_name: return None
-    
-    target = team_name.lower().strip()
+    target = _normalize_team(team_name)
     
     for m in SCHEDULE:
-        if m['team_home'].lower().strip() == target:
+        if _normalize_team(m['team_home']) == target or target in m['team_home'].lower():
+            return {
+                'home_team': m['team_home'],
+                'away_team': m['team_away'],
+                'date_iso': m['date_iso'],
+                'venue': m.get('venue', 'Estadio Azteca, Mexico City'),
+                'venue_from': 'MetLife Stadium, East Rutherford' 
+            }
+    return None
+
+def find_match_by_teams(home_team, away_team):
+    """
+    Finds a specific match between two teams with TBD normalization.
+    """
+    if not home_team or not away_team: return None
+    
+    h = _normalize_team(home_team)
+    a = _normalize_team(away_team)
+    
+    for m in SCHEDULE:
+        sched_h = _normalize_team(m['team_home'])
+        sched_a = _normalize_team(m['team_away'])
+        
+        # Check standard and reverse to be helpful
+        if (h == sched_h and a == sched_a) or (h == sched_a and a == sched_h):
             return {
                 'home_team': m['team_home'],
                 'away_team': m['team_away'],
@@ -487,12 +518,12 @@ def validate_match_request(extracted_data):
     """
     if not extracted_data: return False
     
-    target_home = extracted_data.get('home_team', '').lower()
-    target_away = extracted_data.get('away_team', '').lower()
+    target_home = _normalize_team(extracted_data.get('home_team', ''))
+    target_away = _normalize_team(extracted_data.get('away_team', ''))
     
     for m in SCHEDULE:
-        sched_home = m['team_home'].lower()
-        sched_away = m['team_away'].lower()
+        sched_home = _normalize_team(m['team_home'])
+        sched_away = _normalize_team(m['team_away'])
         
         # Check for A vs B
         match_found = (target_home in sched_home or sched_home in target_home) and \

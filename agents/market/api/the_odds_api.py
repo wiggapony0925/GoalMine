@@ -10,7 +10,7 @@ def fetch_latest_odds(sport_key='soccer_fifa_world_cup'):
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/?regions=us&markets=h2h&apiKey={ODDS_API_KEY}"
     
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=5)
         response.raise_for_status()
         data = response.json()
         

@@ -16,7 +16,7 @@ class TacticsAgent:
 
     async def analyze(self, team_a_id, team_b_id):
         # 1. DATA ACQUISITION
-        data_a, data_b = self._fetch_data_safely(team_a_id, team_b_id)
+        data_a, data_b = await self._fetch_data_safely(team_a_id, team_b_id)
         
         # 2. DETERMINISTIC MODEL (The "Hard" Baseline)
         # We calculate the 'Paper Expectation' before looking at tactics.
@@ -78,11 +78,12 @@ class TacticsAgent:
             'reasoning': analysis.get('tactical_logic', "N/A")
         }
 
-    def _fetch_data_safely(self, id_a, id_b):
+    async def _fetch_data_safely(self, id_a, id_b):
         """Fetches data or returns 'League Average' defaults on failure."""
         try:
-            raw_a = fetch_team_stats(id_a)
-            raw_b = fetch_team_stats(id_b)
+            import asyncio
+            raw_a = await asyncio.to_thread(fetch_team_stats, id_a)
+            raw_b = await asyncio.to_thread(fetch_team_stats, id_b)
             return raw_a, raw_b
         except Exception as e:
             logger.warning(f"Tactics Data Fetch Failed: {e}. Using league averages.")

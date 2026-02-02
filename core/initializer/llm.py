@@ -1,5 +1,6 @@
 import os
 import json
+import openai
 from openai import AsyncOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 from data.scripts.data import MODEL_CONFIG
@@ -15,7 +16,13 @@ client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 @retry(
     stop=stop_after_attempt(3), 
     wait=wait_exponential(multiplier=1, min=2, max=10),
-    retry=retry_if_exception_type((json.JSONDecodeError, ValueError)),
+    retry=retry_if_exception_type((
+        json.JSONDecodeError, 
+        ValueError, 
+        openai.APIConnectionError,
+        openai.APITimeoutError,
+        openai.RateLimitError
+    )),
     reraise=True
 )
 async def query_llm(

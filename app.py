@@ -2,9 +2,11 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+import asyncio
+import threading
 from flask import Flask, request
 from apscheduler.schedulers.background import BackgroundScheduler
-
+from collections import deque
 from core.log import setup_logging, register_request_logger, print_start_banner
 from core.initializer.whatsapp import WhatsAppClient
 from services.conversationalFlow.conversation import ConversationHandler
@@ -19,10 +21,29 @@ app = Flask(__name__)
 register_request_logger(app)
 
 VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
+
+# --- BACKGROUND WORKER ---
+# Dedicated loop for long-running background tasks (prevents loop destruction on request end)
+bg_loop = asyncio.new_event_loop()
+
+def start_bg_loop(loop):
+    asyncio.set_event_loop(loop)
+    loop.run_forever()
+
+threading.Thread(target=start_bg_loop, args=(bg_loop,), daemon=True).start()
+
+def run_bg_task(coro):
+    """Schedules a coroutine to run in the background thread's loop."""
+    asyncio.run_coroutine_threadsafe(coro, bg_loop)
+
 print_start_banner()
 
 # --- SERVICES ---
 wa_client = WhatsAppClient()
+# Deduplication Cache (FIFO)
+PROCESSED_IDS = set()
+ID_QUEUE = deque(maxlen=500)
+
 # Dynamic Handler Selection
 if settings.get('app.interaction_mode') == "BUTTON_STRICT":
     from core.initializer.database import Database
@@ -160,12 +181,26 @@ async def webhook():
                 
                 # Mark as Read (Blue Tick)
                 msg_id = message_data.get("id")
+                
+                # DEDUPLICATION CHECK
+                if msg_id in PROCESSED_IDS:
+                    logger.warning(f"♻️ Duplicate message ID {msg_id} ignored.")
+                    return "ALREADY_PROCESSED", 200
+                
                 if msg_id:
+                    PROCESSED_IDS.add(msg_id)
+                    ID_QUEUE.append(msg_id)
+                    # Sync set with queue maxlen
+                    if len(PROCESSED_IDS) > 500:
+                        oldest = ID_QUEUE.popleft()
+                        PROCESSED_IDS.discard(oldest)
+                    
                     wa_client.mark_as_read(msg_id)
 
                 # Delegate to Conversation Handler if we found content
                 if msg_body:
-                    await conv_handler.handle_incoming_message(from_number, msg_body)
+                    # BACKGROUND THE PROCESSING via persistent loop
+                    run_bg_task(conv_handler.handle_incoming_message(from_number, msg_body))
 
             return "EVENT_RECEIVED", 200
         else:

@@ -102,7 +102,7 @@ async def generate_bet_recommendations(num_bets=3, user_phone=None, conversation
     try:
         response = await query_llm(
             system_prompt=system_prompt,
-            user_prompt=user_prompt,
+            user_content=user_prompt,
             config_key="closer",
             temperature=0.5  # Slightly higher for creative bet discovery
         )

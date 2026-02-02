@@ -45,9 +45,11 @@ class ConversationHandler:
 
         # 2.1 FIRST TIME GREETING / MANUAL RULES OVERRIDE
         # We check for an explicit rules flag or manual 'rules'/'help' keyword
-        is_greeting = any(w in msg_body.lower().strip() for w in ["hi", "hello", "hola", "hey", "sup", "yo", "start", "help", "rules"])
+        words = set(msg_body.lower().split())
+        greeting_words = {"hi", "hello", "hola", "hey", "sup", "yo", "start", "help", "rules"}
+        is_greeting = not (words.isdisjoint(greeting_words))
         has_seen_rules = user_state.get('has_seen_v2_rules', False)
-        manual_rules = any(w in msg_body.lower().strip() for w in ["help", "rules"])
+        manual_rules = "help" in words or "rules" in words
 
         if (is_greeting and not has_seen_rules) or manual_rules:
             logger.info(f"🆕 Sending v2 Rules Greeting to {from_number}")

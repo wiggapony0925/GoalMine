@@ -19,9 +19,10 @@ class NarrativeAgent:
     async def analyze(self, team_name):
         # 1. Fetch Google News Headlines (Dual-Scan Strategy)
         # Scan for physical fitness/injuries
-        injury_articles = fetch_headlines(team_name, query_type="injury", region="GB")
+        import asyncio
+        injury_articles = await asyncio.to_thread(fetch_headlines, team_name, query_type="injury", region="GB")
         # Scan for psychological/locker room drama
-        drama_articles = fetch_headlines(team_name, query_type="narrative", region="GB")
+        drama_articles = await asyncio.to_thread(fetch_headlines, team_name, query_type="narrative", region="GB")
         
         all_articles = injury_articles + drama_articles
         
@@ -34,7 +35,7 @@ class NarrativeAgent:
             from .api.web_scraper import extract_article_text
             # Scan the top article from EITHER category to get deep context
             top_link = all_articles[0].get('link')
-            deep_content = extract_article_text(top_link)
+            deep_content = await asyncio.to_thread(extract_article_text, top_link)
 
         source = "GOOGLE NEWS (GB) + REDDIT (DEEP_SCAN_ENABLED)"
         if not all_articles and not reddit_data.get('headlines'):

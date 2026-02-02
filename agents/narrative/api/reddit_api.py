@@ -48,7 +48,8 @@ class RedditScanner:
                 }
                 
                 try:
-                    response = requests.get(url, headers=headers, timeout=10)
+                    import asyncio
+                    response = await asyncio.to_thread(requests.get, url, headers=headers, timeout=10)
                     if response.status_code == 200:
                         children = response.json().get("data", {}).get("children", [])
                         for post in children:
@@ -61,7 +62,7 @@ class RedditScanner:
                                 permalink = p.get('permalink')
                                 comments = []
                                 if len(headlines) < 3: 
-                                    comments = self._fetch_top_comments(permalink)
+                                    comments = await self._fetch_top_comments(permalink)
 
                                 headlines.append({
                                     "title": title,
@@ -86,13 +87,14 @@ class RedditScanner:
             logger.error(f"Reddit No-Key Scrape Error: {e}")
             return {"source": "reddit", "status": "error", "headlines": []}
 
-    def _fetch_top_comments(self, permalink: str) -> List[str]:
+    async def _fetch_top_comments(self, permalink: str) -> List[str]:
         """Fetches top 3 comments for a post to gauge 'Public Pulse'."""
         if not permalink: return []
         url = f"https://www.reddit.com{permalink}.json?limit=5&depth=1"
         headers = {"User-Agent": self.user_agent, "Accept": "application/json"}
         try:
-            response = requests.get(url, headers=headers, timeout=5)
+            import asyncio
+            response = await asyncio.to_thread(requests.get, url, headers=headers, timeout=5)
             if response.status_code == 200:
                 # Reddit structure: [post_data, comment_data]
                 comment_data = response.json()[1]

@@ -9,7 +9,7 @@ init(autoreset=True)
 
 class GoalMineFormatter(logging.Formatter):
     """
-    Custom formatter for Terminal Output with colors and component names.
+    Premium Formatter for Terminal Output with icons and vibrant colors.
     """
     COLORS = {
         'DEBUG': Fore.CYAN,
@@ -19,15 +19,39 @@ class GoalMineFormatter(logging.Formatter):
         'CRITICAL': Fore.MAGENTA + Style.BRIGHT,
     }
 
+    ICONS = {
+        'GoalMine': '🏰',
+        'Database': '📡',
+        'LLM': '🧠',
+        'WhatsApp': '💬',
+        'Network': '🌐',
+        'Orchestrator': '🎯',
+        'Tactics': '⚔️',
+        'Logistics': '🚛',
+        'Market': '💰',
+        'Narrative': '📰',
+        'Quant': '🎲',
+        'Conversation': '🗣️',
+        'Gatekeeper': '🚪',
+    }
+
     def format(self, record):
         log_color = self.COLORS.get(record.levelname, Fore.WHITE)
-        comp_name = f"[{record.name}]"
         
-        # Clean terminal output: Component -> Message
+        # Extract base component name (e.g., GoalMine.Database -> Database)
+        comp_parts = record.name.split('.')
+        base_comp = comp_parts[-1] if comp_parts else "System"
+        icon = self.ICONS.get(base_comp, '⚙️')
+        
+        comp_label = f"{icon} {base_comp}"
+        
+        # High-End Formatting
         if record.levelname == 'INFO':
-            return f"{log_color}{comp_name} {record.getMessage()}"
+            return f"{log_color}{comp_label.ljust(15)} | {record.getMessage()}"
+        elif record.levelname == 'DEBUG':
+             return f"{Fore.WHITE}{Style.DIM}[DEBUG] {comp_label.ljust(15)} | {record.getMessage()}"
         else:
-            return f"{log_color}{record.levelname}: {comp_name} {record.getMessage()}"
+            return f"{log_color}{record.levelname.ljust(8)} | {comp_label.ljust(15)} | {record.getMessage()}"
 
 def setup_logging():
     """

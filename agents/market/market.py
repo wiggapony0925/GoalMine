@@ -19,7 +19,8 @@ class MarketAgent:
         # 1. Fetch Data
         if odds_data is None:
             try:
-                odds_data = fetch_latest_odds() # Ensure this returns a list of events
+                import asyncio
+                odds_data = await asyncio.to_thread(fetch_latest_odds)
             except Exception as e:
                 logger.error(f"Odds API failed: {e}")
                 odds_data = {"error": "API Failure"}

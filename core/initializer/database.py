@@ -1,6 +1,6 @@
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Optional, List, Any
 from supabase import create_client
 from core.log import get_logger
@@ -106,9 +106,10 @@ class Database:
         try:
             self.client.table('sessions').upsert({
                 "phone": str(user_phone),
-                "god_view": data
+                "god_view": data,
+                "created_at": datetime.now(timezone.utc).isoformat() # Refresh TTL on every save
             }).execute()
-            logger.info(f"💾 [Supabase] God View Persisted for {user_phone}")
+            logger.info(f"💾 God View Persisted for {user_phone} (TTL Refreshed)")
         except Exception as e:
             logger.error(f"Supabase Save Error for {user_phone}: {e}")
 
@@ -136,7 +137,7 @@ class Database:
                     # Handle both Z-terminated and offset-aware ISO strings
                     created_at_dt = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
                     # Ensure now() is timezone aware (UTC) to match Supabase
-                    now = datetime.now(datetime.timezone.utc) if created_at_dt.tzinfo else datetime.utcnow()
+                    now = datetime.now(timezone.utc) if created_at_dt.tzinfo else datetime.utcnow()
                     
                     age_hours = (now - created_at_dt).total_seconds() / 3600.0
                     
