@@ -39,6 +39,11 @@ class ButtonConversationHandler:
              await self._trigger_analysis(from_number, query)
              return
 
+        elif user_input.startswith("LOCKED_TBD"):
+            logger.info("🔒 User attempted to select a TBD match.")
+            self.wa.send_message(from_number, "🔓 *Match Locked:* This fixture is still 'To Be Determined'.\n\nI can only analyze matches once the official teams are confirmed. Please check back after the previous round is complete! 🏆")
+            return
+
         elif user_input == "Show_Schedule":
             logger.info("📅 User requested Schedule Browser.")
             await self._send_schedule_browser(from_number)
@@ -307,9 +312,17 @@ class ButtonConversationHandler:
             for m in m_list:
                 home = m['team_home']
                 away = m['team_away']
-                row_id = f"Analyze {home} vs {away}"
-                title = f"{home[:9]} vs {away[:9]}"
-                desc = f"{m['date_iso'].split('T')[1][:5]} @ {m.get('venue', 'Stadium')[:30]}"
+                is_tbd = "TBD" in home or "TBD" in away
+                
+                if is_tbd:
+                    row_id = f"LOCKED_TBD_{home}_{away}"
+                    title = f"🔒 {home[:7]} vs {away[:7]}"
+                    desc = "Fixture not yet determined."
+                else:
+                    row_id = f"Analyze {home} vs {away}"
+                    title = f"{home[:9]} vs {away[:9]}"
+                    desc = f"{m['date_iso'].split('T')[1][:5]} @ {m.get('venue', 'Stadium')[:30]}"
+                
                 rows.append({"id": row_id, "title": title, "description": desc})
             
             sections.append({"title": round_label, "rows": rows})
