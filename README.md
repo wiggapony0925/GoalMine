@@ -267,7 +267,12 @@ The **God View** is a comprehensive JSON intelligence matrix containing outputs 
 ```
 
 **Stored in**: `sessions.god_view` (Supabase JSONB column)  
-**TTL**: 3 hours (configurable in `settings.json`)
+**Memory Lifecycle**: Cleaned after 3 hours of inactivity (configurable).
+
+### **🔍 Context-Aware Navigation**
+The bot distinguishes between **Cold Starts** and **Warm Sessions**:
+- **Cold Start** (>45 mins): Sends a full welcome template and resets to the Main Menu.
+- **Warm Session** (<45 mins): Greets the user but restores their exact last UI state (e.g., Analysis or Bet Selection) to prevent reset fatigue.
 
 ---
 
@@ -493,7 +498,8 @@ Each agent is an **expert in one domain** with its own LLM and data sources. The
   },
   
   "retention": {
-    "god_view_ttl_hours": 3  // Auto-delete old God Views
+    "god_view_ttl_hours": 3,      // Auto-delete old God Views
+    "session_warm_start_mins": 45 // Greeting persistence limit
   }
 }
 ```

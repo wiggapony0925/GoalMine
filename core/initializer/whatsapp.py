@@ -2,6 +2,7 @@ import os
 import requests
 import hmac
 import hashlib
+import json
 from core.log import get_logger
 
 logger = get_logger("WhatsApp")
@@ -112,9 +113,23 @@ class WhatsAppClient:
             "template": {
                 "name": template_name,
                 "language": {"code": language_code},
-                "components": [{"type": "body", "parameters": parameters}]
+                "components": []
             }
         }
+
+        # 1. HANDLE BODY COMPONENTS
+        # Determine if we are using positional list or named dict
+        if isinstance(components, list):
+            # Standard Positional Format
+            parameters = [{"type": "text", "text": str(val)} for val in components]
+        else:
+            # Named Parameters Format
+            parameters = [
+                {"type": "text", "parameter_name": key, "text": str(val)} 
+                for key, val in components.items()
+            ]
+        
+        data["template"]["components"].append({"type": "body", "parameters": parameters})
 
         try:
             response = requests.post(url, headers=headers, json=data)
@@ -227,58 +242,23 @@ class WhatsAppClient:
 
     def send_typing_indicator(self, to_number):
         """
-        Sends a 'typing...' status to the user.
+        Sends a 'typing...' status to the user using the standard sender action.
         """
         if not self.token or not self.phone_number_id:
             return
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
         headers = self._get_headers()
-        # Note: messaging_product is required for messages endpoint
-        # BUT the docs provided show a slightly different payload structure for typing indicators sometimes.
-        # However, the standard Cloud API for sending sender actions (typing) usually is separate or uses "status" endpoint?
-        # WAIT, the docs provided by the user say: 
-        # curl 'https://graph.facebook.com/v24.0/PHONE_ID/messages' ...
-        # { "messaging_product": "whatsapp", "recipient_type": "individual", "to": PHONE, "type": "sender_action", "sender_action": "typing_on" }
-        # Let me re-read the user's provided snippet.
-        # User snippet:
-        # { "messaging_product": "whatsapp", "status": "read", "message_id": "...", "typing_indicator": {"type": "text"} } 
-        # This looks wrong. The user provided snippet creates a confusion between marking read and typing.
-        # The standard way to show typing is "type": "sender_action", "sender_action": "typing_on".
-        # Let's stick to the official Cloud API standard for typing indicators to be safe, unless user insists on provided snippet.
-        # Actually, looking closely at the provided snippet "typing_indicator": {"type": "text"} seems to be attached to the READ receipt? 
-        # That is unusual.
-        # I will implement the STANDARD Meta Cloud API 'typing_on' action which is reliable.
-        # { "messaging_product": "whatsapp", "recipient_type": "individual", "to": to_number, "type": "interactive" }... NO.
-        # correct payload for typing:
-        """
-        {
-          "messaging_product": "whatsapp",
-          "recipient_type": "individual",
-          "to": "PHONE_NUMBER",
-          "type": "interaction", <--- No.
-        }
-        """
-        # I will use the verified one: 
-        # { "messaging_product": "whatsapp", "recipient_type": "individual", "to": "PHONE", "type": "text" ... } NO.
-        
-        # Okay, let's implement the 'read' one correctly first as requested, and I'll add the standard 'typing_on' sender action.
-        
-        # ACTUALLY, checking the user snippet again:
-        # { "messaging_product": "whatsapp", "status": "read", ... "typing_indicator": ...} 
-        # This implies updating the status of a previous message?
-        
-        # Let's stick to the industry standard "sender_action" for typing, as it works universally.
         
         data = {
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
             "to": to_number,
-            "type": "sender_action", # This is the key
+            "type": "sender_action",
             "sender_action": "typing_on"
         }
         
         try:
            requests.post(url, headers=headers, json=data, timeout=5)
-        except:
+        except Exception:
            pass

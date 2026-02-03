@@ -37,14 +37,20 @@ async def query_llm(
     Robust LLM Query with central configuration.
     """
     
-    # 1. Configuration Routing (Prioritize settings.json > model_config.json)
+    # 1. Configuration Routing (New Structured Settings)
     # Defaults
-    final_model = settings.get('llm.default_model', 'gpt-4o')
-    final_temp = settings.get('llm.temperature', 0.7)
+    final_model = settings.get('GLOBAL_APP_CONFIG.llm_core.default_model', 'gpt-4o')
+    final_temp = settings.get('GLOBAL_APP_CONFIG.llm_core.temperature', 0.7)
     
-    # Check settings.json for agent-specific config first
+    # Check settings for agent-specific config
     if config_key:
-        agent_config = settings.get(f'llm.{config_key}')
+        # Priority 1: Check GLOBAL_APP_CONFIG (Most agents)
+        agent_config = settings.get(f'GLOBAL_APP_CONFIG.llm_core.{config_key}')
+        
+        # Priority 2: Check CONVERSATION_FLOW_APP_CONFIG (Chat specific)
+        if not agent_config:
+            agent_config = settings.get(f'CONVERSATION_FLOW_APP_CONFIG.llm_chat.{config_key}')
+            
         if isinstance(agent_config, dict):
             final_model = agent_config.get("model", final_model)
             final_temp = agent_config.get("temperature", final_temp)

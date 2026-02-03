@@ -21,18 +21,20 @@ narrative_agent = NarrativeAgent()
 
 # Internal Cache to prevent redundant swarm triggers
 SWARM_CACHE = {}
-CACHE_TTL_HOURS = settings.get('strategy.swarm_cache_ttl_hours', 6)
+CACHE_TTL_HOURS = settings.get('GLOBAL_APP_CONFIG.strategy.swarm_cache_ttl_hours', 6)
 
 def format_to_12hr(date_iso):
     """Converts ISO timestamp to 12-hour format: 5:00 PM."""
     dt = datetime.fromisoformat(date_iso)
     return dt.strftime("%I:%M %p").lstrip("0")
 
-async def generate_betting_briefing(match_info, user_budget=100):
+async def generate_betting_briefing(match_info, user_budget=None):
     """
     Orchestrates the analysis across all agents in PARALLEL.
     Checks SWARM_CACHE first to avoid redundant API/LLM costs.
     """
+    if user_budget is None:
+        user_budget = settings.get('GLOBAL_APP_CONFIG.strategy.default_budget', 100)
     home = match_info.get('home_team', 'Team A')
     away = match_info.get('away_team', 'Team B')
     match_key = f"{home}_vs_{away}".lower().replace(" ", "_")
@@ -61,7 +63,7 @@ async def generate_betting_briefing(match_info, user_budget=100):
     tasks = []
     
     # Logistics
-    if settings.get('agents.logistics', True):
+    if settings.get('GLOBAL_APP_CONFIG.agents.logistics', True):
         tasks.append(logistics_agent.analyze(
             match_info.get('venue_from', 'MetLife Stadium, East Rutherford'), 
             match_info.get('venue', 'Estadio Azteca, Mexico City')
@@ -71,21 +73,21 @@ async def generate_betting_briefing(match_info, user_budget=100):
         tasks.append(asyncio.sleep(0, result={"branch": "logistics", "status": "DISABLED", "fatigue_score": 5}))
 
     # Tactics
-    if settings.get('agents.tactics', True):
+    if settings.get('GLOBAL_APP_CONFIG.agents.tactics', True):
         tasks.append(tactics_agent.analyze(home, away))
     else:
         logger.info("⏸️ Tactics Agent disabled via settings.")
         tasks.append(asyncio.sleep(0, result={"branch": "tactics", "status": "DISABLED", "team_a_xg": 1.5, "team_b_xg": 1.2}))
 
     # Market
-    if settings.get('agents.market', True):
+    if settings.get('GLOBAL_APP_CONFIG.agents.market', True):
         tasks.append(market_agent.analyze(home, away))
     else:
         logger.info("⏸️ Market Agent disabled via settings.")
         tasks.append(asyncio.sleep(0, result={"branch": "market", "status": "DISABLED", "best_odds": "N/A"}))
 
     # Narrative
-    if settings.get('agents.narrative', True):
+    if settings.get('GLOBAL_APP_CONFIG.agents.narrative', True):
         tasks.append(narrative_agent.analyze(home))
         tasks.append(narrative_agent.analyze(away))
     else:
@@ -136,7 +138,9 @@ async def generate_betting_briefing(match_info, user_budget=100):
             "status": "FALLBACK"
         }
     else:
-        logger.info(f"✅ Market: Best Entry found on {mkt_res.get('best_odds', {}).get('Team_A_Win', {}).get('platform', 'N/A')}")
+        # Fixed key matching for the Best Odds structure
+        best_book = mkt_res.get('best_odds', {}).get('home', {}).get('book', 'N/A')
+        logger.info(f"✅ Market: Best Entry found on {best_book}")
         logger.debug(f"📊 Market Full Response: {json.dumps(mkt_res, indent=2)}")
     
     # Narrative A fallback
@@ -150,7 +154,8 @@ async def generate_betting_briefing(match_info, user_budget=100):
             "status": "FALLBACK"
         }
     else:
-        logger.info(f"✅ Narrative ({home}): Score {nar_a.get('score', 5)}")
+        reddit_mentions = nar_a.get('mention_count', 0)
+        logger.info(f"✅ Narrative ({home}): Score {nar_a.get('score', 5)} | Reddit Evidence: {reddit_mentions} mentions.")
         logger.debug(f"📊 Narrative ({home}) Full Response: {json.dumps(nar_a, indent=2)}")
     
     # Narrative B fallback
@@ -164,7 +169,8 @@ async def generate_betting_briefing(match_info, user_budget=100):
             "status": "FALLBACK"
         }
     else:
-        logger.info(f"✅ Narrative ({away}): Score {nar_b.get('score', 5)}")
+        reddit_mentions = nar_b.get('mention_count', 0)
+        logger.info(f"✅ Narrative ({away}): Score {nar_b.get('score', 5)} | Reddit Evidence: {reddit_mentions} mentions.")
         logger.debug(f"📊 Narrative ({away}) Full Response: {json.dumps(nar_b, indent=2)}")
     
     # 3. Extract Data & Apply Multipliers
@@ -237,10 +243,36 @@ async def format_the_closer_report(briefing, num_bets=1):
     
     # Construct a high-density "Intelligence Summary" for the Closer LLM
     intel_matrix = {
-        "quant": f"{briefing['final_xg']['home']} vs {briefing['final_xg']['away']} xG",
-        "tactics": briefing['tactics'].get('tactical_analysis', 'Balanced'),
-        "logistics": briefing['logistics'].get('summary', 'Neutral'),
-        "narrative": f"Home morale: {briefing['narrative']['home'].get('morale')} | Away: {briefing['narrative']['away'].get('morale')}"
+        "quant": {
+            "final_xg": f"{briefing['final_xg']['home']} vs {briefing['final_xg']['away']}",
+            "win_probs": briefing['quant']['probabilities'],
+            "top_plays": briefing['quant'].get('top_plays', [])
+        },
+        "tactics": {
+            "logic": briefing['tactics'].get('tactical_logic', 'Balanced approach expected.'),
+            "battle": briefing['tactics'].get('key_battle', 'Central midfield control.'),
+            "script": briefing['tactics'].get('game_script', 'Tactical stalemate.')
+        },
+        "logistics": {
+            "summary": briefing['logistics'].get('summary', 'Optimal conditions.'),
+            "fatigue": briefing['logistics'].get('fatigue_score', 0),
+            "risk": briefing['logistics'].get('risk', 'None'),
+            "stamina": briefing['logistics'].get('stamina_impact', 'Minimal')
+        },
+        "narrative": {
+            "home": briefing['narrative']['home'].get('headline', 'No major drama.'),
+            "away": briefing['narrative']['away'].get('headline', 'Stable camp.'),
+            "home_summary": briefing['narrative']['home'].get('summary'),
+            "away_summary": briefing['narrative']['away'].get('summary'),
+            "home_morale": briefing['narrative']['home'].get('morale'),
+            "away_morale": briefing['narrative']['away'].get('morale')
+        },
+        "market": {
+            "best_odds": briefing['market'].get('best_odds'),
+            "vig": briefing['market'].get('market_math', {}).get('vig'),
+            "trap": briefing['market'].get('analysis', {}).get('trap_alert', 'None'),
+            "sharp_signal": briefing['market'].get('analysis', {}).get('sharp_signal', 'None detected')
+        }
     }
     
     formatted_prompt = CLOSER_PROMPT.format(
@@ -288,10 +320,11 @@ def get_todays_matches():
 
 def get_upcoming_matches():
     """
-    Finds matches starting within the next 60-70 minutes (Real System Time).
+    Finds matches starting within the lead time defined in settings.
     """
     now = datetime.now()
-    cutoff = now + timedelta(minutes=65)
+    lead_time = settings.get('GLOBAL_APP_CONFIG.scheduling.alert_lead_time_mins', 60)
+    cutoff = now + timedelta(minutes=lead_time + 5) # +5 for small overlap
     
     upcoming = []
     for m in SCHEDULE:

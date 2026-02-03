@@ -26,18 +26,17 @@ class MorningBriefService:
         logger.info(f"📢 Blasting Morning Brief to {len(users)} users.")
         
         for target_user in users:
-        
-        # Generate Fallback Text
-        fallback = orchestrator.get_schedule_brief(days=1)
+            # Generate Fallback Text
+            fallback = orchestrator.get_schedule_brief(days=1)
 
-        if settings.get('whatsapp.use_templates'):
-            template_name = settings.get('whatsapp.templates.briefing', 'goalmine_alpha_briefing')
-            self.wa.send_template_message(
-                target_user, 
-                template_name, 
-                [today_str, num_edges, top_match],
-                fallback_text=fallback
-            )
-        else:
-            if fallback:
-                self.wa.send_message(target_user, fallback)
+            if settings.get('GLOBAL_APP_CONFIG.whatsapp.use_templates'):
+                template_name = settings.get('GLOBAL_APP_CONFIG.whatsapp.templates.briefing', 'goalmine_alpha_briefing')
+                self.wa.send_template_message(
+                    target_user, 
+                    template_name, 
+                    [today_str, num_edges, top_match],
+                    fallback_text=fallback
+                )
+            else:
+                if fallback:
+                    self.wa.send_message(target_user, fallback)

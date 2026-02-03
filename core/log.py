@@ -7,6 +7,29 @@ from flask import request
 # Initialize colorama for terminal colors
 init(autoreset=True)
 
+def get_logger(name="GoalMine"):
+    """
+    Helper to get a sub-logger that inherits from the main GoalMine configuration.
+    """
+    if not name.startswith("GoalMine"):
+        full_name = f"GoalMine.{name}"
+    else:
+        full_name = name
+    logger = logging.getLogger(full_name)
+    logger.propagate = True 
+    return logger
+
+def clear_log():
+    """
+    Truncates the app.log file to give a fresh start.
+    """
+    from datetime import datetime
+    try:
+        with open('app.log', 'w') as f:
+            f.write(f"--- 🧼 LOG WIPED: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} (Session Refresh) ---\n")
+    except Exception as e:
+        print(f"Failed to clear log: {e}")
+
 class GoalMineFormatter(logging.Formatter):
     """
     Premium Formatter for Terminal Output with icons and vibrant colors.
@@ -80,28 +103,35 @@ def setup_logging():
     logging.basicConfig(level=logging.WARNING)
 
     # 3. GoalMine Master Logger
-    from core.config import settings
-    log_level_str = settings.get('app.log_level', 'INFO').upper()
+    try:
+        from core.config import settings
+        log_level_str = settings.get('GLOBAL_APP_CONFIG.app.log_level', 'INFO').upper()
+    except:
+        log_level_str = 'INFO'
+    
     log_level = getattr(logging, log_level_str, logging.INFO)
-
-    main_logger = logging.getLogger("GoalMine")
-    main_logger.setLevel(log_level)
-    main_logger.propagate = False
 
     # 4. Handlers
     # File Handler: Detailed for debugging, persistent in app.log
     file_handler = logging.FileHandler('app.log', mode='a') # Append for history
     file_handler.setLevel(logging.DEBUG)
-    file_format = logging.Formatter('%(asctime)s | %(levelname)-8s | [%(name)s] | %(message)s')
-    file_handler.setFormatter(file_format)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 
     # Console Handler: Optimized for clean terminal viewing
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
     console_handler.setFormatter(GoalMineFormatter())
 
-    main_logger.addHandler(file_handler)
-    main_logger.addHandler(console_handler)
+    # Setup core loggers
+    for logger_name in ["GoalMine", "WhatsApp", "Database", "Orchestrator", "Agent", "LLM", "Conversation", "KickoffAlerts", "MarketMonitor", "MorningBrief"]:
+        l = logging.getLogger(logger_name)
+        l.setLevel(log_level)
+        l.propagate = False # Ensure these specific loggers don't propagate to root
+        l.addHandler(file_handler)
+        l.addHandler(console_handler)
+
+    main_logger = logging.getLogger("GoalMine") # Get the configured GoalMine logger
+    main_logger.info(f"✅ Logging System Initialized (Level: {log_level_str})")
 
     # Suppress external noise for a cleaner terminal
     # Library noise is suppressed at WARNING unless the app is in DEBUG mode
@@ -116,30 +146,6 @@ def setup_logging():
 
     return main_logger
 
-def get_logger(name="GoalMine"):
-    """
-    Helper to get a sub-logger that inherits from the main GoalMine configuration.
-    Example usage: logger = get_logger("Tactics")
-    """
-    # If the name doesn't start with GoalMine, we prefix it to ensure it inherits settings/handlers
-    # if we were using propagate=True. But since we have custom handlers on "GoalMine",
-    # we'll just attach them if it's a new top-level request.
-    
-    # For now, let's keep all app logic under the "GoalMine" hierarchy or just return a child.
-    if not name.startswith("GoalMine"):
-        full_name = f"GoalMine.{name}"
-    else:
-        full_name = name
-        
-    logger = logging.getLogger(full_name)
-    
-    # If this logger has no handlers and isn't the root, it might not log anything 
-    # if we don't enable propagation or add handlers. 
-    # We want child loggers to propagate up to "GoalMine".
-    logger.propagate = True 
-    
-    return logger
-
 def register_request_logger(app):
     """
     Cleaner Flask request logging.
@@ -150,7 +156,7 @@ def register_request_logger(app):
     def log_response(response):
         from core.config import settings
         # We only care about matching/webhook logs to keep terminal noise down
-        if "webhook" in request.path or settings.get('app.detailed_request_logging'):
+        if "webhook" in request.path or settings.get('GLOBAL_APP_CONFIG.app.detailed_request_logging'):
             status = response.status_code
             symbol = "🟢" if status < 400 else "🔴"
             logger.info(f"{symbol} Net {request.method} {request.path} -> {status}")

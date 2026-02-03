@@ -1,10 +1,10 @@
 import json
 import asyncio
-from core.log import get_logger
+from core.log import get_logger, clear_log
 from services import orchestrator
 from core.config import settings
 from agents.gatekeeper.gatekeeper import Gatekeeper
-from data.scripts.responses import Responses, ButtonResponses
+from prompts.messages_prompts import Responses, ButtonResponses
 from core.generate_bets import generate_bet_recommendations
 
 logger = get_logger("ButtonHandler")
@@ -103,6 +103,34 @@ class ButtonConversationHandler:
             await self._send_schedule_browser(from_number)
             return
 
+        elif intent == "CONV":
+            # 1. Check session age for context-awareness
+            session_info = self.db.get_session_info(from_number)
+            age_mins = session_info.get('age_minutes', 9999)
+            
+            # Get timeout from settings (default to 45 mins)
+            warm_start_limit = settings.get('GLOBAL_APP_CONFIG.retention.session_warm_start_mins', 45)
+            
+            if age_mins > warm_start_limit: 
+                # COLD START: Treat as a fresh morning greeting
+                logger.info(f"👋 Cold Start Greeting ({round(age_mins)} mins). Clearing Logs & Initializing UI.")
+                clear_log() # Wipes app.log for a fresh debug session
+                if settings.get('GLOBAL_APP_CONFIG.whatsapp.use_templates'):
+                    welcome_template = settings.get('BUTTON_FLOW_APP_CONFIG.welcome_template', 'goalmine_welcome')
+                    self.wa.send_template_message(from_number, welcome_template, ["Player"])
+                
+                await self._send_main_menu(from_number)
+            else:
+                # WARM SESSION: Mid-conversation. Don't "Turn it off and on again".
+                logger.info(f"🔄 Warm Greeting ({round(age_mins)} mins). Restoring current flow.")
+                last_state = self.db.load_button_state(from_number)
+                if last_state:
+                    self.wa.send_message(from_number, "Hey! 👋 Let's pick up where we left off.")
+                    self.wa.send_interactive_message(from_number, last_state)
+                else:
+                    await self._send_main_menu(from_number)
+            return
+
         # 4. FINAL FALLBACK: Unclear Input -> Resend Last State
         logger.info(f"⛔ Unclear Input ('{user_input}') -> Checking for last state.")
         last_state = self.db.load_button_state(from_number)
@@ -110,7 +138,7 @@ class ButtonConversationHandler:
         if last_state:
             logger.info(f"🔄 Resending last UI state to {from_number}")
             # Add a small prefix to explain
-            prefix = "⚠️ *Input not recognized.* Please select an option below to continue:\n\n"
+            prefix = ButtonResponses.UNCLEAR_INPUT_PREFIX
             # We clone to avoid modifying the original and then update the body
             resend_obj = last_state.copy()
             if "body" in resend_obj and "text" in resend_obj["body"]:
@@ -132,35 +160,42 @@ class ButtonConversationHandler:
         
         body_text = content["body"]
         if is_fallback:
-            body_text = "I'm currently in Predictor Mode. Please use the buttons below to navigate, or just type the name of a team to start an analysis! 👇\n\n" + body_text
+            body_text = ButtonResponses.FALLBACK_MAIN_MENU_BODY + body_text
+
+        buttons = []
+        menu_config = settings.get('BUTTON_FLOW_APP_CONFIG.menus.main', ["Show_Schedule", "Show_Help"])
+        
+        for btn_id in menu_config:
+            # Map ID to Title
+            title = "View Schedule" if btn_id == "Show_Schedule" else "Help / Rules"
+            if btn_id == "Generate_Bets" and settings.get('BUTTON_FLOW_APP_CONFIG.show_generate_bets', True):
+                title = "🎲 Generate Bets"
+            
+            buttons.append({"type": "reply", "reply": {"id": btn_id, "title": title}})
 
         interactive_obj = {
             "type": "button",
             "header": {"type": "text", "text": content["header"]},
             "body": {"text": body_text},
             "footer": {"text": content["footer"]},
-            "action": {"buttons": [
-                {"type": "reply", "reply": b} for b in content["buttons"]
-            ]}
+            "action": {"buttons": buttons[:3]} # WhatsApp limit is 3 buttons
         }
         self._send_interactive(to_number, interactive_obj)
 
     async def _send_schedule_browser(self, to_number):
-        """Sends a high-level selection between Group Stage and Knockouts."""
+        """Sends the Browser with Groups and Knockouts."""
+        content = ButtonResponses.SCHEDULE_BROWSER
         interactive_obj = {
             "type": "list",
-            "header": {"type": "text", "text": "📅 World Cup Schedule"},
-            "body": {"text": "How would you like to browse the 2026 World Cup fixtures?"},
-            "footer": {"text": "GoalMine AI 🏆"},
+            "header": {"type": "text", "text": content["header"]},
+            "body": {"text": content["body"]},
+            "footer": {"text": content["footer"]},
             "action": {
-                "button": "Select Stage",
+                "button": content["button"],
                 "sections": [
                     {
                         "title": "Tournament Phases",
-                        "rows": [
-                            {"id": "Show_Groups_Menu", "title": "🌍 Group Stages", "description": "Browse Groups A-L"},
-                            {"id": "Show_Knockouts_Menu", "title": "🏆 Knockout Rounds", "description": "Round of 32 to The Final"}
-                        ]
+                        "rows": content["rows"]
                     }
                 ]
             }
@@ -172,12 +207,13 @@ class ButtonConversationHandler:
         """Deeper menu for Groups (Split into two messages if needed, or two sections)."""
         # We can use two sections, but 12 groups is still > 10 rows.
         # We'll split into A-F and G-L.
+        content = ButtonResponses.GROUP_SELECTOR
         interactive_obj = {
             "type": "list",
-            "header": {"type": "text", "text": "🌍 Group Stage Selector"},
-            "body": {"text": "Select a group to see its matches and analysis options."},
+            "header": {"type": "text", "text": content["header"]},
+            "body": {"text": content["body"]},
             "action": {
-                "button": "Choose Group",
+                "button": content["button"],
                 "sections": [
                     {
                         "title": "Groups A-F",
@@ -200,12 +236,13 @@ class ButtonConversationHandler:
         self._send_interactive(to_number, interactive_obj)
 
     async def _send_groups_g_l(self, to_number):
+        content = ButtonResponses.GROUP_SELECTOR_GL
         interactive_obj = {
             "type": "list",
-            "header": {"type": "text", "text": "🌍 Group Stage Selector (G-L)"},
-            "body": {"text": "Continuing the group stage fixtures..."},
+            "header": {"type": "text", "text": content["header"]},
+            "body": {"text": content["body"]},
             "action": {
-                "button": "Choose Group",
+                "button": content["button"],
                 "sections": [
                     {
                         "title": "Groups G-L",
@@ -222,22 +259,17 @@ class ButtonConversationHandler:
         self._send_interactive(to_number, interactive_obj)
 
     async def _send_knockouts_selection(self, to_number):
+        content = ButtonResponses.KNOCKOUT_SELECTOR
         interactive_obj = {
             "type": "list",
-            "header": {"type": "text", "text": "🏆 Knockout Stages"},
-            "body": {"text": "The road to the trophy. Select a round to view upcoming knockout matches."},
+            "header": {"type": "text", "text": content["header"]},
+            "body": {"text": content["body"]},
             "action": {
-                "button": "Choose Round",
+                "button": content["button"],
                 "sections": [
                     {
                         "title": "Knockout Brackets",
-                        "rows": [
-                            {"id": "Stage_Round_of_32", "title": "Round of 32"},
-                            {"id": "Stage_Round_of_16", "title": "Round of 16"},
-                            {"id": "Stage_Quarter-finals", "title": "Quarter-finals"},
-                            {"id": "Stage_Semi-finals", "title": "Semi-finals"},
-                            {"id": "Stage_Final", "title": "The Grand Final"}
-                        ]
+                        "rows": content["rows"]
                     }
                 ]
             }
@@ -255,7 +287,7 @@ class ButtonConversationHandler:
             matches = [m for m in all_matches if m.get('group') == filter_name]
 
         if not matches:
-            self.wa.send_message(to_number, f"⚠️ No matches found for {filter_name}.")
+            self.wa.send_message(to_number, ButtonResponses.NO_MATCHES.format(filter_name=filter_name))
             await self._send_schedule_browser(to_number)
             return
 
@@ -285,10 +317,10 @@ class ButtonConversationHandler:
         interactive_obj = {
             "type": "list",
             "header": {"type": "text", "text": f"🏆 {filter_name}"},
-            "body": {"text": f"Select a fixture from {filter_name} to launch the swarm intelligence analysis."},
-            "footer": {"text": "GoalMine Tournament Browser"},
+            "body": {"text": ButtonResponses.MATCH_LIST_BODY.format(filter_name=filter_name)},
+            "footer": {"text": ButtonResponses.MATCH_LIST_FOOTER},
             "action": {
-                "button": "View Fixtures",
+                "button": ButtonResponses.MATCH_LIST_BUTTON,
                 "sections": sections
             }
         }
@@ -297,16 +329,8 @@ class ButtonConversationHandler:
 
     async def _send_help_menu(self, to_number):
         """Sends the Help/About info."""
-        msg = (
-            "🤖 *GoalMine AI Help*\n\n"
-            "I am an advanced AI prediction engine for the 2026 World Cup.\n"
-            "My Swarm of agents analyzes:\n"
-            "• Performance Data (xG)\n"
-            "• Market Odds\n"
-            "• Tactical Matchups\n"
-            "• Logistics (Weather/Travel)\n\n"
-            "Tap *Analyze Matches* to start."
-        )
+        support = settings.get('GLOBAL_APP_CONFIG.app.support_contact', '@Admin')
+        msg = ButtonResponses.HELP_MENU + f"\n\nFor support, contact {support}"
         
         nav_obj = {
             "type": "button",
@@ -353,17 +377,21 @@ class ButtonConversationHandler:
 
     async def _send_analysis_footer(self, to_number):
         """Sends the post-analysis navigation options."""
+        content = ButtonResponses.ANALYSIS_FOOTER
+        buttons = []
+        if settings.get('BUTTON_FLOW_APP_CONFIG.show_generate_bets', True):
+            buttons.append({"type": "reply", "reply": {"id": "Generate_Bets", "title": "🎲 Generate Bets"}})
+        
+        buttons.append({"type": "reply", "reply": {"id": "Show_Schedule", "title": "📅 More Matches"}})
+        
+        if settings.get('BUTTON_FLOW_APP_CONFIG.show_back_button', True):
+            buttons.append({"type": "reply", "reply": {"id": "Show_MainMenu", "title": "🔙 Main Menu"}})
+
         interactive_obj = {
             "type": "button",
-            "header": {"type": "text", "text": "📊 Analysis Complete"},
-            "body": {"text": "What would you like to do next?"},
-            "action": {
-                "buttons": [
-                    {"type": "reply", "reply": {"id": "Generate_Bets", "title": "🎲 Generate Bets"}},
-                    {"type": "reply", "reply": {"id": "Show_Schedule", "title": "📅 More Matches"}},
-                    {"type": "reply", "reply": {"id": "Show_MainMenu", "title": "🔙 Main Menu"}}
-                ]
-            }
+            "header": {"type": "text", "text": content["header"]},
+            "body": {"text": content["body"]},
+            "action": {"buttons": buttons[:3]}
         }
         self._send_interactive(to_number, interactive_obj)
 
@@ -398,7 +426,7 @@ class ButtonConversationHandler:
             save_data = briefing.copy()
             save_data.update({
                 'match': match_info,  # Store match info for context
-                'budget': 100,  # Default, can be overridden later
+                'budget': settings.get('GLOBAL_APP_CONFIG.strategy.default_budget', 100),  # Use setting instead of hardcoded 100
                 'num_bets': 1,  # Default
                 'god_view': briefing
             })
@@ -443,4 +471,5 @@ class ButtonConversationHandler:
 
         except Exception as e:
             logger.error(f"Strict Analysis failed: {e}")
-            self.wa.send_message(to_number, "⚠️ operational error.")
+            support = settings.get('GLOBAL_APP_CONFIG.app.support_contact', '@Admin')
+            self.wa.send_message(to_number, ButtonResponses.ANALYSIS_ERROR.format(support=support))

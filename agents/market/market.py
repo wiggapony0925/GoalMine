@@ -59,7 +59,8 @@ class MarketAgent:
                 "best_bet": "Pass",
                 "bookie": "N/A",
                 "value_score": "C",
-                "edge_percentage": 0.0
+                "edge_percentage": 0.0,
+                "sharp_signal": "None detected."
             }
         
         return {

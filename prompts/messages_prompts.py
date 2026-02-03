@@ -2,7 +2,7 @@ import random
 
 class Responses:
     """
-    Central repository for premium, conversational bot strings.
+    Central repository for premium, conversational bot strings used in Conversational Mode.
     """
     
     GREETING = (
@@ -38,9 +38,7 @@ class Responses:
     ]
     
     ANALYSIS_ERROR = "⚠️ Something went wrong with the analysis. Let me try again..."
-    
     CONTEXT_ERROR = "I'm having trouble accessing that information right now. Could you rephrase your question?"
-    
     GENERAL_HELP = (
         "Hey! I'm GoalMine, your World Cup betting assistant. "
         "I can analyze matches, check schedules, and identify value bets. "
@@ -61,7 +59,6 @@ class Responses:
     
     @staticmethod
     def get_confirmation(match):
-        """Returns a natural confirmation prompt for a match."""
         return random.choice(Responses.CONFIRMATION_PROMPTS).format(match=match)
 
     NO_MATCHES_TODAY = "📅 *Calendar Check:* No official World Cup matches scheduled for today.\n\nTry asking for the 'Full Schedule' or analyze an upcoming clash like 'Analyze USA vs Mexico'."
@@ -71,6 +68,7 @@ class Responses:
 class ButtonResponses:
     """
     Dedicated copy for the Button-Strict Interaction Mode.
+    Managed here to allow easy UI personality shifts.
     """
     
     MAIN_MENU = {
@@ -82,26 +80,60 @@ class ButtonResponses:
             {"id": "Show_Help", "title": "Help / Rules"}
         ]
     }
+
+    FALLBACK_MAIN_MENU_BODY = "I'm currently in Predictor Mode. Please use the buttons below to navigate, or just type the name of a team to start an analysis! 👇\n\n"
+    UNCLEAR_INPUT_PREFIX = "⚠️ *Input not recognized.* Please select an option below to continue:\n\n"
     
-    SCHEDULE_LIST = {
-        "header": "📅 Operations Schedule",
-        "body": "Select a match to initialize swarm intelligence:",
-        "footer": "Select Match",
-        "button": "View Fixtures"
+    SCHEDULE_BROWSER = {
+        "header": "📅 World Cup Schedule",
+        "body": "How would you like to browse the 2026 World Cup fixtures?",
+        "footer": "GoalMine AI 🏆",
+        "button": "Select Stage",
+        "rows": [
+            {"id": "Show_Groups_Menu", "title": "🌍 Group Stages", "description": "Browse Groups A-L"},
+            {"id": "Show_Knockouts_Menu", "title": "🏆 Knockout Rounds", "description": "Round of 32 to The Final"}
+        ]
     }
-    
-    HELP_TEXT = (
-        "🛡️ *GoalMine Protocol Rules*\n\n"
-        "1. This is a strictly controlled environment.\n"
-        "2. Text input is disabled. Use the menus.\n"
-        "3. We only cover official World Cup 2026 matches.\n"
+
+    GROUP_SELECTOR = {
+        "header": "🌍 Group Stage Selector",
+        "body": "Select a group to see its matches and analysis options.",
+        "button": "Choose Group"
+    }
+
+    GROUP_SELECTOR_GL = {
+        "header": "🌍 Group Stage Selector (G-L)",
+        "body": "Continuing the group stage fixtures...",
+        "button": "Choose Group"
+    }
+
+    KNOCKOUT_SELECTOR = {
+        "header": "🏆 Knockout Stages",
+        "body": "The road to the trophy. Select a round to view upcoming knockout matches.",
+        "button": "Choose Round",
+        "rows": [
+            {"id": "Stage_Round_of_32", "title": "Round of 32"},
+            {"id": "Stage_Round_of_16", "title": "Round of 16"},
+            {"id": "Stage_Quarter-finals", "title": "Quarter-finals"},
+            {"id": "Stage_Semi-finals", "title": "Semi-finals"},
+            {"id": "Stage_Final", "title": "The Grand Final"}
+        ]
+    }
+
+    MATCH_LIST_BODY = "Select a fixture from {filter_name} to launch the swarm intelligence analysis."
+    MATCH_LIST_FOOTER = "GoalMine Tournament Browser"
+    MATCH_LIST_BUTTON = "View Fixtures"
+
+    HELP_MENU = (
+        "🤖 *GoalMine AI Help*\n\n"
+        "I am an advanced AI prediction engine for the 2026 World Cup.\n"
+        "My Swarm of agents analyzes:\n"
+        "• Performance Data (xG)\n"
+        "• Market Odds\n"
+        "• Tactical Matchups\n"
+        "• Logistics (Weather/Travel)\n\n"
+        "Tap *Analyze Matches* to start."
     )
-    
-    NO_MATCHES = "⚠️ No matches found in the immediate schedule."
-    MATCH_NOT_FOUND = "❌ Error: Match data not found."
-    ANALYSIS_START = "🚀 Initializing Swarm for {home} vs {away}..."
-    ANALYSIS_ERROR = "⚠️ Operational error during analysis."
-    REJECT_TEXT = "⛔ Strict Mode: Input rejected. Please use the menu options."
 
     BET_GENERATION_MENU = {
         "header": "🎲 Tactical Bet Generator",
@@ -113,3 +145,19 @@ class ButtonResponses:
             {"id": "Bets_5", "title": "5 Accumulator"}
         ]
     }
+
+    ANALYSIS_FOOTER = {
+        "header": "📊 Analysis Complete",
+        "body": "What would you like to do next?",
+        "buttons": [
+            {"id": "Generate_Bets", "title": "🎲 Generate Bets"},
+            {"id": "Show_Schedule", "title": "📅 More Matches"},
+            {"id": "Show_MainMenu", "title": "🔙 Main Menu"}
+        ]
+    }
+    
+    NO_MATCHES = "⚠️ No matches found for {filter_name}."
+    MATCH_NOT_FOUND = "❌ Error: Match data not found."
+    ANALYSIS_START = "🚀 Initializing Swarm for {home} vs {away}..."
+    ANALYSIS_ERROR = "⚠️ operational error. Please contact {support} if this persists."
+    REJECT_TEXT = "⛔ Strict Mode: Input rejected. Please use the menu options."

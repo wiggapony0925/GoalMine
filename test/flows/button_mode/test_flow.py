@@ -3,8 +3,8 @@ from unittest.mock import MagicMock, AsyncMock, patch
 import asyncio
 from dotenv import load_dotenv
 load_dotenv()
-from services.button_conversation import ButtonConversationHandler
-from data.scripts.responses import ButtonResponses
+from services.buttonConversationalFlow.button_conversation import ButtonConversationHandler
+from prompts.messages_prompts import ButtonResponses
 
 class TestButtonConversationFlow(unittest.IsolatedAsyncioTestCase):
     

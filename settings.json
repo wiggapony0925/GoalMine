@@ -1,99 +1,103 @@
 {
-    "app": {
-        "maintenance_mode": false, // Set to true to pause the bot and return 503 to WhatsApp -> app.py
-        "interaction_mode": "BUTTON_STRICT", // Options: "CONVERSATIONAL", "BUTTON_STRICT" -> app.py
-        "log_level": "INFO", // Controls terminal verbosity: DEBUG, INFO (includes LLM stats), WARNING, ERROR -> core/log.py
-        "support_contact": "@Admin" // Contact handle shown in system error messages -> app.py
-    },
-    "whatsapp": {
-        "use_templates": true, // Use professional Meta Templates -> core/whatsapp.py
-        "templates": {
-            "welcome": "goalmine_welcome", // Greeting template -> services/conversation.py
-            "briefing": "goalmine_alpha_briefing", // Daily brief template -> services/orchestrator.py
-            "kickoff": "goalmine_kickoff_alert", // Kickoff alert template -> services/orchestrator.py
-            "sharp_move": "goalmine_sharp_move" // Market shift alert -> services/orchestrator.py
+    "GLOBAL_APP_CONFIG": {
+        "app": {
+            "maintenance_mode": false,
+            "interaction_mode": "BUTTON_STRICT", // "CONVERSATIONAL" or "BUTTON_STRICT"
+            "log_level": "INFO",
+            "support_contact": "@Admin",
+            "detailed_request_logging": false
+        },
+        "whatsapp": {
+            "use_templates": true,
+            "templates": {
+                "briefing": "goalmine_alpha_briefing",
+                "kickoff": "goalmine_kickoff_alert",
+                "sharp_move": "goalmine_sharp_move"
+            }
+        },
+        "agents": {
+            "logistics": true,
+            "tactics": true,
+            "market": true,
+            "narrative": true,
+            "quant": true
+        },
+        "strategy": {
+            "default_budget": 100,
+            "kelly_multiplier": 1.0,
+            "max_stake_pct": 10.0,
+            "min_edge_threshold": 0.01,
+            "swarm_cache_ttl_hours": 6
+        },
+        "scheduling": {
+            "morning_brief_hour": 5,
+            "morning_brief_minute": 0,
+            "kickoff_alert_interval_mins": 15,
+            "alert_lead_time_mins": 60,
+            "market_monitor_interval_mins": 30
+        },
+        "llm_core": {
+            "default_model": "gpt-4o",
+            "temperature": 0.3,
+            "gatekeeper": {
+                "model": "gpt-4o-mini",
+                "temperature": 0.1
+            },
+            "logistics": {
+                "model": "gpt-4o",
+                "temperature": 0.3
+            },
+            "tactics": {
+                "model": "gpt-4o",
+                "temperature": 0.3
+            },
+            "market": {
+                "model": "gpt-4o",
+                "temperature": 0.3
+            },
+            "narrative": {
+                "model": "gpt-4o-mini",
+                "temperature": 0.5
+            },
+            "closer": {
+                "model": "gpt-4o",
+                "temperature": 0.5
+            },
+            "extractor": {
+                "model": "gpt-4o-mini",
+                "temperature": 0.1
+            },
+            "qa_assistant": {
+                "model": "gpt-4o",
+                "temperature": 0.3
+            }
+        },
+        "retention": {
+            "god_view_ttl_hours": 3,
+            "session_warm_start_mins": 45
         }
     },
-    "button_flow": {
-        "show_back_button": true, // Toggle 'Back to Main' button -> services/button_conversation.py
-        "show_generate_bets": true, // (Future) Toggle bet generation button -> services/button_conversation.py
+    "BUTTON_FLOW_APP_CONFIG": {
+        "show_back_button": true,
+        "show_generate_bets": true,
+        "welcome_template": "goalmine_welcome",
         "menus": {
             "main": [
                 "Show_Schedule",
                 "Show_Help"
-            ], // Main menu structure -> services/button_conversation.py
+            ],
             "analysis_footer": [
                 "Back_To_Main"
-            ] // Analysis result footer -> services/button_conversation.py
+            ]
         }
     },
-    "agents": {
-        "logistics": true, // Toggle fatigue/venue analysis -> agents/logistics/logistics.py
-        "tactics": true, // Toggle tactical/form analysis -> agents/tactics/tactics.py
-        "market": true, // Toggle live odds/overround analysis -> agents/market/market.py
-        "narrative": true, // Toggle news/reddit sentiment analysis -> agents/narrative/narrative.py
-        "quant": true // Toggle final mathematical ROI calculation -> agents/quant/quant.py
-    },
-    "strategy": {
-        "default_budget": 100, // Fallback budget if user doesn't specify one -> agents/quant/quant.py
-        "kelly_multiplier": 1.0, // 1.0 = Full Kelly (Aggressive), 0.5 = Half Kelly (Safe) -> agents/quant/quant.py
-        "max_stake_pct": 10.0, // Maximum % of budget allowed on a single bet -> agents/quant/quant.py
-        "min_edge_threshold": 0.01, // Minimum ROI % (e.g. 0.01 = 1%) to even recommend a bet -> agents/quant/quant.py
-        "swarm_cache_ttl_hours": 6 // Hours to reuse analysis for the same match -> services/orchestrator.py
-    },
-    "scheduling": {
-        "morning_brief_hour": 5, // Hour (24h) to send decision brief -> app.py
-        "morning_brief_minute": 0, // Minute to send decision brief -> app.py
-        "kickoff_alert_interval_mins": 15, // Check frequency for matches -> app.py
-        "alert_lead_time_mins": 60 // Minutes before kickoff to alert -> services/orchestrator.py
-    },
-    "llm": {
-        "default_model": "gpt-4o", // Fallback if no specific config
-        "temperature": 0.3, // Default creativity (0=Rigid, 1=Creative)
-        // ============ AGENT-SPECIFIC MODELS ============
-        // Cost optimization: Use gpt-4o-mini for simple tasks, gpt-4o for complex reasoning
-        "gatekeeper": {
-            "model": "gpt-4o-mini", // Intent classification (simple task)
-            "temperature": 0.1 // Very deterministic
+    "CONVERSATION_FLOW_APP_CONFIG": {
+        "llm_chat": {
+            "conversation": {
+                "model": "gpt-4o",
+                "temperature": 0.7
+            }
         },
-        "logistics": {
-            "model": "gpt-4o", // Complex altitude/fatigue calculations
-            "temperature": 0.3
-        },
-        "tactics": {
-            "model": "gpt-4o", // Advanced tactical reasoning
-            "temperature": 0.3
-        },
-        "market": {
-            "model": "gpt-4o", // Identify value/trap lines
-            "temperature": 0.3
-        },
-        "narrative": {
-            "model": "gpt-4o-mini", // Sentiment analysis (simple)
-            "temperature": 0.5 // Higher for creative interpretation
-        },
-        "quant": {
-            "model": "gpt-4o", // Not used (pure Python math)
-            "temperature": 0.0
-        },
-        "closer": {
-            "model": "gpt-4o", // Final synthesis and bet recommendations
-            "temperature": 0.5 // Creative bet discovery
-        },
-        "conversation": {
-            "model": "gpt-4o", // Natural conversation
-            "temperature": 0.7 // Friendly and natural
-        },
-        "extractor": {
-            "model": "gpt-4o-mini", // Team name extraction
-            "temperature": 0.1
-        },
-        "qa_assistant": {
-            "model": "gpt-4o", // Follow-up questions about God View
-            "temperature": 0.3
-        }
-    },
-    "retention": {
-        "god_view_ttl_hours": 3 // Hours before user memory is wiped -> core/database.py
+        "greeting_style": "ANALYST"
     }
 }

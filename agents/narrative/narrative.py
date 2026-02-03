@@ -51,7 +51,8 @@ class NarrativeAgent:
 
         reddit_entries = []
         for h in reddit_data.get('headlines', []):
-            entry = f"- [REDDIT] TITLE: {h['title']}"
+            sub_info = f" (r/{h['subreddit']})" if h.get('subreddit') else ""
+            entry = f"- [REDDIT{sub_info}] TITLE: {h['title']}"
             if h.get('body'):
                 entry += f" | CONTENT: {h['body'][:400]}"
             if h.get('comments'):
@@ -93,5 +94,6 @@ class NarrativeAgent:
             "adjustment": analysis_json.get('narrative_adjustment', 0.0),
             "headline": analysis_json.get('headline_scoop', 'N/A'),
             "summary": analysis_json.get('insider_summary', 'N/A'),
+            "mention_count": reddit_data.get('mention_count', 0), # Pass through to logger
             "raw_analysis": analysis_json
         }

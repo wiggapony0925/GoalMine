@@ -5,7 +5,7 @@ from core.log import get_logger
 from services import orchestrator
 from agents.gatekeeper.gatekeeper import Gatekeeper
 from core.initializer.database import Database
-from data.scripts.responses import Responses
+from prompts.messages_prompts import Responses
 from core.initializer.llm import query_llm
 from core.config import settings
 
@@ -43,20 +43,31 @@ class ConversationHandler:
         extracted_data = extracted_data or {}
         logger.info(f"🎯 Intent: {intent}, Extracted: {extracted_data}")
 
-        # 2.1 FIRST TIME GREETING / MANUAL RULES OVERRIDE
-        # We check for an explicit rules flag or manual 'rules'/'help' keyword
+        # 2.1 SESSION TIMING & GREETING
+        # Check session age for context-awareness (Cold Start vs mid-convo)
+        session_info = self.db.get_session_info(from_number)
+        age_mins = session_info.get('age_minutes', 9999)
+        warm_start_limit = settings.get('GLOBAL_APP_CONFIG.retention.session_warm_start_mins', 45)
+        is_cold_start = age_mins > warm_start_limit
+
         words = set(msg_body.lower().split())
         greeting_words = {"hi", "hello", "hola", "hey", "sup", "yo", "start", "help", "rules"}
         is_greeting = not (words.isdisjoint(greeting_words))
         has_seen_rules = user_state.get('has_seen_v2_rules', False)
         manual_rules = "help" in words or "rules" in words
 
-        if (is_greeting and not has_seen_rules) or manual_rules:
-            logger.info(f"🆕 Sending v2 Rules Greeting to {from_number}")
+        if is_cold_start or (is_greeting and not has_seen_rules) or manual_rules:
+            logger.info(f"👋 Cold Start / Greeting detected ({age_mins} mins). Initializing Context.")
+            
+            # Wipe logs and session if cold start
+            if is_cold_start:
+                from core.log import clear_log
+                clear_log()
+                user_state = {'has_seen_v2_rules': True} # Start fresh context
             
             # MODE CHECK: If Button-Strict, use Template
-            if settings.get('app.interaction_mode') == "BUTTON_STRICT" and settings.get('whatsapp.use_templates'):
-                template_name = settings.get('whatsapp.templates.welcome', 'goalmine_welcome')
+            if settings.get('GLOBAL_APP_CONFIG.app.interaction_mode') == "BUTTON_STRICT" and settings.get('GLOBAL_APP_CONFIG.whatsapp.use_templates'):
+                template_name = settings.get('BUTTON_FLOW_APP_CONFIG.welcome_template', 'goalmine_welcome')
                 self.wa.send_template_message(from_number, template_name, [], fallback_text=Responses.get_greeting())
             else:
                 self.wa.send_message(from_number, Responses.get_greeting())
@@ -210,7 +221,8 @@ class ConversationHandler:
         Triggers the swarm and speaks the result.
         """
         # Extract parameters
-        budget = extracted_data.get('budget', 100) if extracted_data else match_info.get('budget', 100)
+        default_budget = settings.get('GLOBAL_APP_CONFIG.strategy.default_budget', 100)
+        budget = extracted_data.get('budget', default_budget) if extracted_data else match_info.get('budget', default_budget)
         num_bets = extracted_data.get('num_bets', 1) if extracted_data else match_info.get('num_bets', 1)
         
         home = match_info.get('home_team', 'Team A')
@@ -353,7 +365,7 @@ class ConversationHandler:
 
         # 2. deciding how to send it based on Mode
         # 2. deciding how to send it based on Mode
-        if settings.get('app.interaction_mode') == "BUTTON_STRICT":
+        if settings.get('GLOBAL_APP_CONFIG.app.interaction_mode') == "BUTTON_STRICT":
             # [INTERACTIVE LIST] Dynamic Schedule Menu
             # Fetch real upcoming matches to populate the list
             upcoming = orchestrator.get_upcoming_matches()[:8] # Max 10 rows allow

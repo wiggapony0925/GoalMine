@@ -11,13 +11,10 @@ import hashlib
 from flask import Flask, request, jsonify, render_template_string
 from apscheduler.schedulers.background import BackgroundScheduler
 from collections import deque
-from core.log import setup_logging, register_request_logger, print_start_banner
-from core.initializer.whatsapp import WhatsAppClient
-from services.conversationalFlow.conversation import ConversationHandler
-from services.buttonConversationalFlow.button_conversation import ButtonConversationHandler
-from services import orchestrator
+from core import setup_logging, register_request_logger, print_start_banner, settings
+from core.initializer import WhatsAppClient, Database
+from services import ConversationHandler, ButtonConversationHandler, orchestrator
 from services._automatic_messages import MorningBriefService, KickoffAlertService, MarketMonitor
-from core.config import settings
 
 # --- SETUP ---
 logger = setup_logging()
@@ -50,10 +47,9 @@ PROCESSED_IDS = set()
 ID_QUEUE = deque(maxlen=500)
 
 # Dynamic Handler Selection
-from core.initializer.database import Database
 db_client = Database()
 
-if settings.get('app.interaction_mode') == "BUTTON_STRICT":
+if settings.get('GLOBAL_APP_CONFIG.app.interaction_mode') == "BUTTON_STRICT":
     conv_handler = ButtonConversationHandler(wa_client, db_client)
     logger.info("🛡️ STRICT MODE ACTIVATED: Using ButtonConversationHandler")
 else:
@@ -79,18 +75,18 @@ scheduler = BackgroundScheduler()
 scheduler.add_job(
     morning_brief_job, 
     'cron', 
-    hour=settings.get('scheduling.morning_brief_hour', 5), 
-    minute=settings.get('scheduling.morning_brief_minute', 0)
+    hour=settings.get('GLOBAL_APP_CONFIG.scheduling.morning_brief_hour', 5), 
+    minute=settings.get('GLOBAL_APP_CONFIG.scheduling.morning_brief_minute', 0)
 )
 scheduler.add_job(
     kickoff_alert_job, 
     'interval', 
-    minutes=settings.get('scheduling.kickoff_alert_interval_mins', 15)
+    minutes=settings.get('GLOBAL_APP_CONFIG.scheduling.kickoff_alert_interval_mins', 15)
 )
 scheduler.add_job(
     market_monitor_job,
     'interval',
-    minutes=settings.get('scheduling.market_monitor_interval_mins', 30)
+    minutes=settings.get('GLOBAL_APP_CONFIG.scheduling.market_monitor_interval_mins', 30)
 )
 scheduler.start()
 
@@ -180,7 +176,7 @@ def data_deletion_status():
 @app.route("/webhook", methods=["GET", "POST"])
 async def webhook():
     # Maintenance Check
-    if settings.get('app.maintenance_mode'):
+    if settings.get('GLOBAL_APP_CONFIG.app.maintenance_mode'):
         logger.warning("🚫 Webhook hit while in Maintenance Mode. Ignoring.")
         return "Service Temporarily Unavailable", 503
 

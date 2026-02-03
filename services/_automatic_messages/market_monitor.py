@@ -52,7 +52,7 @@ class MarketMonitor:
                             move = abs(price - prev_price) / prev_price
                             if move >= self.threshold:
                                 logger.info(f"🔥 Significant Move Detected: {home_team} vs {away_team} ({team}) moved {round(move*100, 1)}%")
-                                await self._trigger_alerts(home_team, away_team, team, prev_price, price)
+                                await self._trigger_alerts(home_team, away_team, team, prev_price, price, move)
                 
                 # Save current odds for next comparison
                 self.db.save_global_odds(match_id, outcomes)
@@ -60,7 +60,7 @@ class MarketMonitor:
         except Exception as e:
             logger.error(f"Market Monitor Core Failure: {e}")
 
-    async def _trigger_alerts(self, home, away, team, old_price, new_price):
+    async def _trigger_alerts(self, home, away, team, old_price, new_price, move):
         """Sends the alert to all active users."""
         direction = "UP" if new_price < old_price else "DOWN" # Lower price means more money/favorites
         alert_msg = (
@@ -89,12 +89,13 @@ class MarketMonitor:
             }
             
             # Use templates if enabled
-            if settings.get('whatsapp.use_templates'):
-                 template_name = settings.get('whatsapp.templates.sharp_move', 'goalmine_sharp_move')
+            if settings.get('GLOBAL_APP_CONFIG.whatsapp.use_templates'):
+                 template_name = settings.get('GLOBAL_APP_CONFIG.whatsapp.templates.sharp_move', 'goalmine_sharp_move')
+                 # Approved Template has 2 params: {{1}} = Match, {{2}} = % Change
                  self.wa.send_template_message(
                      user_phone, 
                      template_name, 
-                     [home, away, team, str(old_price), str(new_price)],
+                     [f"{home} vs {away} ({team})", str(round(move * 100, 1))],
                      fallback_text=alert_msg
                  )
             else:

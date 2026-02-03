@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from typing import Dict, Optional, List, Any
 from supabase import create_client
 from core.log import get_logger
+from core.log import get_logger
 
 logger = get_logger("Database")
 
@@ -46,53 +47,47 @@ class Database:
 
     def save_chat_context(self, user_phone: str, context: List[Dict]):
         """
-        Saves the active conversation history (Vector Store lite).
-        
-        Table: active_sessions
-        Schema: phone (PK), messages (JSONB), last_active, interactive_state (New)
+        Saves the active conversation history inside the 'sessions' table.
         """
         try:
-            self.client.table('active_sessions').upsert({
-                "phone": str(user_phone),
-                "messages": context,
-                "last_active": datetime.utcnow().isoformat()
-            }).execute()
+            # Load existing to not overwrite other state
+            existing = self.load_memory(user_phone) or {}
+            existing["messages"] = context
+            
+            self.save_memory(user_phone, existing)
             logger.info(f"💬 Chat context saved for {user_phone}")
         except Exception as e:
             logger.error(f"Memory Save Error: {e}")
 
     def save_button_state(self, user_phone: str, interactive_obj: Dict):
         """
-        Saves the last sent interactive message so we can resend it on error.
-        
-        We use the 'users' table to store persistent 'UI state'.
+        Saves the last sent interactive message inside the 'sessions' table.
         """
         try:
-            self.client.table('active_sessions').upsert({
-                "phone": str(user_phone),
-                "interactive_state": interactive_obj,
-                "last_active": datetime.utcnow().isoformat()
-            }).execute()
+            existing = self.load_memory(user_phone) or {}
+            existing["interactive_state"] = interactive_obj
+            
+            self.save_memory(user_phone, existing)
             logger.info(f"💾 Interactive state persisted for {user_phone}")
         except Exception as e:
             logger.error(f"Failed to save button state for {user_phone}: {e}")
 
     def load_button_state(self, user_phone: str) -> Optional[Dict]:
-        """Loads the last interactive message for resending."""
+        """Loads the last interactive message from the 'sessions' blob."""
         try:
-            res = self.client.table('active_sessions').select("interactive_state").eq("phone", str(user_phone)).execute()
-            if res.data:
-                return res.data[0].get("interactive_state")
+            data = self.load_memory(user_phone)
+            if data and "interactive_state" in data:
+                return data["interactive_state"]
         except Exception as e:
             logger.warning(f"No button state found for {user_phone}: {e}")
         return None
 
     def load_chat_context(self, user_phone: str) -> List[Dict]:
-        """Loads the last conversation for context window."""
+        """Loads the last conversation from the 'sessions' blob."""
         try:
-            res = self.client.table('active_sessions').select("messages").eq("phone", str(user_phone)).execute()
-            if res.data:
-                return res.data[0].get("messages", [])
+            data = self.load_memory(user_phone)
+            if data and "messages" in data:
+                return data["messages"]
         except Exception as e:
             logger.warning(f"No chat context found for {user_phone}: {e}")
         return []
@@ -107,7 +102,7 @@ class Database:
                 stake, model_version, created_at
         """
         try:
-            self.client.table('predictions').insert({
+            self.client.table(TABLE_PREDICTIONS).insert({
                 "user_phone": str(user_phone),
                 "match_id": match_id,
                 "predicted_outcome": prediction.get('selection'),
@@ -121,23 +116,58 @@ class Database:
         except Exception as e:
             logger.error(f"Failed to log bet: {e}")
 
-    def save_memory(self, user_phone: str, data: Dict):
+    def get_session_info(self, user_phone: str) -> Dict[str, Any]:
         """
-        Legacy method for backward compatibility.
-        Saves user session data (God View) to Supabase.
-        
-        Table: sessions
-        Schema: phone, god_view (JSONB), created_at
+        Returns { 'data': god_view_dict, 'age_minutes': float }
+        Used for context-aware greetings.
         """
         try:
+            res = self.client.table('sessions').select("god_view, created_at").eq("phone", str(user_phone)).order("created_at", desc=True).limit(1).execute()
+            if not res.data:
+                return {"data": None, "age_minutes": 9999}
+            
+            record = res.data[0]
+            god_view = record.get("god_view")
+            created_at_str = record.get("created_at")
+            
+            if not created_at_str:
+                return {"data": god_view, "age_minutes": 9999}
+
+            created_at_dt = datetime.fromisoformat(created_at_str.replace('Z', '+00:00'))
+            now = datetime.now(timezone.utc) if created_at_dt.tzinfo else datetime.utcnow()
+            age_minutes = (now - created_at_dt).total_seconds() / 60.0
+            
+            return {"data": god_view, "age_minutes": age_minutes}
+        except Exception as e:
+            logger.error(f"Error getting session info: {e}")
+            return {"data": None, "age_minutes": 9999}
+
+    def save_memory(self, user_phone: str, data: Dict):
+        """
+        Saves user session data to Supabase.
+        MERGE LOGIC: Fetches existing data first to avoid overwriting 'messages' or 'interactive_state'.
+        """
+        try:
+            # 1. Load existing data for this user
+            res = self.client.table('sessions').select("god_view").eq("phone", str(user_phone)).limit(1).execute()
+            
+            merged_data = data
+            if res.data:
+                existing_god_view = res.data[0].get("god_view", {})
+                # Perform a shallow merge - 'data' takes precedence but we keep 'messages' and 'interactive_state'
+                # if they aren't in the new payload.
+                merged_data = existing_god_view.copy()
+                merged_data.update(data)
+
+            # 2. Upsert the merged blob
             self.client.table('sessions').upsert({
                 "phone": str(user_phone),
-                "god_view": data,
-                "created_at": datetime.now(timezone.utc).isoformat() # Refresh TTL on every save
+                "god_view": merged_data,
+                "created_at": datetime.now(timezone.utc).isoformat()
             }).execute()
-            logger.info(f"💾 God View Persisted for {user_phone} (TTL Refreshed)")
+            logger.info(f"💾 God View Persisted (Merged) for {user_phone}")
         except Exception as e:
-            logger.error(f"Supabase Save Error for {user_phone}: {e}")
+            logger.error(f"Supabase Merge Save Error for {user_phone}: {e}")
 
     def load_memory(self, user_phone: str) -> Optional[Dict]:
         """
@@ -157,7 +187,7 @@ class Database:
                 
                 # TTL Check
                 from core.config import settings
-                ttl_hours = settings.get('retention.god_view_ttl_hours', 4) # Default 4h life
+                ttl_hours = settings.get('GLOBAL_APP_CONFIG.retention.god_view_ttl_hours', 4) # Default 4h life
                 
                 if created_at_str:
                     # Handle both Z-terminated and offset-aware ISO strings
@@ -194,7 +224,6 @@ class Database:
         try:
             # Wipe from all known tables
             self.client.table('sessions').delete().eq("phone", user_phone_str).execute()
-            self.client.table('active_sessions').delete().eq("phone", user_phone_str).execute()
             self.client.table('users').delete().eq("phone", user_phone_str).execute()
             self.client.table('predictions').delete().eq("user_phone", user_phone_str).execute()
             
@@ -259,8 +288,24 @@ class Database:
     def get_all_active_users(self) -> List[str]:
         """Returns list of all phone numbers that have interacted with the bot."""
         try:
+            # Priority 1: The 'users' table
             res = self.client.table('users').select("phone").execute()
             return [row['phone'] for row in res.data]
         except Exception as e:
-            logger.error(f"Failed to fetch active users: {e}")
+            # Robust check for PGRST205 (Table not found)
+            error_str = str(e)
+            is_table_missing = "PGRST205" in error_str or "schema cache" in error_str
+            
+            if is_table_missing:
+                # Fallback: Look in the 'sessions' table since it exists as seen in screenshot
+                try:
+                    logger.warning("⚠️ 'users' table missing, falling back to 'sessions' for user list.")
+                    res = self.client.table('sessions').select("phone").execute()
+                    # Return unique set of phones
+                    phones = list(set([row['phone'] for row in res.data]))
+                    return phones
+                except Exception as se:
+                    logger.error("Failed to fetch users from sessions too: {se}")
+            else:
+                logger.error(f"Failed to fetch active users: {e}")
             return []

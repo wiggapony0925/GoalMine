@@ -92,10 +92,10 @@ def run_quant_engine(adjusted_xg_a, adjusted_xg_b, best_odds, user_budget=100, t
     probs = dixon_coles_matrix(adjusted_xg_a, adjusted_xg_b)
     
     value_bets = []
-    MIN_EDGE = settings.get('strategy.min_edge_threshold', 0.04) 
+    MIN_EDGE = settings.get('GLOBAL_APP_CONFIG.strategy.min_edge_threshold', 0.04) 
     
     # Kelly Fraction - adjust based on settings or budget fallback
-    KELLY_FRACTION = settings.get('strategy.kelly_multiplier', 0.35)
+    KELLY_FRACTION = settings.get('GLOBAL_APP_CONFIG.strategy.kelly_multiplier', 0.35)
     
     # Dynamic minimum stake (1% of budget, min $1)
     MIN_STAKE = max(1.0, user_budget * 0.01)
@@ -160,7 +160,7 @@ def run_quant_engine(adjusted_xg_a, adjusted_xg_b, best_odds, user_budget=100, t
                     stake_amount = round(user_budget * safe_stake_pct, 2)
                     
                     # Sanity Check: Never bet more than Max % of bankroll on one soccer match
-                    MAX_EXPOSURE = user_budget * (settings.get('strategy.max_stake_pct', 5.0) / 100.0)
+                    MAX_EXPOSURE = user_budget * (settings.get('GLOBAL_APP_CONFIG.strategy.max_stake_pct', 5.0) / 100.0)
                     stake_amount = min(stake_amount, MAX_EXPOSURE)
                     
                     if stake_amount >= MIN_STAKE: # Dynamic minimum bet threshold

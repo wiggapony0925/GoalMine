@@ -9,14 +9,20 @@ def fetch_latest_odds(sport_key='soccer_fifa_world_cup'):
     
     url = f"https://api.the-odds-api.com/v4/sports/{sport_key}/odds/?regions=us&markets=h2h&apiKey={ODDS_API_KEY}"
     
-    try:
-        response = requests.get(url, timeout=5)
-        response.raise_for_status()
-        data = response.json()
-        
-        if not data:
-            raise ValueError("No odds data found for this market.")
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            data = response.json()
             
-        return data
-    except Exception as e:
-        raise e
+            if not data:
+                raise ValueError("No odds data found for this market.")
+                
+            return data
+        except Exception as e:
+            if attempt < max_retries - 1:
+                import time
+                time.sleep(2)
+                continue
+            raise e
