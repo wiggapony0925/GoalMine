@@ -234,3 +234,33 @@ class Database:
         except Exception as e:
             logger.error(f"ROI calculation failed: {e}")
             return {'total_staked': 0, 'total_bets': 0, 'roi_percent': 0.0}
+
+    def save_global_odds(self, match_id: str, odds_data: Dict):
+        """Saves current odds for a match to detect movements later."""
+        try:
+            self.client.table('market_data').upsert({
+                "match_id": match_id,
+                "odds_json": odds_data,
+                "updated_at": datetime.utcnow().isoformat()
+            }).execute()
+        except Exception as e:
+            logger.error(f"Failed to save global odds: {e}")
+
+    def load_global_odds(self, match_id: str) -> Optional[Dict]:
+        """Loads previous odds for a match."""
+        try:
+            res = self.client.table('market_data').select("odds_json").eq("match_id", match_id).execute()
+            if res.data:
+                return res.data[0].get("odds_json")
+        except Exception as e:
+            logger.warning(f"No previous odds found for {match_id}")
+        return None
+
+    def get_all_active_users(self) -> List[str]:
+        """Returns list of all phone numbers that have interacted with the bot."""
+        try:
+            res = self.client.table('users').select("phone").execute()
+            return [row['phone'] for row in res.data]
+        except Exception as e:
+            logger.error(f"Failed to fetch active users: {e}")
+            return []

@@ -16,6 +16,7 @@ from core.initializer.whatsapp import WhatsAppClient
 from services.conversationalFlow.conversation import ConversationHandler
 from services.buttonConversationalFlow.button_conversation import ButtonConversationHandler
 from services import orchestrator
+from services._automatic_messages import MorningBriefService, KickoffAlertService, MarketMonitor
 from core.config import settings
 
 # --- SETUP ---
@@ -59,66 +60,37 @@ else:
     conv_handler = ConversationHandler(wa_client)
     logger.info("💬 CONVERSATIONAL MODE: Using standard ConversationHandler")
 
-# --- SCHEDULER ---
-def push_morning_brief():
-    """ Daily Brief from settings """
-    logger.info("Pushing Morning Brief...")
-    
-    # 1. Get raw data needed for template / text
-    matches = orchestrator.get_todays_matches()
-    num_edges = len(matches) # Simplified for now
-    today_str = datetime.now().strftime("%b %d")
-    top_match = f"{matches[0]['team_home']} vs {matches[0]['team_away']}" if matches else "N/A"
+# --- AUTOMATED SERVICES ---
+brief_service = MorningBriefService(wa_client, db_client)
+kickoff_service = KickoffAlertService(wa_client, db_client)
+market_monitor = MarketMonitor(db_client, wa_client)
 
-    test_user = "9294255178"
-    
-    # Generate Fallback Text
-    fallback = orchestrator.get_schedule_brief(days=1)
+# --- SCHEDULER JOBS ---
+def morning_brief_job():
+    brief_service.push_brief()
 
-    if settings.get('whatsapp.use_templates'):
-        template_name = settings.get('whatsapp.templates.briefing', 'goalmine_alpha_briefing')
-        wa_client.send_template_message(
-            test_user, 
-            template_name, 
-            [today_str, num_edges, top_match],
-            fallback_text=fallback
-        )
-    else:
-        if fallback:
-            wa_client.send_message(test_user, fallback)
+def kickoff_alert_job():
+    kickoff_service.check_and_send_alerts()
 
-def check_upcoming_matches_alert():
-    """ Runs based on settings interval for Kick-off Alerts """
-    upcoming = orchestrator.get_upcoming_matches()
-    test_user = "9294255178"
-
-    for m in upcoming:
-        # Generate Fallback Text
-        fallback = f"🚨 KICK-OFF ALERT: {m['team_home']} vs {m['team_away']} starts in 1 hour!\nReply 'Analyze {m['team_home']}' for a last-minute edge."
-        
-        if settings.get('whatsapp.use_templates'):
-            template_name = settings.get('whatsapp.templates.kickoff', 'goalmine_kickoff_alert')
-            wa_client.send_template_message(
-                test_user, 
-                template_name, 
-                [m['team_home'], m['team_away']],
-                fallback_text=fallback
-            )
-        else:
-            wa_client.send_message(test_user, fallback)
-
+def market_monitor_job():
+    run_bg_task(market_monitor.check_for_line_moves())
 
 scheduler = BackgroundScheduler()
 scheduler.add_job(
-    push_morning_brief, 
+    morning_brief_job, 
     'cron', 
     hour=settings.get('scheduling.morning_brief_hour', 5), 
     minute=settings.get('scheduling.morning_brief_minute', 0)
 )
 scheduler.add_job(
-    check_upcoming_matches_alert, 
+    kickoff_alert_job, 
     'interval', 
     minutes=settings.get('scheduling.kickoff_alert_interval_mins', 15)
+)
+scheduler.add_job(
+    market_monitor_job,
+    'interval',
+    minutes=settings.get('scheduling.market_monitor_interval_mins', 30)
 )
 scheduler.start()
 
