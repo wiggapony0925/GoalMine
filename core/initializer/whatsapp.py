@@ -1,5 +1,7 @@
 import os
 import requests
+import hmac
+import hashlib
 from core.log import get_logger
 
 logger = get_logger("WhatsApp")
@@ -11,8 +13,35 @@ class WhatsAppClient:
     def __init__(self):
         self.token = os.getenv("WHATSAPP_TOKEN")
         self.phone_number_id = os.getenv("PHONE_NUMBER_ID")
-        self.api_version = "v17.0"
+        self.api_version = "v24.0"
         self.base_url = f"https://graph.facebook.com/{self.api_version}"
+        self.app_secret = os.getenv("WHATSAPP_APP_SECRET")
+        self._appsecret_proof = self._generate_appsecret_proof() if self.app_secret and self.token else None
+        
+        # LOG SECURITY STATUS
+        if self._appsecret_proof:
+            logger.info("🛡️ WhatsApp Security: App Secret Proof ACTIVE (Secure Mode)")
+        else:
+            logger.warning("🔓 WhatsApp Security: App Secret Proof INACTIVE (Standard Mode)")
+
+    def _generate_appsecret_proof(self):
+        """Generates the appsecret_proof required for secure API calls."""
+        return hmac.new(
+            self.app_secret.encode('utf-8'),
+            self.token.encode('utf-8'),
+            hashlib.sha256
+        ).hexdigest()
+
+    def _get_headers(self):
+        """Helper to get standardized headers including security proofs."""
+        headers = {
+            "Authorization": f"Bearer {self.token}",
+            "Content-Type": "application/json",
+        }
+        # If user enabled 'Require App Secret' in Portal, we must send this
+        if self._appsecret_proof:
+            headers["x-app-secret-proof"] = self._appsecret_proof
+        return headers
 
     def send_message(self, to_number, message_text):
         """
@@ -23,10 +52,7 @@ class WhatsAppClient:
             return None
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json",
-        }
+        headers = self._get_headers()
         data = {
             "messaging_product": "whatsapp",
             "to": to_number,
@@ -39,10 +65,8 @@ class WhatsAppClient:
             response.raise_for_status()
             logger.info(f"Message sent to {to_number}")
             
-            # [AUDIT LOG] Log what the bot said
-            from core.config import settings
-            if settings.get('app.detailed_request_logging'):
-                logger.info(f"🤖 BOT REPLY: {message_text[:200]}..." if len(message_text) > 200 else f"🤖 BOT REPLY: {message_text}")
+            # [AUDIT LOG] Log what the bot said (Developer Only)
+            logger.debug(f"🤖 BOT REPLY: {message_text[:200]}..." if len(message_text) > 200 else f"🤖 BOT REPLY: {message_text}")
                 
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -77,10 +101,7 @@ class WhatsAppClient:
             return None
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json",
-        }
+        headers = self._get_headers()
         
         parameters = [{"type": "text", "text": str(val)} for val in components]
         
@@ -117,10 +138,7 @@ class WhatsAppClient:
             return
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json",
-        }
+        headers = self._get_headers()
         data = {
             "messaging_product": "whatsapp",
             "status": "read",
@@ -143,10 +161,7 @@ class WhatsAppClient:
             return None
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json",
-        }
+        headers = self._get_headers()
         
         data = {
             "messaging_product": "whatsapp",
@@ -157,12 +172,24 @@ class WhatsAppClient:
 
         try:
             response = requests.post(url, headers=headers, json=data)
+            # If 400, log the payload for debugging
+            if response.status_code == 400:
+                logger.error(f"❌ WhatsApp 400 Payload: {json.dumps(data, indent=2)}")
+            
             response.raise_for_status()
             logger.info(f"🔘 Interactive Message sent to {to_number}")
             return response.json()
         except requests.exceptions.RequestException as e:
-            error_data = e.response.text if e.response else str(e)
-            logger.error(f"❌ Failed to send Interactive Message: {error_data}")
+            # EXTRACT FULL JSON ERROR BODY FOR 400s
+            error_body = "No Response Body"
+            if e.response is not None:
+                try:
+                    error_body = json.dumps(e.response.json(), indent=2)
+                except:
+                    error_body = e.response.text
+            
+            logger.error(f"❌ WhatsApp API Failed: {e}")
+            logger.error(f"📝 Error Details: {error_body}")
             return None
 
     def send_location_message(self, to_number, latitude, longitude, name=None, address=None):
@@ -174,10 +201,7 @@ class WhatsAppClient:
             return None
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json",
-        }
+        headers = self._get_headers()
         
         location_data = {
             "latitude": latitude,
@@ -209,10 +233,7 @@ class WhatsAppClient:
             return
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Content-Type": "application/json",
-        }
+        headers = self._get_headers()
         # Note: messaging_product is required for messages endpoint
         # BUT the docs provided show a slightly different payload structure for typing indicators sometimes.
         # However, the standard Cloud API for sending sender actions (typing) usually is separate or uses "status" endpoint?

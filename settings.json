@@ -2,8 +2,7 @@
     "app": {
         "maintenance_mode": false, // Set to true to pause the bot and return 503 to WhatsApp -> app.py
         "interaction_mode": "BUTTON_STRICT", // Options: "CONVERSATIONAL", "BUTTON_STRICT" -> app.py
-        "log_level": "INFO", // Controls terminal verbosity: DEBUG, INFO, WARNING, ERROR -> core/log.py
-        "detailed_request_logging": false, // Set to true to log every single network hit -> core/whatsapp.py
+        "log_level": "INFO", // Controls terminal verbosity: DEBUG, INFO (includes LLM stats), WARNING, ERROR -> core/log.py
         "support_contact": "@Admin" // Contact handle shown in system error messages -> app.py
     },
     "whatsapp": {

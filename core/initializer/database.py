@@ -49,7 +49,7 @@ class Database:
         Saves the active conversation history (Vector Store lite).
         
         Table: active_sessions
-        Schema: phone (PK), messages (JSONB), last_active
+        Schema: phone (PK), messages (JSONB), last_active, interactive_state (New)
         """
         try:
             self.client.table('active_sessions').upsert({
@@ -60,6 +60,32 @@ class Database:
             logger.info(f"💬 Chat context saved for {user_phone}")
         except Exception as e:
             logger.error(f"Memory Save Error: {e}")
+
+    def save_button_state(self, user_phone: str, interactive_obj: Dict):
+        """
+        Saves the last sent interactive message so we can resend it on error.
+        
+        We use the 'users' table to store persistent 'UI state'.
+        """
+        try:
+            self.client.table('active_sessions').upsert({
+                "phone": str(user_phone),
+                "interactive_state": interactive_obj,
+                "last_active": datetime.utcnow().isoformat()
+            }).execute()
+            logger.info(f"💾 Interactive state persisted for {user_phone}")
+        except Exception as e:
+            logger.error(f"Failed to save button state for {user_phone}: {e}")
+
+    def load_button_state(self, user_phone: str) -> Optional[Dict]:
+        """Loads the last interactive message for resending."""
+        try:
+            res = self.client.table('active_sessions').select("interactive_state").eq("phone", str(user_phone)).execute()
+            if res.data:
+                return res.data[0].get("interactive_state")
+        except Exception as e:
+            logger.warning(f"No button state found for {user_phone}: {e}")
+        return None
 
     def load_chat_context(self, user_phone: str) -> List[Dict]:
         """Loads the last conversation for context window."""
@@ -159,6 +185,24 @@ class Database:
             logger.info(f"🧹 Memory cleared for {user_phone}")
         except Exception as e:
             logger.error(f"Memory clear error for {user_phone}: {e}")
+
+    def delete_all_user_data(self, user_phone: str):
+        """
+        PERMANENT WIPE: Deletes all user records across all tables for compliance.
+        """
+        user_phone_str = str(user_phone)
+        try:
+            # Wipe from all known tables
+            self.client.table('sessions').delete().eq("phone", user_phone_str).execute()
+            self.client.table('active_sessions').delete().eq("phone", user_phone_str).execute()
+            self.client.table('users').delete().eq("phone", user_phone_str).execute()
+            self.client.table('predictions').delete().eq("user_phone", user_phone_str).execute()
+            
+            logger.warning(f"🚨 [COMPLIANCE] All data permanently deleted for {user_phone_str}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to perform full data deletion for {user_phone_str}: {e}")
+            return False
 
     def load_all_matchday_memory(self, user_phone: str) -> List[Dict]:
         """Loads all matches analyzed for this user today."""

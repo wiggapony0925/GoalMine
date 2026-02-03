@@ -3,7 +3,7 @@ import json
 import openai
 from openai import AsyncOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
-from data.scripts.data import MODEL_CONFIG
+import time
 from core.log import get_logger
 
 from core.config import settings
@@ -49,14 +49,6 @@ async def query_llm(
             final_model = agent_config.get("model", final_model)
             final_temp = agent_config.get("temperature", final_temp)
         
-        # Fallback to legacy model_config.json if not in settings
-        elif config_key in MODEL_CONFIG:
-            node = MODEL_CONFIG[config_key]
-            if isinstance(node, dict):
-                final_model = node.get("model", final_model)
-                final_temp = node.get("temperature", final_temp)
-            else:
-                final_model = node  # Simple string config
 
     # Apply direct overrides
     if model:
@@ -79,8 +71,13 @@ async def query_llm(
 
     try:
         # 3. Execution
-        if settings.get('app.detailed_request_logging'):
-            logger.info(f"📤 LLM Request [{final_model}]: {system_prompt[:50]}... | User: {user_content[:50]}...")
+        start_time = time.perf_counter()
+        
+        # High-level info for all users
+        logger.info(f"📤 Querying {final_model} (Agent: {config_key or 'General'})")
+        # Deep detail only for developers
+        logger.debug(f"System Prompt: {system_prompt[:500]}...")
+        logger.debug(f"User Content: {user_content[:500]}...")
 
         response = await client.chat.completions.create(
             model=final_model,
@@ -92,10 +89,15 @@ async def query_llm(
             response_format=response_format
         )
         
+        latency = (time.perf_counter() - start_time) * 1000 # ms
         content = response.choices[0].message.content.strip()
+        usage = response.usage
         
-        if settings.get('app.detailed_request_logging'):
-             logger.info(f"📥 LLM Response: {content[:100]}...")
+        # High-level results for all users
+        token_info = f"Tokens: {usage.total_tokens} ({usage.prompt_tokens} in / {usage.completion_tokens} out)"
+        logger.info(f"📥 Response from {final_model} in {latency:.0f}ms | {token_info}")
+        # Raw response content only for developers
+        logger.debug(f"Raw Response: {content}")
 
         # 4. Validation
         if json_mode:

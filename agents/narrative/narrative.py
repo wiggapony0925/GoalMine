@@ -61,12 +61,11 @@ class NarrativeAgent:
         
         evidence = "\n".join(news_entries + reddit_entries) or "No live data. Analyze based on historical reputation."
         
-        # [DETAILED LOGGING] Raw Data Dump
-        if settings.get('app.detailed_request_logging'):
-            logger.info(f"📰 GOOGLE RAW ({team_name}): {json.dumps(all_articles, indent=2)}")
-            logger.info(f"👽 REDDIT RAW ({team_name}): {json.dumps(reddit_data, indent=2)}")
-            if deep_content:
-                logger.info(f"🕵️ DEEP SCAN CONTENT ({team_name}): {deep_content[:500]}...")
+        # [DETAILED LOGGING] Raw Data Dump (Developer Only)
+        logger.debug(f"📰 GOOGLE RAW ({team_name}): {json.dumps(all_articles, indent=2)}")
+        logger.debug(f"👽 REDDIT RAW ({team_name}): {json.dumps(reddit_data, indent=2)}")
+        if deep_content:
+            logger.debug(f"🕵️ DEEP SCAN CONTENT ({team_name}): {deep_content[:500]}...")
         
         from prompts.system_prompts import NARRATIVE_PROMPT
         

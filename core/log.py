@@ -43,15 +43,29 @@ class GoalMineFormatter(logging.Formatter):
         base_comp = comp_parts[-1] if comp_parts else "System"
         icon = self.ICONS.get(base_comp, '⚙️')
         
+        # Handle special formatting for LLM or Agent results
+        message = record.getMessage()
+        
+        # 🟢 Special Formatting for "INTERNAL RESULTS" (JSON or long text)
+        if base_comp == "LLM" and ("Response" in message or "Request" in message):
+             icon = "🪄" 
+             comp_color = Fore.MAGENTA
+        elif base_comp in ["Tactics", "Logistics", "Market", "Narrative", "Quant"]:
+             comp_color = Fore.CYAN
+        else:
+             comp_color = log_color
+
         comp_label = f"{icon} {base_comp}"
         
         # High-End Formatting
         if record.levelname == 'INFO':
-            return f"{log_color}{comp_label.ljust(15)} | {record.getMessage()}"
+            # Add a vertical bar for cleaner separation
+            timestamp = self.formatTime(record, "%H:%M:%S")
+            return f"{Fore.WHITE}{timestamp} | {comp_color}{comp_label.ljust(15)}{Style.RESET_ALL} | {message}"
         elif record.levelname == 'DEBUG':
-             return f"{Fore.WHITE}{Style.DIM}[DEBUG] {comp_label.ljust(15)} | {record.getMessage()}"
+             return f"{Fore.WHITE}{Style.DIM}[DEBUG] {comp_label.ljust(15)} | {message}"
         else:
-            return f"{log_color}{record.levelname.ljust(8)} | {comp_label.ljust(15)} | {record.getMessage()}"
+            return f"{log_color}{record.levelname.ljust(8)} | {comp_label.ljust(15)} | {message}"
 
 def setup_logging():
     """
@@ -76,7 +90,7 @@ def setup_logging():
 
     # 4. Handlers
     # File Handler: Detailed for debugging, persistent in app.log
-    file_handler = logging.FileHandler('app.log', mode='w')
+    file_handler = logging.FileHandler('app.log', mode='a') # Append for history
     file_handler.setLevel(logging.DEBUG)
     file_format = logging.Formatter('%(asctime)s | %(levelname)-8s | [%(name)s] | %(message)s')
     file_handler.setFormatter(file_format)
@@ -89,23 +103,16 @@ def setup_logging():
     main_logger.addHandler(file_handler)
     main_logger.addHandler(console_handler)
 
-    # Suppress external noise
-    # Suppress external noise UNLESS detailed logging is on
-    from core.config import settings
-    if not settings.get('app.detailed_request_logging'):
-        for noisy_lib in ["werkzeug", "openai", "httpx", "httpcore", "apscheduler", "supabase", "postgrest"]:
-            logging.getLogger(noisy_lib).setLevel(logging.WARNING)
-        
-        # Extra quiet for werkzeug (Flask logs)
+    # Suppress external noise for a cleaner terminal
+    # Library noise is suppressed at WARNING unless the app is in DEBUG mode
+    ext_level = logging.WARNING if log_level != logging.DEBUG else logging.INFO
+    
+    for noisy_lib in ["werkzeug", "openai", "httpx", "httpcore", "apscheduler", "supabase", "postgrest"]:
+        logging.getLogger(noisy_lib).setLevel(ext_level)
+    
+    # Extra quiet for werkzeug (Flask logs) unless in debug
+    if log_level != logging.DEBUG:
         logging.getLogger("werkzeug").setLevel(logging.ERROR)
-    else:
-        # If detailed logging is on, set them to INFO so we see API calls
-        for noisy_lib in ["openai", "httpx", "httpcore", "apscheduler", "supabase", "postgrest"]:
-            logging.getLogger(noisy_lib).setLevel(logging.INFO)
-            # Ensure they propagate to our handlers
-            logging.getLogger(noisy_lib).addHandler(file_handler)
-            if log_level == logging.DEBUG:
-                 logging.getLogger(noisy_lib).addHandler(console_handler)
 
     return main_logger
 
@@ -162,16 +169,16 @@ def print_start_banner():
         print(Fore.WHITE + "------------------------------------------------------------")
         
         # Check Database
-        db_valid = os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY")
-        db_msg = Fore.GREEN + "Cloud Sync: ONLINE" if db_valid else Fore.RED + "Cloud Sync: OFFLINE (Check Keys)"
-        print(f"💾 {db_msg}")
+        # Metadata
+        from data.scripts.data import SCHEDULE
+        num_matches = len(SCHEDULE)
         
-        # Check Data
-        try:
-            from data.scripts.data import SCHEDULE
-            print(Fore.GREEN + f"📅 Schedule: {len(SCHEDULE)} Matches Loaded")
-        except:
-            print(Fore.RED + "📅 Schedule: FAILED TO LOAD")
+        # Security Check for Banner
+        secret_status = "🛡️ SECURE (HMAC)" if os.getenv("WHATSAPP_APP_SECRET") else "🔓 STANDARD"
 
-        print(Fore.YELLOW + "🤖 Agents: [Tactics, Logistics, Market, Narrative] -> WAITING")
-        print(Fore.WHITE + "------------------------------------------------------------\n")
+        print(Fore.WHITE + f"💾 Cloud Sync: ONLINE")
+        print(Fore.WHITE + f"📅 Schedule: {num_matches} Matches Loaded")
+        print(Fore.WHITE + f"🔐 Security: {secret_status}")
+        print(Fore.WHITE + f"🤖 Agents: [Tactics, Logistics, Market, Narrative] -> WAITING")
+        print(Fore.WHITE + "------------------------------------------------------------")
+        print(Style.RESET_ALL)

@@ -30,6 +30,7 @@ class ButtonConversationHandler:
         # For now, we assume msg_body IS the text/payload.
         
         user_input = msg_body.strip()
+        logger.info(f"🕹️ [Routing] Received: '{user_input}' from {from_number}")
         
         # 2. MATCH PAYLOADS
         if user_input.startswith("Analyze"):
@@ -39,6 +40,7 @@ class ButtonConversationHandler:
              return
 
         elif user_input == "Show_Schedule":
+            logger.info("📅 User requested Schedule Browser.")
             await self._send_schedule_browser(from_number)
             return
 
@@ -57,10 +59,12 @@ class ButtonConversationHandler:
              return
 
         elif user_input == "Show_MainMenu":
+            logger.info("🏠 User requested Main Menu.")
             await self._send_main_menu(from_number)
             return
 
         elif user_input == "Generate_Bets":
+            logger.info("🎲 User requested Bet Generation Menu.")
             await self._send_bet_menu(from_number)
             return
 
@@ -99,9 +103,29 @@ class ButtonConversationHandler:
             await self._send_schedule_browser(from_number)
             return
 
-        # 4. FINAL FALLBACK: Unclear Input -> Polite Redirect to Menu
-        logger.info(f"⛔ Unclear Input ('{user_input}') -> Sending Menu.")
-        await self._send_main_menu(from_number, is_fallback=True)
+        # 4. FINAL FALLBACK: Unclear Input -> Resend Last State
+        logger.info(f"⛔ Unclear Input ('{user_input}') -> Checking for last state.")
+        last_state = self.db.load_button_state(from_number)
+        
+        if last_state:
+            logger.info(f"🔄 Resending last UI state to {from_number}")
+            # Add a small prefix to explain
+            prefix = "⚠️ *Input not recognized.* Please select an option below to continue:\n\n"
+            # We clone to avoid modifying the original and then update the body
+            resend_obj = last_state.copy()
+            if "body" in resend_obj and "text" in resend_obj["body"]:
+                 resend_obj["body"] = {"text": prefix + resend_obj["body"]["text"]}
+            
+            self.wa.send_interactive_message(from_number, resend_obj)
+        else:
+            logger.info("🏠 No last state found. Sending Main Menu.")
+            await self._send_main_menu(from_number, is_fallback=True)
+
+    def _send_interactive(self, to_number, interactive_obj):
+        """Helper to send and record the UI state."""
+        self.db.save_button_state(to_number, interactive_obj)
+        self.wa.send_interactive_message(to_number, interactive_obj)
+
     async def _send_main_menu(self, to_number, is_fallback=False):
         """Sends the Main Menu interactive message."""
         content = ButtonResponses.MAIN_MENU
@@ -119,7 +143,7 @@ class ButtonConversationHandler:
                 {"type": "reply", "reply": b} for b in content["buttons"]
             ]}
         }
-        self.wa.send_interactive_message(to_number, interactive_obj)
+        self._send_interactive(to_number, interactive_obj)
 
     async def _send_schedule_browser(self, to_number):
         """Sends a high-level selection between Group Stage and Knockouts."""
@@ -141,7 +165,8 @@ class ButtonConversationHandler:
                 ]
             }
         }
-        self.wa.send_interactive_message(to_number, interactive_obj)
+        logger.info(f"📅 Outgoing: Schedule Browser sent to {to_number}")
+        self._send_interactive(to_number, interactive_obj)
 
     async def _send_groups_selection(self, to_number):
         """Deeper menu for Groups (Split into two messages if needed, or two sections)."""
@@ -171,7 +196,8 @@ class ButtonConversationHandler:
         rows_1.append({"id": "Show_Groups_G_L", "title": "Next: Groups G-L ➡️"})
         
         interactive_obj["action"]["sections"] = [{"title": "Select Group", "rows": rows_1}]
-        self.wa.send_interactive_message(to_number, interactive_obj)
+        logger.info(f"🌍 Outgoing: Group Selector (A-E) sent to {to_number}")
+        self._send_interactive(to_number, interactive_obj)
 
     async def _send_groups_g_l(self, to_number):
         interactive_obj = {
@@ -192,7 +218,8 @@ class ButtonConversationHandler:
                 ]
             }
         }
-        self.wa.send_interactive_message(to_number, interactive_obj)
+        logger.info(f"🌍 Outgoing: Group Selector (G-L) sent to {to_number}")
+        self._send_interactive(to_number, interactive_obj)
 
     async def _send_knockouts_selection(self, to_number):
         interactive_obj = {
@@ -215,7 +242,8 @@ class ButtonConversationHandler:
                 ]
             }
         }
-        self.wa.send_interactive_message(to_number, interactive_obj)
+        logger.info(f"🏆 Outgoing: Knockout Selector sent to {to_number}")
+        self._send_interactive(to_number, interactive_obj)
 
     async def _send_group_matches(self, to_number, filter_name, is_stage=False):
         """Sends matches for a specific group or stage, organized by 'Matchday'."""
@@ -264,7 +292,8 @@ class ButtonConversationHandler:
                 "sections": sections
             }
         }
-        self.wa.send_interactive_message(to_number, interactive_obj)
+        logger.info(f"⚽ Outgoing: Matchday section for {filter_name} sent to {to_number}")
+        self._send_interactive(to_number, interactive_obj)
 
     async def _send_help_menu(self, to_number):
         """Sends the Help/About info."""
@@ -286,7 +315,7 @@ class ButtonConversationHandler:
                 {"type": "reply", "reply": {"id": "Show_MainMenu", "title": "🔙 Main Menu"}}
             ]}
         }
-        self.wa.send_interactive_message(to_number, nav_obj)
+        self._send_interactive(to_number, nav_obj)
 
     # ... (existing methods) ...
 
@@ -303,7 +332,8 @@ class ButtonConversationHandler:
                 {"type": "reply", "reply": b} for b in content["buttons"]
             ]}
         }
-        self.wa.send_interactive_message(to_number, interactive_obj)
+        logger.info(f"🎲 Outgoing: Bet Generation Menu sent to {to_number}")
+        self._send_interactive(to_number, interactive_obj)
 
     async def _trigger_bet_generation(self, to_number, count):
         """Generates the recommended bets using DB persistence."""
@@ -335,7 +365,7 @@ class ButtonConversationHandler:
                 ]
             }
         }
-        self.wa.send_interactive_message(to_number, interactive_obj)
+        self._send_interactive(to_number, interactive_obj)
 
     async def _trigger_analysis(self, to_number, match_query):
         """Runs the Swarm and persists data to DB."""

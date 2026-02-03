@@ -7,7 +7,7 @@ import json
 from core.log import get_logger
 from core.initializer.llm import query_llm
 from core.initializer.database import Database
-from data.scripts.data import BET_TYPES, SCHEDULE, VENUES_DB, MODEL_CONFIG
+from data.scripts.data import BET_TYPES, SCHEDULE, VENUES_DB
 
 logger = get_logger("BetGenerator")
 

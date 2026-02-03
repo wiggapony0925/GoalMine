@@ -303,6 +303,9 @@ The **God View** is a comprehensive JSON intelligence matrix containing outputs 
   - User profile management
 - **Persistence Strategy**: Every God View saved for follow-up Q&A
 
+If set to INFO: You get the clean version + all the important AI stats (Latency & Tokens).
+If set to DEBUG: You get the "Everything Mode" (Long texts, raw API dumps).
+
 ### **2. `/core/generate_bets.py` - The Big Daddy 🏰**
 
 #### **Role**: Final Betting Intelligence Synthesizer
@@ -459,8 +462,7 @@ Each agent is an **expert in one domain** with its own LLM and data sources. The
 {
   "app": {
     "interaction_mode": "CONVERSATIONAL",  // or "BUTTON_STRICT"
-    "log_level": "INFO",
-    "detailed_request_logging": false
+    "log_level": "INFO"
   },
   
   "agents": {

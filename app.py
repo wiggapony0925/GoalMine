@@ -4,7 +4,11 @@ load_dotenv()
 
 import asyncio
 import threading
-from flask import Flask, request
+import json
+import base64
+import hmac
+import hashlib
+from flask import Flask, request, jsonify, render_template_string
 from apscheduler.schedulers.background import BackgroundScheduler
 from collections import deque
 from core.log import setup_logging, register_request_logger, print_start_banner
@@ -45,9 +49,10 @@ PROCESSED_IDS = set()
 ID_QUEUE = deque(maxlen=500)
 
 # Dynamic Handler Selection
+from core.initializer.database import Database
+db_client = Database()
+
 if settings.get('app.interaction_mode') == "BUTTON_STRICT":
-    from core.initializer.database import Database
-    db_client = Database()
     conv_handler = ButtonConversationHandler(wa_client, db_client)
     logger.info("🛡️ STRICT MODE ACTIVATED: Using ButtonConversationHandler")
 else:
@@ -122,6 +127,83 @@ scheduler.start()
 def home():
     return "GoalMine WhatsApp Bot is Running!"
 
+# --- DATA DELETION COMPLIANCE (GDPR/CCPA) ---
+def parse_signed_request(signed_request, app_secret):
+    """Parses and verifies a Meta signed request."""
+    try:
+        l, r = signed_request.split('.', 2)
+        encoded_sig = l
+        payload = r
+
+        # Decode signature
+        sig = base64.urlsafe_b64decode(encoded_sig + "=" * ((4 - len(encoded_sig) % 4) % 4))
+        # Decode data
+        data = json.loads(base64.urlsafe_b64decode(payload + "=" * ((4 - len(payload) % 4) % 4)))
+
+        # Verify HMAC
+        expected_sig = hmac.new(app_secret.encode('utf-8'), payload.encode('utf-8'), hashlib.sha256).digest()
+        
+        if not hmac.compare_digest(sig, expected_sig):
+            logger.error("❌ Data Deletion: Signature verification failed!")
+            return None
+        
+        return data
+    except Exception as e:
+        logger.error(f"❌ Data Deletion: Parse error: {e}")
+        return None
+
+@app.route("/data-deletion", methods=["POST"])
+def data_deletion():
+    """Meta Data Deletion Callback URL."""
+    logger.warning("🚨 Data Deletion Request Received from Meta.")
+    
+    app_secret = os.getenv("WHATSAPP_APP_SECRET")
+    signed_request = request.form.get('signed_request')
+    
+    if not app_secret or not signed_request:
+        return jsonify({"error": "Missing secret or request"}), 400
+        
+    data = parse_signed_request(signed_request, app_secret)
+    if not data:
+        return jsonify({"error": "Invalid signed request"}), 400
+        
+    user_id = data.get('user_id')
+    if user_id:
+        # 1. Trigger the Wipe
+        # Note: Meta passes a 'user_id'. In our DB, we use 'phone'. 
+        # For simplicity in this dev stage, we assume they are mapped or delete by ID.
+        # If your users log in with FB, 'user_id' is their FB ID. 
+        # If it's pure WhatsApp, Meta will send the account ID.
+        success = db_client.delete_all_user_data(user_id)
+        
+        if success:
+            confirmation_code = f"DEL-{hash(user_id) % 1000000}"
+            status_url = f"{request.host_url}data-deletion-status?code={confirmation_code}"
+            
+            return jsonify({
+                "url": status_url,
+                "confirmation_code": confirmation_code
+            })
+
+    return jsonify({"error": "No user ID found"}), 400
+
+@app.route("/data-deletion-status")
+def data_deletion_status():
+    """User-facing confirmation page for Meta."""
+    code = request.args.get('code', 'N/A')
+    html = f"""
+    <html>
+        <head><title>GoalMine | Data Deleted</title></head>
+        <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+            <h1 style="color: #2ecc71;">✅ Data Wiped Successfully</h1>
+            <p>Your records have been permanently removed from GoalMine AI servers.</p>
+            <p><strong>Confirmation Code:</strong> {code}</p>
+            <p style="color: #666; font-size: 0.9em;">GoalMine AI 🏆 | Compliance & Privacy</p>
+        </body>
+    </html>
+    """
+    return render_template_string(html)
+
 
 @app.route("/webhook", methods=["GET", "POST"])
 async def webhook():
@@ -164,6 +246,7 @@ async def webhook():
                 # EXTRACT CONTENT BASED ON TYPE
                 if msg_type == "text":
                     msg_body = message_data["text"]["body"]
+                    logger.info(f"💬 [Incoming] Text from {from_number}: '{msg_body}'")
                 
                 elif msg_type == "interactive":
                     interactive = message_data["interactive"]
@@ -172,12 +255,12 @@ async def webhook():
                     if int_type == "button_reply":
                         # User clicked a button
                         msg_body = interactive["button_reply"]["id"]
-                        logger.info(f"🖱️ Button Clicked: {interactive['button_reply']['title']} (ID: {msg_body})")
+                        logger.info(f"🖱️ [Button] Clicked: '{interactive['button_reply']['title']}' (ID: {msg_body}) from {from_number}")
                         
                     elif int_type == "list_reply":
                         # User selected from a list
                         msg_body = interactive["list_reply"]["id"]
-                        logger.info(f"📜 List Selection: {interactive['list_reply']['title']} (ID: {msg_body})")
+                        logger.info(f"📜 [List] Selection: '{interactive['list_reply']['title']}' (ID: {msg_body}) from {from_number}")
                 
                 # Mark as Read (Blue Tick)
                 msg_id = message_data.get("id")

@@ -78,8 +78,8 @@ class ButtonResponses:
         "body": "Welcome to the Command Center.\nSelect an operation below:",
         "footer": "Strict Mode Active",
         "buttons": [
-            {"id": "Show_Schedule", "title": "📅 View Schedule"},
-            {"id": "Show_Help", "title": "❓ Help / Rules"}
+            {"id": "Show_Schedule", "title": "View Schedule"},
+            {"id": "Show_Help", "title": "Help / Rules"}
         ]
     }
     
@@ -108,8 +108,8 @@ class ButtonResponses:
         "body": "Quant Engine Ready.\nHow many value recommendations would you like?",
         "footer": "Select Quantity",
         "buttons": [
-            {"id": "Bets_1", "title": "🎯 1 Top Pick"},
-            {"id": "Bets_3", "title": "📊 3 Smart Picks"},
-            {"id": "Bets_5", "title": "🚀 5 Accumulator"}
+            {"id": "Bets_1", "title": "1 Top Pick"},
+            {"id": "Bets_3", "title": "3 Smart Picks"},
+            {"id": "Bets_5", "title": "5 Accumulator"}
         ]
     }

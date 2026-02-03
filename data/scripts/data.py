@@ -48,9 +48,6 @@ SCHEDULE = load_json_file('schedule.json', default=[])
 # Betting Market Types (Orchestrator)
 BET_TYPES = load_json_file('bet_types.json', default={})
 
-# LLM Model Configuration (LLM Module)
-MODEL_CONFIG = load_json_file('model_config.json', default={"default_model": "gpt-4o"})
-
 # Reddit Scraper Configuration (Narrative Agent)
 REDDIT_CONFIG = load_json_file('reddit_config.json', default={
     "subreddits": ["soccer", "worldcup", "football"],
