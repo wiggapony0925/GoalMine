@@ -228,7 +228,13 @@ class ConversationHandler:
         home = match_info.get('home_team', 'Team A')
         away = match_info.get('away_team', 'Team B')
         
-        # 1. Acknowledge using Responses
+        # 1. TBD PROTECTION: Check if teams are confirmed
+        if "TBD" in home.upper() or "TBD" in away.upper():
+            logger.info(f"🔒 TBD Block: User tried to analyze {home} vs {away} via Chat.")
+            self.wa.send_message(user_phone, "🔓 *Match Locked:* This fixture is still 'To Be Determined'.\n\nI can only analyze matches once the official teams are confirmed. Please check back after the previous round is complete! 🏆")
+            return
+
+        # 2. Acknowledge using Responses
         launch_msg = Responses.get_launch(f"{home} vs {away}")
         self.wa.send_message(user_phone, launch_msg)
         
