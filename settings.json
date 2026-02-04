@@ -1,51 +1,58 @@
 {
+    // ==========================================
+    // 🌍 GLOBAL APPLICATION CONFIGURATION
+    // Core parameters that affect the entire engine.
+    // ==========================================
     "GLOBAL_APP_CONFIG": {
         "app": {
-            "maintenance_mode": false,
-            "interaction_mode": "BUTTON_STRICT", // "CONVERSATIONAL" or "BUTTON_STRICT"
-            "log_level": "INFO",
-            "support_contact": "@Admin",
-            "detailed_request_logging": false
+            "maintenance_mode": false, // When true, all webhooks are ignored (503 status)
+            "interaction_mode": "BUTTON_STRICT", // "CONVERSATIONAL" = Chatbot style, "BUTTON_STRICT" = App-like button navigation
+            "log_level": "INFO", // Logging verbosity: DEBUG, INFO, WARNING, ERROR
+            "support_contact": "@Admin", // Support handle shown in error messages
+            "detailed_request_logging": false // If true, logs full HTTP payloads (careful: sensitive data)
         },
         "whatsapp": {
-            "use_templates": true,
+            "use_templates": true, // Toggle for official Meta business templates
             "templates": {
-                "briefing": "goalmine_alpha_briefing",
-                "kickoff": "goalmine_kickoff_alert",
-                "sharp_move": "goalmine_sharp_move"
+                "welcome": "goalmine_welcome", // Template ID for first-time or cold start greetings
+                "briefing": "goalmine_alpha_briefing", // Monthly/Daily Morning Briefing template
+                "kickoff": "goalmine_kickoff_alert", // Pre-match alert (30-60 mins before kickoff)
+                "sharp_move": "goalmine_sharp_move" // Alert when significant odds movements occur
             }
         },
         "agents": {
-            "logistics": true,
-            "tactics": true,
-            "market": true,
-            "narrative": true,
-            "quant": true
+            // Master toggles for the AI Swarm. Disabling one will force the orchestrator into LLM fallback mode.
+            "logistics": true, // Evaluate physical stress (Altitude, Travel, Recovery)
+            "tactics": true, // Deep style analysis & xG predictions
+            "market": true, // Odds analysis and bookie 'Trap' detection
+            "narrative": true, // Social sentiment (Reddit) and locker room news
+            "quant": true // Mathematical bankroll management (Kelly Criterion)
         },
         "strategy": {
-            "default_budget": 100,
-            "kelly_multiplier": 1.0,
-            "max_stake_pct": 10.0,
-            "min_edge_threshold": 0.01,
-            "swarm_cache_ttl_hours": 6
+            "default_budget": 100, // Default virtual bankroll if user doesn't specify one
+            "kelly_multiplier": 1.0, // Staking aggressiveness (1.0 = Full Kelly, 0.5 = Half Kelly)
+            "max_stake_pct": 10.0, // Safety cap: never recommend staking more than X% of bankroll per bet
+            "min_edge_threshold": 0.01, // Minimum mathematical value (1%) required to suggest a bet
+            "swarm_cache_ttl_hours": 6 // How long a 'God View' for a specific match stays valid before a fresh swarm is required
         },
         "scheduling": {
-            "morning_brief_hour": 5,
+            "morning_brief_hour": 5, // Hour (24h) to send the morning brief
             "morning_brief_minute": 0,
-            "kickoff_alert_interval_mins": 15,
-            "alert_lead_time_mins": 60,
-            "market_monitor_interval_mins": 30
+            "kickoff_alert_interval_mins": 15, // Frequency of checking for upcoming games
+            "alert_lead_time_mins": 60, // How many minutes before kickoff to send the alert
+            "market_monitor_interval_mins": 30 // Frequency of checking for sharp line moves
         },
         "live_data": {
-            "api_token": "d0bcb25a490b4a3ebc278b88f256f59f",
-            "sync_interval_mins": 60,
+            "api_token": "d0bcb25a490b4a3ebc278b88f256f59f", // Global Sports API token (used by DataScout)
+            "sync_interval_mins": 60, // Frequency of pulling the latest official World Cup calendar
             "enabled": true
         },
         "llm_core": {
-            "default_model": "gpt-4o",
-            "temperature": 0.3,
+            // Brain configuration for specialized AI agents.
+            "default_model": "gpt-4o", // The 'Closer' and primary reasoning brain
+            "temperature": 0.3, // Lower = more factual/deterministic
             "gatekeeper": {
-                "model": "gpt-4o-mini",
+                "model": "gpt-4o-mini", // Lightweight model for fast intent classification
                 "temperature": 0.1
             },
             "logistics": {
@@ -62,15 +69,15 @@
             },
             "narrative": {
                 "model": "gpt-4o-mini",
-                "temperature": 0.5
+                "temperature": 0.5 // Higher = better at capturing 'vibe' and sentiment
             },
             "closer": {
                 "model": "gpt-4o",
-                "temperature": 0.5
+                "temperature": 0.5 // Balance between numerical accuracy and professional prose
             },
             "extractor": {
                 "model": "gpt-4o-mini",
-                "temperature": 0.1
+                "temperature": 0.1 // Precision extraction of team names/dates
             },
             "qa_assistant": {
                 "model": "gpt-4o",
@@ -78,31 +85,36 @@
             }
         },
         "retention": {
-            "god_view_ttl_hours": 3,
-            "session_warm_start_mins": 45
+            "god_view_ttl_hours": 3, // How long the detailed match context stays in memory for user follow-up questions
+            "session_warm_start_mins": 45 // Time window where returning users get a 'Welcome back' instead of a full rules reset
         }
     },
+    // ==========================================
+    // 🕹️ BUTTON FLOW INTERFACE (App Mode)
+    // Configuration for the strict Interactive Message UI.
+    // ==========================================
     "BUTTON_FLOW_APP_CONFIG": {
-        "show_back_button": true,
-        "show_generate_bets": true,
+        "show_back_button": true, // Adds a 'Main Menu' button to analysis results
+        "show_generate_bets": true, // Toggles visibility of the 'Generate Bets' button
         "welcome_template": "goalmine_welcome",
         "menus": {
             "main": [
-                "Show_Schedule",
-                "Show_Help"
-            ],
-            "analysis_footer": [
-                "Back_To_Main"
+                "Show_Schedule", // Display Tournament Browser
+                "Show_Help" // Display FAQ / Betting Rules
             ]
         }
     },
+    // ==========================================
+    // 💬 CONVERSATION FLOW (Chat Mode)
+    // Settings for the purely natural language experience.
+    // ==========================================
     "CONVERSATION_FLOW_APP_CONFIG": {
         "llm_chat": {
             "conversation": {
                 "model": "gpt-4o",
-                "temperature": 0.7
+                "temperature": 0.7 // Warmer tone for standard chat
             }
         },
-        "greeting_style": "ANALYST"
+        "greeting_style": "ANALYST" // Options: "ANALYST" (Formal/Direct) or "CASUAL" (Banter-heavy)
     }
 }
