@@ -109,71 +109,46 @@ class ConversationHandler:
             self.db.save_memory(from_number, user_state)
             return
 
-        # --- SCENARIO A: FOLLOW-UP ON EXISTING ANALYSIS ---
+        # --- SCENARIO A: SCHEDULE ---
+        if intent == "SCHEDULE":
+            logger.info("📅 Scenario A: Schedule query.")
+            await self._handle_schedule(from_number, msg_body, extracted_data)
+            return
+
+        # --- SCENARIO B: NEW BETTING COMMAND ---
+        if intent == "BETTING":
+            logger.info("🎯 Scenario B: New Betting command.")
+            await self._handle_betting_natural(from_number, msg_body, extracted_data)
+            return
+
+        # --- SCENARIO C: CONFIRMATION ("Yeah", "Do it", "Sure") ---
+        # If we have an active match and user confirms, run analysis
+        if last_match and self._is_confirmation(msg_body):
+            logger.info("✅ Scenario C: Confirmation detected.")
+            await self._run_analysis(from_number, last_match, extracted_data)
+            return
+
+        # --- SCENARIO D: STRATEGIC ADVICE ---
         # If user already has analysis AND is asking about budget/bets, use Strategic Advisor
-        # This prevents rerunning the swarm if they just want more picks from the same match
         god_view = user_state.get("god_view")
         if god_view and not self._mentions_new_teams(msg_body, last_match):
             strategy_keywords = [
-                "dollar",
-                "$",
-                "budget",
-                "spend",
-                "bet",
-                "get on",
-                "money",
-                "stake",
-                "parlay",
-                "parley",
-                "hedge",
-                "split",
-                "strategy",
-                "should i",
-                "more",
-                "other",
-                "another",
-                "else",
-                "alternative",
+                "dollar", "$", "budget", "spend", "bet", "get on", "money", "stake",
+                "parlay", "parley", "hedge", "split", "strategy", "should i",
+                "more", "other", "another", "else", "alternative",
             ]
 
-            is_strategy_ask = any(
-                keyword in msg_body.lower() for keyword in strategy_keywords
-            )
-            # If they say "Analyze", we want a FRESH swarm usually, even if vague.
-            # But if they say "more bets", we want Advisor.
+            is_strategy_ask = any(keyword in msg_body.lower() for keyword in strategy_keywords)
 
-            if is_strategy_ask or (
-                intent == "BETTING"
-                and not extracted_data.get("teams")
-                and "analyze" not in msg_body.lower()
-            ):
-                logger.info(
-                    "💰 Strategy/Follow-up detected with existing God View. Using Strategic Advisor."
-                )
+            # If they are asking for "more" or "other" games, but intent is CONV (not strategy),
+            # they might want the schedule. But strategy ask is stricter here.
+            if is_strategy_ask:
+                logger.info("💰 Strategy/Follow-up detected with existing God View. Using Strategic Advisor.")
                 if extracted_data and extracted_data.get("budget"):
                     god_view["user_budget"] = extracted_data["budget"]
                 answer = await self._strategic_betting_advisor(user_state, msg_body)
                 await self._send_multi(from_number, answer)
                 return
-
-        # --- SCENARIO B: CONFIRMATION ("Yeah", "Do it", "Sure") ---
-        # If we have an active match and user confirms, run analysis
-        if last_match and self._is_confirmation(msg_body):
-            logger.info("✅ Scenario B: Confirmation detected.")
-            await self._run_analysis(from_number, last_match, extracted_data)
-            return
-
-        # --- SCENARIO C: NEW BETTING COMMAND ---
-        if intent == "BETTING":
-            logger.info("🎯 Scenario C: New Betting command.")
-            await self._handle_betting_natural(from_number, msg_body, extracted_data)
-            return
-
-        # --- SCENARIO D: SCHEDULE ---
-        elif intent == "SCHEDULE":
-            logger.info("📅 Scenario D: Schedule query.")
-            await self._handle_schedule(from_number, msg_body, extracted_data)
-            return
 
         # --- SCENARIO E: STRATEGIC BETTING QUESTIONS ---
         # Detect questions about betting strategy using God View
@@ -553,34 +528,24 @@ class ConversationHandler:
     def _is_confirmation(self, text):
         """
         Detects confirmations like 'Yes', 'Do it', 'Go ahead'.
-        Refined to avoid false positives on 'bet' in longer sentences.
+        Refined to avoid false positives on 'bet' or 'okay' in intent-rich sentences.
         """
         affirmations = [
-            "yes",
-            "yeah",
-            "yep",
-            "do it",
-            "go",
-            "sure",
-            "ok",
-            "okay",
-            "run it",
-            "let's go",
-            "yup",
-            "absolutely",
-            "please",
-            "confirm",
+            "yes", "yeah", "yep", "do it", "go", "sure", "ok", "okay",
+            "run it", "let's go", "yup", "absolutely", "please", "confirm",
         ]
         text_lower = text.lower().strip()
 
-        # Standalone "bet" counts as confirmation
-        if text_lower == "bet":
+        # Standalone "bet" or "okay" counts as confirmation
+        if text_lower in ["bet", "okay", "ok", "yes", "yeah"]:
             return True
 
-        # Exact match or contains significant affirmation
-        return text_lower in affirmations or any(
-            w in text_lower.split() for w in affirmations
-        )
+        # If the text is short (<= 3 words) and contains an affirmation
+        words = text_lower.split()
+        if len(words) <= 3 and any(w in words for w in affirmations):
+            return True
+
+        return False
 
     def _mentions_new_teams(self, text, current_match):
         """
