@@ -6,7 +6,7 @@
     "GLOBAL_APP_CONFIG": {
         "app": {
             "maintenance_mode": false, // When true, all webhooks are ignored (503 status)
-            "interaction_mode": "BUTTON_STRICT", // "CONVERSATIONAL" = Chatbot style, "BUTTON_STRICT" = App-like button navigation
+            "interaction_mode": "CONVERSATIONAL", // "CONVERSATIONAL" = Chatbot style, "BUTTON_STRICT" = App-like button navigation
             "log_level": "INFO", // Logging verbosity: DEBUG, INFO, WARNING, ERROR
             "support_contact": "@Admin", // Support handle shown in error messages
             "detailed_request_logging": false // If true, logs full HTTP payloads (careful: sensitive data)
