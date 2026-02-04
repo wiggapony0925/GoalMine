@@ -12,7 +12,7 @@ sys.path.append(os.getcwd())
 load_dotenv()
 
 from core.log import setup_logging
-from services import ConversationHandler  # noqa: E402
+from services import GoalMineHandler  # noqa: E402
 
 # Initialize centralized logging
 setup_logging()
@@ -35,7 +35,7 @@ async def simulate_conversation(phone_number, scripts, delay=0.5):
     Simulates a sequence of user messages and prints the interaction.
     """
     mock_wa = MockWhatsAppClient()
-    handler = ConversationHandler(mock_wa)
+    handler = GoalMineHandler(mock_wa)
 
     # Clear memory for fresh start
     try:

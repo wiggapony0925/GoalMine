@@ -72,13 +72,12 @@ GoalMine/
 │   │   └── button_conversation.py # Interactive lists & buttons (WhatsApp UI)
 │   │
 │   └── conversationalFlow/         # 💬 Natural language conversation mode
-│       └── conversation.py         # Context-aware chat handler
+│   └── handler.py                  # 🎮 UNUSED (Old folder, logic moved to services/message_handler.py)
 │
-├── services/api/                   # 🔌 External Data Partners
-│   └── football_data/
-│       └── client.py               # Football-Data.org v4 Specialist
-│
-├── services/data_scout.py           # 🛰️ Live Data Scout (Syncs API with local data)
+├── services/                       # ⚙️ Business Logic \u0026 UI Engine
+│   ├── message_handler.py          # 🕹️ GoalMineHandler: The Button-First UI Engine
+│   ├── orchestrator.py             # 🧠 The Swarm Master (coordinates all agents)
+│   └── data_scout.py               # 🛰️ Live Data Scout (Syncs API with local data)
 │
 ├── prompts/                        # 🧠 AI System Prompts (The Brain)
 │   └── system_prompts.py           # All LLM prompts centralized
@@ -236,10 +235,11 @@ The **God View** is a comprehensive JSON intelligence matrix containing outputs 
 **Stored in**: `sessions.god_view` (Supabase JSONB column)  
 **Memory Lifecycle**: Cleaned after 3 hours of inactivity (configurable).
 
-### **🔍 Context-Aware Navigation**
-The bot distinguishes between **Cold Starts** and **Warm Sessions**:
+### **🔍 GoalMine High-Performance Mode**
+The bot is now optimized for speed and clarity using **Strict Button-Based** navigation.
 - **Cold Start** (>45 mins): Sends a full welcome template and resets to the Main Menu.
-- **Warm Session** (<45 mins): Greets the user but restores their exact last UI state (e.g., Analysis or Bet Selection) to prevent reset fatigue.
+- **Warm Session** (<45 mins): Restores the exact last UI state (e.g., Analysis or Bet Selection) to prevent reset fatigue.
+- **Text Rejection**: Pure conversational chat is politely redirected to the menu to ensure the user stays on the most profitable path.
 
 ---
 

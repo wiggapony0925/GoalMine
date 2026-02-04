@@ -6,7 +6,7 @@
     "GLOBAL_APP_CONFIG": {
         "app": {
             "maintenance_mode": false, // When true, all webhooks are ignored (503 status)
-            "interaction_mode": "CONVERSATIONAL", // "CONVERSATIONAL" = Chatbot style, "BUTTON_STRICT" = App-like button navigation
+            "interaction_mode": "STRICT_BUTTON", // Strictly App-like button navigation
             "log_level": "INFO", // Logging verbosity: DEBUG, INFO, WARNING, ERROR
             "support_contact": "@Admin", // Support handle shown in error messages
             "detailed_request_logging": false // If true, logs full HTTP payloads (careful: sensitive data)
@@ -90,8 +90,8 @@
         }
     },
     // ==========================================
-    // 🕹️ BUTTON FLOW INTERFACE (App Mode)
-    // Configuration for the strict Interactive Message UI.
+    // 🕹️ BUTTON FLOW INTERFACE (Engine)
+    // Configuration for the strictly Interactive Message UI.
     // ==========================================
     "BUTTON_FLOW_APP_CONFIG": {
         "show_back_button": true, // Adds a 'Main Menu' button to analysis results
@@ -103,18 +103,5 @@
                 "Show_Help" // Display FAQ / Betting Rules
             ]
         }
-    },
-    // ==========================================
-    // 💬 CONVERSATION FLOW (Chat Mode)
-    // Settings for the purely natural language experience.
-    // ==========================================
-    "CONVERSATION_FLOW_APP_CONFIG": {
-        "llm_chat": {
-            "conversation": {
-                "model": "gpt-4o",
-                "temperature": 0.7 // Warmer tone for standard chat
-            }
-        },
-        "greeting_style": "ANALYST" // Options: "ANALYST" (Formal/Direct) or "CASUAL" (Banter-heavy)
     }
 }

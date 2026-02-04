@@ -11,7 +11,7 @@ load_dotenv()
 logging.basicConfig(level=logging.ERROR)  # Only show errors from agents
 logger = logging.getLogger("UserJourneyTest")
 
-from services import ConversationHandler
+from services import GoalMineHandler
 
 
 class MockWhatsAppClient:
@@ -28,7 +28,7 @@ async def simulate_conversation(phone_number, scripts):
     Simulates a sequence of user messages and prints the interaction.
     """
     mock_wa = MockWhatsAppClient()
-    handler = ConversationHandler(mock_wa)
+    handler = GoalMineHandler(mock_wa)
 
     # Clear memory for fresh start
     handler.db.clear_memory(phone_number)

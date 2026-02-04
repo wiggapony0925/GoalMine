@@ -15,7 +15,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from collections import deque
 from core import setup_logging, register_request_logger, print_start_banner, settings
 from core.initializer import WhatsAppClient, Database
-from services import ConversationHandler, ButtonConversationHandler, data_scout
+from services import GoalMineHandler, data_scout
 from services._automatic_messages import (
     MorningBriefService,
     KickoffAlertService,
@@ -56,16 +56,11 @@ wa_client = WhatsAppClient()
 PROCESSED_IDS = set()
 ID_QUEUE = deque(maxlen=500)
 
-# Dynamic Handler Selection
+# Unified Message Handler
 db_client = Database()
 data_scout.set_database(db_client)
-
-if settings.get("GLOBAL_APP_CONFIG.app.interaction_mode") == "BUTTON_STRICT":
-    conv_handler = ButtonConversationHandler(wa_client, db_client)
-    logger.info("🛡️ STRICT MODE ACTIVATED: Using ButtonConversationHandler")
-else:
-    conv_handler = ConversationHandler(wa_client)
-    logger.info("💬 CONVERSATIONAL MODE: Using standard ConversationHandler")
+conv_handler = GoalMineHandler(wa_client, db_client)
+logger.info("🛡️ STRICT MODE ACTIVATED: Using GoalMineHandler")
 
 # --- AUTOMATED SERVICES ---
 brief_service = MorningBriefService(wa_client, db_client)

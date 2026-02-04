@@ -1,11 +1,9 @@
-from .conversationalFlow.conversation import ConversationHandler
-from .buttonConversationalFlow.button_conversation import ButtonConversationHandler
+from .message_handler import GoalMineHandler
 from .data_scout import DataScoutService, data_scout
 from . import orchestrator
 
 __all__ = [
-    "ConversationHandler",
-    "ButtonConversationHandler",
+    "GoalMineHandler",
     "DataScoutService",
     "data_scout",
     "orchestrator",

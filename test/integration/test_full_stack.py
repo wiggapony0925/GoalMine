@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-from services import ConversationHandler
+from services import GoalMineHandler
 from core.initializer.whatsapp import WhatsAppClient
 # from prompts.system_prompts import * # Directory was deleted by user
 
@@ -71,7 +71,7 @@ async def test_full_suite():
 
     with patch("services.conversation.Database", return_value=MockDB()):
         wa = MockWhatsApp()
-        handler = ConversationHandler(wa_client=wa)
+        handler = GoalMineHandler(wa_client=wa)
         db = handler.db
 
         test_phone = "123456789"

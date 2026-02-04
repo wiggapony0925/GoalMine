@@ -678,15 +678,13 @@ class TestConversationFlows:
     @pytest.mark.asyncio
     async def test_button_flow_schedule_display(self):
         """Test button flow shows schedule with interactive list"""
-        from services.buttonConversationalFlow.button_conversation import (
-            ButtonConversationHandler,
-        )
+        from services import GoalMineHandler
         from core.initializer.whatsapp import WhatsAppClient
         from core.initializer.database import Database
 
         wa = WhatsAppClient()
         db = Database()
-        handler = ButtonConversationHandler(wa, db)
+        handler = GoalMineHandler(wa, db)
 
         with patch.object(wa, "send_interactive_message") as mock_send:
             await handler._send_schedule_list("1234567890")
@@ -699,11 +697,11 @@ class TestConversationFlows:
     @pytest.mark.asyncio
     async def test_conversational_flow_context_retention(self):
         """Test conversational flow remembers match context"""
-        from services.conversationalFlow.conversation import ConversationHandler
+        from services import GoalMineHandler
         from core.initializer.whatsapp import WhatsAppClient
 
         wa = WhatsAppClient()
-        handler = ConversationHandler(wa)
+        handler = GoalMineHandler(wa)
 
         # Mock database to return context
         with patch("core.initializer.database.Database.load_memory") as mock_load:

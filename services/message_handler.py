@@ -1,16 +1,16 @@
 import json
 import asyncio
-from core.log import get_logger, clear_log
+from core.log import get_logger
 from services import orchestrator
 from core.config import settings
 from agents.gatekeeper.gatekeeper import Gatekeeper
 from prompts.messages_prompts import ButtonResponses
-from core.generate_bets import generate_bet_recommendations
+from core.generate_bets import generate_bet_recommendations, generate_strategic_advice
 
 logger = get_logger("ButtonHandler")
 
 
-class ButtonConversationHandler:
+class GoalMineHandler:
     """
     Strict Button Handler - The "App" Logic.
     Rejects text chat. Forces menu navigation via Interactive Messages.
@@ -101,19 +101,28 @@ class ButtonConversationHandler:
         # Classify Intent
         intent, data = await Gatekeeper.classify_intent(user_input)
 
-        if intent == "BETTING" and data and data.get("teams"):
-            # User typed a team name or "Analyze Brazil"
-            team_name = data["teams"][0]
-            logger.info(
-                f"🎯 Intelligent Routing: Triggering analysis for '{team_name}' based on text."
-            )
-            await self._trigger_analysis(from_number, team_name)
-            return
+        if intent == "BETTING":
+            if data and data.get("teams"):
+                # User typed a team name or "Analyze Brazil"
+                team_name = data["teams"][0]
+                logger.info(f"🎯 Text-to-Analysis Routing: '{team_name}'")
+                await self._trigger_analysis(from_number, team_name)
+                return
+            else:
+                # Strategic Question (e.g. "How should I stake?")
+                user_state = self.db.load_memory(from_number) or {}
+                if user_state.get("god_view"):
+                    logger.info("💰 Strategy ask detected with existing God View.")
+                    answer = await self._strategic_betting_advisor(user_state, user_input, from_number)
+                    await self._send_multi(from_number, answer)
+                    return
+                else:
+                    # No context, just send schedule
+                    await self._send_schedule_browser(from_number)
+                    return
 
         elif intent == "SCHEDULE":
-            logger.info(
-                "📅 Intelligent Routing: Showing schedule browser based on text."
-            )
+            logger.info("📅 Text-to-Schedule Routing.")
             await self._send_schedule_browser(from_number)
             return
 
@@ -128,52 +137,46 @@ class ButtonConversationHandler:
             )
 
             if age_mins > warm_start_limit:
-                # COLD START: Treat as a fresh morning greeting
-                logger.info(
-                    f"👋 Cold Start Greeting ({round(age_mins)} mins). Clearing Logs & Initializing UI."
-                )
-                clear_log()  # Wipes app.log for a fresh debug session
-                if settings.get("GLOBAL_APP_CONFIG.whatsapp.use_templates"):
+                 # Initial greeting for new session
+                 if settings.get("GLOBAL_APP_CONFIG.whatsapp.use_templates"):
                     welcome_template = settings.get(
                         "BUTTON_FLOW_APP_CONFIG.welcome_template", "goalmine_welcome"
                     )
+                    self.wa.send_typing_indicator(from_number)
                     self.wa.send_template_message(
                         from_number, welcome_template, ["Player"]
                     )
-
-                await self._send_main_menu(from_number)
+                 await self._send_main_menu(from_number)
             else:
-                # WARM SESSION: Mid-conversation. Don't "Turn it off and on again".
-                logger.info(
-                    f"🔄 Warm Greeting ({round(age_mins)} mins). Restoring current flow."
-                )
+                # Handle general chat or questions mid-session
+                reply = await self._handle_general_conversation(user_input)
+                self.wa.send_message(from_number, reply)
+                
+                # Always follow up with the menu or last state
                 last_state = self.db.load_button_state(from_number)
                 if last_state:
-                    self.wa.send_message(
-                        from_number, "Hey! 👋 Let's pick up where we left off."
-                    )
                     self.wa.send_interactive_message(from_number, last_state)
                 else:
                     await self._send_main_menu(from_number)
             return
 
-        # 4. FINAL FALLBACK: Unclear Input -> Resend Last State
-        logger.info(f"⛔ Unclear Input ('{user_input}') -> Checking for last state.")
+        # 4. FINAL FALLBACK: Unclear Input or General Chat
+        logger.info(f"⛔ Unsupported Pure Text ('{user_input}') -> Forcing Menu.")
+
+        # Send a polite rejection message explaining the button-only mode
+        rejection_msg = (
+            "🤖 *GoalMine High-Performance Mode*\n\n"
+            "I've shifted to a strictly professional interface to give you faster analysis and cleaner data. "
+            "Please use the **buttons and menus** below to navigate.\n\n"
+            "If you're lost, hit **Main Menu**! 👇"
+        )
+        self.wa.send_message(from_number, rejection_msg)
+
         last_state = self.db.load_button_state(from_number)
-
         if last_state:
-            logger.info(f"🔄 Resending last UI state to {from_number}")
-            # Add a small prefix to explain
-            prefix = ButtonResponses.UNCLEAR_INPUT_PREFIX
-            # We clone to avoid modifying the original and then update the body
-            resend_obj = last_state.copy()
-            if "body" in resend_obj and "text" in resend_obj["body"]:
-                resend_obj["body"] = {"text": prefix + resend_obj["body"]["text"]}
-
-            self.wa.send_interactive_message(from_number, resend_obj)
+            self.wa.send_interactive_message(from_number, last_state)
         else:
-            logger.info("🏠 No last state found. Sending Main Menu.")
-            await self._send_main_menu(from_number, is_fallback=True)
+            await self._send_main_menu(from_number)
 
     def _send_interactive(self, to_number, interactive_obj):
         """Helper to send and record the UI state."""
@@ -551,3 +554,51 @@ class ButtonConversationHandler:
             self.wa.send_message(
                 to_number, ButtonResponses.ANALYSIS_ERROR.format(support=support)
             )
+    async def _handle_general_conversation(self, message):
+        """
+        Handles greetings and general chat with a professional redirection.
+        """
+        from core.initializer.llm import query_llm
+        from prompts.system_prompts import CONVERSATION_ASSISTANT_PROMPT
+
+        try:
+            # We use the standard assistant but with a cooler, more brief instruction if needed.
+            # For now, keeping the premium assistant.
+            reply = await query_llm(
+                CONVERSATION_ASSISTANT_PROMPT, message, temperature=0.7
+            )
+            return reply
+        except Exception as e:
+            logger.error(f"General conversation failed: {e}")
+            return "I'm GoalMine AI, your elite betting partner. How can I help you win today? 🏆"
+
+    async def _strategic_betting_advisor(self, user_state, question, user_phone):
+        """
+        Advanced betting strategist using God View JSON.
+        """
+        try:
+            answer = await generate_strategic_advice(
+                user_phone=user_phone,
+                question=question,
+            )
+            return answer
+        except Exception as e:
+            logger.error(f"Strategic Betting Advisor failed: {e}")
+            return "I'm having trouble analyzing that strategy right now. Could you rephrase your question? 🎲"
+            
+    async def _send_multi(self, to_number, text):
+        """
+        Sends long messages split by '# BET' as separate WhatsApp messages.
+        """
+        import re
+        if not text: return
+
+        if "# BET" in text:
+            parts = re.split(r"(?=# BET \d+)", text)
+            for part in parts:
+                clean_part = part.strip()
+                if clean_part:
+                    self.wa.send_message(to_number, clean_part)
+                    await asyncio.sleep(0.3)
+        else:
+            self.wa.send_message(to_number, text)

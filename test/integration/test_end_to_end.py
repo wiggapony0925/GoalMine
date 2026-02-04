@@ -167,15 +167,13 @@ class TestCompleteAnalysisFlow:
         BUTTON FLOW TEST:
         User clicks "Show Schedule" → Selects match → Gets analysis
         """
-        from services.buttonConversationalFlow.button_conversation import (
-            ButtonConversationHandler,
-        )
+        from services import GoalMineHandler
         from core.initializer.whatsapp import WhatsAppClient
         from core.initializer.database import Database
 
         wa = WhatsAppClient()
         db = Database()
-        handler = ButtonConversationHandler(wa, db)
+        handler = GoalMineHandler(wa, db)
 
         with patch.object(wa, "send_interactive_message") as mock_send_interactive:
             # Step 1: User clicks "Show Schedule"
