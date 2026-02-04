@@ -14,7 +14,11 @@ logger = get_logger("BetGenerator")
 
 
 async def generate_bet_recommendations(
-    num_bets=3, user_phone=None, conversational_mode=False, user_question=None
+    num_bets=3,
+    user_phone=None,
+    conversational_mode=False,
+    user_question=None,
+    exclude_history=None,
 ):
     """
     UNIFIED BET GENERATION ENGINE
@@ -31,6 +35,7 @@ async def generate_bet_recommendations(
         user_phone (str): User's phone number to retrieve their god_view from DB
         conversational_mode (bool): If True, use strategic advisor style. If False, use strict format.
         user_question (str): Optional - specific question from user (e.g., "Should I parlay this?")
+        exclude_history (str): Optional - Text of previous bets to avoid repeating.
 
     Returns:
         str: Formatted bet recommendations or error message
@@ -94,6 +99,11 @@ async def generate_bet_recommendations(
             num_bets=num_bets, intelligence=json.dumps(intelligence_package, indent=2)
         )
         user_prompt = f"Generate {num_bets} high-value betting recommendations using ALL available intelligence."
+
+        if exclude_history:
+            user_prompt += f"\n\nIMPORTANT: You previously generated these bets: \n{exclude_history}\n\n"
+            user_prompt += "You must generate {num_bets} NEW and DIFFERENT recommendations. Do not repeat the exact same bets."
+
         logger.info(f"🎯 Unified Bet Generator: {num_bets} bets requested")
 
     # ========================================================================

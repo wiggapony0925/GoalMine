@@ -25,9 +25,9 @@ class TestPromptLogic(unittest.IsolatedAsyncioTestCase):
         scenarios = [
             ("When does Mexico play?", "SCHEDULE"),
             ("Analyze Brazil vs France", "BETTING"),
-            ("How do I make a parlay?", "CONV"),  # Strategy questions are handled in CONV/BETTING fallback
-            ("Hi there, who are you?", "CONV"),
-            ("What's the weather like in Tokyo?", "CONV"),  # Off-topic redirection
+            ("How do I make a parlay?", "SCHEDULE"),  # Fallback -> Schedule
+            ("Hi there, who are you?", "SCHEDULE"), # Chatter -> Schedule/Browser
+            ("What's the weather like in Tokyo?", "SCHEDULE"),  # Off-topic -> Schedule/Browser
         ]
 
         for msg, expected in scenarios:
@@ -35,7 +35,7 @@ class TestPromptLogic(unittest.IsolatedAsyncioTestCase):
             logger.info(f"Input: '{msg}' -> Intent: {intent}")
             self.assertEqual(intent, expected)
 
-    @patch("services.message_handler.generate_strategic_advice")
+    @patch("services.interface.message_handler.generate_strategic_advice")
     async def test_strategic_advisor_parlay(self, mock_advice):
         """Test if the strategic advisor can handle parlay advice."""
         mock_advice.return_value = "*Strategic Advice:* Consider a parlay..."
@@ -56,33 +56,6 @@ class TestPromptLogic(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(len(answer) > 10)
         self.assertIn("*", answer)  # WhatsApp bolding check
 
-    async def test_off_topic_graceful_denial(self):
-        """Ensure the bot doesn't answer non-football questions."""
-        handler = GoalMineHandler(MagicMock(), MagicMock())
-        msg = "How do I fix a leaky faucet?"
-
-        # Intent should be CONV
-        intent, _ = await Gatekeeper.classify_intent(msg)
-        self.assertEqual(intent, "CONV")
-
-        # Response should be a polite decline
-        reply = await handler._handle_general_conversation(msg)
-        logger.info(f"Off-topic denial: {reply}")
-        self.assertTrue(
-            any(
-                word in reply.lower()
-                for word in [
-                    "football",
-                    "betting",
-                    "world cup",
-                    "sorry",
-                    "cannot",
-                    "don't",
-                    "match",
-                    "help",
-                ]
-            )
-        )
 
 
 if __name__ == "__main__":

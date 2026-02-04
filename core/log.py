@@ -61,7 +61,7 @@ class GoalMineFormatter(logging.Formatter):
         "Market": "💰",
         "Narrative": "📰",
         "Quant": "🎲",
-        "Conversation": "🗣️",
+        "System": "🔹",
         "Gatekeeper": "🚪",
         "DataScout": "🛰️",
     }
@@ -142,7 +142,7 @@ def setup_logging():
         "Orchestrator",
         "Agent",
         "LLM",
-        "Conversation",
+        "System",
         "KickoffAlerts",
         "MarketMonitor",
         "MorningBrief",
@@ -210,7 +210,7 @@ def print_start_banner():
         ascii_banner = pyfiglet.figlet_format("GoalMine AI")
         print(Fore.CYAN + ascii_banner)
         print(
-            Fore.GREEN + "🚀 GoalMine AI Prediction Engine — v2.0 'Ghost Logic' Active"
+            Fore.GREEN + "🚀 GoalMine AI Prediction Engine — v2.1 Strict Button Mode"
         )
         print(
             Fore.WHITE + "------------------------------------------------------------"

@@ -76,7 +76,7 @@ class Gatekeeper:
             extracted = await Gatekeeper._extract_match_details(message_body)
             return "BETTING", extracted
 
-        # Conversation / Greetings
+        # Conversation / Greetings -> Route to Schedule/Menu
         if any(
             w in msg
             for w in [
@@ -92,7 +92,7 @@ class Gatekeeper:
                 "help",
             ]
         ):
-            return "CONV", None
+            return "SCHEDULE", None
 
         # 2. FALLBACK: LLM for ambiguous queries
         from prompts.system_prompts import GATEKEEPER_INTENT_PROMPT
@@ -106,17 +106,18 @@ class Gatekeeper:
             )
             category = category.strip().upper()
 
-            if "SCHEDULE" in category:
-                limit_match = re.search(r"(\d+)", msg)
-                limit = int(limit_match.group(1)) if limit_match else None
-                return "SCHEDULE", {"limit": limit}
             if "BETTING" in category:
                 extracted = await Gatekeeper._extract_match_details(message_body)
                 return "BETTING", extracted
-            return "CONV", None
+            
+            # Default everything else to SCHEDULE (Browser/Menu)
+            limit_match = re.search(r"(\d+)", msg)
+            limit = int(limit_match.group(1)) if limit_match else None
+            return "SCHEDULE", {"limit": limit}
+
         except Exception as e:
             logger.warning(f"Gatekeeper LLM failed: {e}")
-            return "CONV", None
+            return "SCHEDULE", None
 
     @staticmethod
     async def _extract_match_details(message_body):

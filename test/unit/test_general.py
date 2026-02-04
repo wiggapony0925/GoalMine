@@ -31,8 +31,9 @@ class TestGoalMineSystem(unittest.IsolatedAsyncioTestCase):
             intent, _ = await Gatekeeper.classify_intent(
                 "How do I bake a chocolate cake?"
             )
-            self.assertEqual(intent, "CONV")
-            print("✅ Gatekeeper correctly routed 'Cooking' request to CONV.")
+            # Strict mode: Off-topic -> SCHEDULE (Browser/Menu)
+            self.assertEqual(intent, "SCHEDULE")
+            print("✅ Gatekeeper correctly routed 'Cooking' request to SCHEDULE.")
 
     async def test_gatekeeper_betting(self):
         # The prompt "Analyze France vs USA" hits the regex, so it skips classification LLM

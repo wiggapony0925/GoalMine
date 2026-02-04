@@ -10,7 +10,7 @@ logger = get_logger("Database")
 class Database:
     """
     Persistence Hub. Manages User State, Bet History, and Analytics.
-    Separates chat memory from betting history for ROI tracking.
+    Stores interactive message states for session persistence.
     """
 
     def __init__(self):
@@ -50,19 +50,6 @@ class Database:
         except Exception as e:
             logger.error(f"Failed to update profile for {user_phone}: {e}")
 
-    def save_chat_context(self, user_phone: str, context: List[Dict]):
-        """
-        Saves the active conversation history inside the 'sessions' table.
-        """
-        try:
-            # Load existing to not overwrite other state
-            existing = self.load_memory(user_phone) or {}
-            existing["messages"] = context
-
-            self.save_memory(user_phone, existing)
-            logger.info(f"💬 Chat context saved for {user_phone}")
-        except Exception as e:
-            logger.error(f"Memory Save Error: {e}")
 
     def save_button_state(self, user_phone: str, interactive_obj: Dict):
         """
@@ -87,15 +74,6 @@ class Database:
             logger.warning(f"No button state found for {user_phone}: {e}")
         return None
 
-    def load_chat_context(self, user_phone: str) -> List[Dict]:
-        """Loads the last conversation from the 'sessions' blob."""
-        try:
-            data = self.load_memory(user_phone)
-            if data and "messages" in data:
-                return data["messages"]
-        except Exception as e:
-            logger.warning(f"No chat context found for {user_phone}: {e}")
-        return []
 
     def log_bet_prediction(self, user_phone: str, match_id: str, prediction: Dict):
         """

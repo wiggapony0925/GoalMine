@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 from services import GoalMineHandler
-from prompts.messages_prompts import ButtonResponses
 
 
 class TestButtonConversationFlow(unittest.IsolatedAsyncioTestCase):

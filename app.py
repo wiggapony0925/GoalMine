@@ -15,8 +15,9 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from collections import deque
 from core import setup_logging, register_request_logger, print_start_banner, settings
 from core.initializer import WhatsAppClient, Database
-from services import GoalMineHandler, data_scout
-from services._automatic_messages import (
+from services.interface import GoalMineHandler
+from services import data_scout
+from services.interface.automatic import (
     MorningBriefService,
     KickoffAlertService,
     MarketMonitor,

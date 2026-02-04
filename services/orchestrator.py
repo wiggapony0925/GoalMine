@@ -393,19 +393,6 @@ async def format_the_closer_report(briefing, num_bets=1):
         return "Intelligence gathered, but the briefing failed to generate."
 
 
-async def handle_general_conversation(user_message):
-    """
-    Redirects to ConversationHandler's specialized logic.
-    """
-    from prompts.system_prompts import CONVERSATION_ASSISTANT_PROMPT
-
-    try:
-        return await query_llm(
-            CONVERSATION_ASSISTANT_PROMPT, user_message, config_key="closer"
-        )
-    except Exception as e:
-        logger.error(f"General conversation failed: {e}")
-        return "I'm focusing on the World Cup right now. How can I help with your bets?"
 
 
 def get_todays_matches():
@@ -479,8 +466,7 @@ def get_next_match_content():
         time_str = format_to_12hr(next_match["date_iso"])
         return (
             f"🔮 *Next Up:* {next_match['team_home']} vs {next_match['team_away']}.\n"
-            f"They kick off today at {time_str} in the Azteca stadium.\n\n"
-            f"Would you like me to analyze this match for you? Just say 'Analyze' or ask about another fixture."
+            f"Kickoff at {time_str} ({next_match.get('venue', 'Stadium')})."
         )
     return (
         "📅 Looking at the calendar, there are no upcoming matches scheduled right now."
@@ -510,7 +496,7 @@ def get_schedule_menu(limit=4):
         day_label = "today" if dt.date() == now.date() else f"on {date_str}"
         msg += f"• *{m['team_home']} vs {m['team_away']}* ({day_label} at {time_str})\n"
 
-    msg += "\nWhich one should we look into? Just say 'Analyze' followed by the teams."
+    msg += "\nSelect a match from the menu below to start analysis."
     return msg
 
 
@@ -555,7 +541,7 @@ def get_schedule_brief(days=7):
             time_str = format_to_12hr(m["date_iso"])
             msg += f"• *{m['team_home']} vs {m['team_away']}* (@ {time_str})\n"
 
-    msg += "\nTo get a deep-dive analysis on any of these, just say 'Analyze' followed by the teams."
+    msg += "\nUse the **View Schedule** menu below to browse fixtures."
     return msg
 
 
