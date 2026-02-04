@@ -348,9 +348,46 @@ async def format_the_closer_report(briefing, num_bets=1):
     user_prompt = f"USER REQUESTED: {num_bets} betting play(s).\n\nGOD VIEW DATA:\n{json.dumps(briefing['quant']['top_plays'][:3], indent=2)}"
 
     try:
-        return await query_llm(
+        response = await query_llm(
             formatted_prompt, user_prompt, config_key="closer", temperature=0.5
         )
+
+        # ========================================================================
+        # EXTRACT & LOG PREDICTIONS FOR ROI AUDIT
+        # ========================================================================
+        clean_response = response
+        if "JSON_START" in response and "JSON_END" in response:
+            try:
+                from core.initializer.database import Database
+
+                db = Database()
+                # Extract JSON block
+                json_part = response.split("JSON_START")[1].split("JSON_END")[0].strip()
+                # Remove double braces if they leaked from prompt formatting
+                json_part = json_part.replace("{{", "{").replace("}}", "}")
+                predictions = json.loads(json_part)
+
+                # Log to DB
+                match_id = briefing.get("meta", {}).get("cache_key", "unknown_match")
+                user_phone = briefing.get(
+                    "user_phone"
+                )  # Ensure this is passed or found
+                if user_phone:
+                    for p in predictions:
+                        db.log_bet_prediction(user_phone, match_id, p)
+
+                # Clean the response for WhatsApp (STRICT STRIP)
+                clean_response = response.split("JSON_START")[0].strip()
+                if "---" in clean_response:
+                    # Remove the last separator and everything after it (the audit label)
+                    clean_response = "---".join(
+                        clean_response.split("---")[:-1]
+                    ).strip()
+            except Exception as pe:
+                logger.error(f"Failed to parse/log Closer's prediction: {pe}")
+
+        return clean_response
+
     except Exception as e:
         logger.error(f"The Closer failed: {e}")
         return "Intelligence gathered, but the briefing failed to generate."

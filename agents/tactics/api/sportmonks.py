@@ -15,7 +15,7 @@ def fetch_team_stats(team_name):
         raise ValueError("Missing SPORTMONKS_API_TOKEN")
 
     try:
-        # 1. Search for Team ID
+        # 1. Search for Team ID - Prioritize National Teams
         search_url = f"https://api.sportmonks.com/v3/football/teams/search/{team_name}?api_token={api_token}"
         response = requests.get(search_url)
         response.raise_for_status()
@@ -24,8 +24,11 @@ def fetch_team_stats(team_name):
         if not data:
             raise ValueError(f"Team {team_name} not found in SportMonks DB")
 
-        team_id = data[0]["id"]
-        team_display_name = data[0]["name"]
+        # FILTER: Find the entry that is explicitly a national team
+        target_team = next((t for t in data if t.get("national_team") is True), data[0])
+
+        team_id = target_team["id"]
+        team_display_name = target_team["name"]
 
         # 2. Get Fixture Data (Today/Upcoming) with Lineups
         fixtures_url = f"https://api.sportmonks.com/v3/football/fixtures/between/2026-01-01/2026-12-31/{team_id}?api_token={api_token}&include=lineups.player,coaches.coach,venue"

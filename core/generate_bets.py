@@ -105,14 +105,39 @@ async def generate_bet_recommendations(
             system_prompt=system_prompt,
             user_content=user_prompt,
             config_key="closer",
-            temperature=0.5,  # Slightly higher for creative bet discovery
+            temperature=0.5,
         )
+
+        # ========================================================================
+        # EXTRACT & LOG PREDICTIONS FOR ROI AUDIT
+        # ========================================================================
+        clean_response = response
+        if "JSON_START" in response and "JSON_END" in response:
+            try:
+                # Extract JSON block
+                json_part = response.split("JSON_START")[1].split("JSON_END")[0].strip()
+                predictions = json.loads(json_part)
+
+                # Log each prediction to DB
+                match_id = god_view.get("meta", {}).get("cache_key", "unknown_match")
+                for p in predictions:
+                    db.log_bet_prediction(user_phone, match_id, p)
+
+                # Clean the response for WhatsApp (STRICT STRIP)
+                clean_response = response.split("JSON_START")[0].strip()
+                if "---" in clean_response:
+                    # Remove the last separator and everything after it (the audit label)
+                    clean_response = "---".join(
+                        clean_response.split("---")[:-1]
+                    ).strip()
+            except Exception as pe:
+                logger.error(f"Failed to parse/log structured predictions: {pe}")
 
         # Format output based on mode
         if conversational_mode:
-            return response  # Strategic advisor returns pre-formatted response
+            return clean_response
         else:
-            return f"🎰 *Bet Recommendations for {match_title}*\n\n{response}"
+            return f"🎰 *Bet Recommendations for {match_title}*\n\n{clean_response}"
 
     except Exception as e:
         logger.error(f"Unified Bet Generator failed: {e}")

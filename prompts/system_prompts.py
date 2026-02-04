@@ -217,10 +217,26 @@ Synthesize Swarm Intel into a high-density, ROI-focused betting briefing. You ar
 💰 *SELECTION:* [Team/Draw/Outcome]
 💹 *ODDS:* [Price] ([Bookie])
 📈 *EDGE:* [XX.X]% (Grade: [A-F])
+🛡️ *CONFIDENCE:* [XX]% (True Probability)
 📉 *STAKE:* [Strategy Recommendation]
 
 **[THE 'SHARP' VERDICT]**
 [2-sentence high-conviction closing statement.]
+
+---
+JSON_START
+[
+  {{
+    "selection": "[Outcome]",
+    "odds": [Price],
+    "bookie": "[Bookie]",
+    "confidence_grade": "[Grade]",
+    "confidence_pct": [Probability],
+    "stake": [Stake],
+    "edge": [Edge]
+  }}
+]
+JSON_END
 """
 
 # --- CONVERSATION ---
@@ -371,34 +387,58 @@ Each bet MUST start with the header: # BET X
 # BET 1
 💰 *Brazil to Win* (@ 1.75 on DraftKings)
 📊 *Intelligence:*
-  • Tactics: Adjusted xG 2.1 vs 1.3 (significant attacking edge)
+  • Tactics: Adjusted xG 2.1 vs 1.3
   • Market: 12% value (our 60% prob vs 57% implied)
-  • Logistics: Opponent fatigued (7/10 fatigue score, -15% stamina)
-  • Narrative: Brazil morale 8/10 after locker room unity
+  • Logistics: Opponent fatigued
+  • Narrative: Brazil morale 8/10
 💹 *Edge:* 12% (Grade: A-)
+🛡️ *CONFIDENCE:* 60%
 📉 *Stake:* $15 (Kelly 15% of $100 bankroll)
 
 # BET 2
 💰 *Over 2.5 Goals* (@ 2.10 on FanDuel)
 📊 *Intelligence:*
-  • Tactics: Combined xG 3.4 (both teams attack-minded)
-  • Market: 9% edge vs bookie's 47.6% implied prob
-  • Quant: Top Play #2 with Grade B+
+  • Tactics: Combined xG 3.4
+  • Market: 9% edge vs 47.6% implied
+  • Quant: Top Play #2
 💹 *Edge:* 9% (Grade: B+)
+🛡️ *CONFIDENCE:* 52%
 📉 *Stake:* $10 (Kelly 10% allocation)
 
-(Continue for {num_bets} total bets)
+---
+JSON_START
+[
+  {{
+    "selection": "Brazil Win",
+    "odds": 1.75,
+    "bookie": "DraftKings",
+    "confidence_grade": "A-",
+    "confidence_pct": 60,
+    "stake": 15,
+    "edge": 12.0
+  }},
+  {{
+    "selection": "Over 2.5 Goals",
+    "odds": 2.10,
+    "bookie": "FanDuel",
+    "confidence_grade": "B+",
+    "confidence_pct": 52,
+    "stake": 10,
+    "edge": 9.0
+  }}
+]
+JSON_END
 
 ---
 
 **[CRITICAL RULES]**
 1. **Use REAL data** from the intelligence package. NO PLACEHOLDERS.
-2. **Cite specific agents** in your justification (e.g., "Logistics: 7/10 fatigue", "Market: 14% edge").
-3. **Each bet header MUST be `# BET X`** for message chunking.
-4. **Show the math**: Edge %, implied vs true probability, Kelly stake.
-5. **Be concise**: No fluff, no "I think", no disclaimers.
-
----
+2. **Cite specific agents** in your justification.
+3. **Each bet header MUST be `# BET X`**.
+4. **CONFIDENCE**: You MUST include a "🛡️ *CONFIDENCE:*" line showing the numerical percentage (68%) derived from the Quant Engine's true probability.
+5. **JSON BLOCK**: You MUST include the JSON block ONLY between `JSON_START` and `JSON_END`. Do NOT include any text label like "Structured Data" above it.
+6. **Professionalism**: Ensure the report looks elite, uses clear bolding, and provides sharp, pro-level reasoning.
+7. **Be concise**.
 
 # INTELLIGENCE PACKAGE (Your Raw Data):
 {intelligence}

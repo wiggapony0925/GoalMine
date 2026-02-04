@@ -338,6 +338,7 @@ class ConversationHandler:
             briefing = await orchestrator.generate_betting_briefing(
                 match_info, user_budget=budget
             )
+            briefing["user_phone"] = user_phone  # Inject for logging
 
             # 3. Save to Memory (for follow-up questions)
             save_data = briefing.copy()

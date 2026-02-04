@@ -114,14 +114,15 @@ class Database:
                     "match_id": match_id,
                     "predicted_outcome": prediction.get("selection"),
                     "odds": prediction.get("odds"),
-                    "confidence": prediction.get("confidence"),
+                    "confidence": prediction.get("confidence_grade")
+                    or prediction.get("confidence"),
                     "stake": prediction.get("stake", 0),
                     "model_version": "v2.1_dixon_coles",
                     "created_at": datetime.utcnow().isoformat(),
                 }
             ).execute()
             logger.info(
-                f"📝 Bet Logged: {prediction.get('selection')} @ {prediction.get('odds')}"
+                f"📝 Bet Logged: {prediction.get('selection')} @ {prediction.get('odds')} (Conviction: {prediction.get('confidence_pct') or 'N/A'}%)"
             )
         except Exception as e:
             logger.error(f"Failed to log bet: {e}")

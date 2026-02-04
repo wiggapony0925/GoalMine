@@ -491,6 +491,7 @@ class ButtonConversationHandler:
         # 2. Run Agents
         try:
             briefing = await orchestrator.generate_betting_briefing(match_info)
+            briefing["user_phone"] = to_number  # Inject phone for logging
 
             # 2.1 [DATABASE PERSISTENCE] Save God View for future bet generation
             save_data = briefing.copy()
