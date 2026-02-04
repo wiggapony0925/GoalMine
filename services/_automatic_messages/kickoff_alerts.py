@@ -5,6 +5,7 @@ from core.initializer.whatsapp import WhatsAppClient
 
 logger = get_logger("KickoffAlerts")
 
+
 class KickoffAlertService:
     def __init__(self, wa: WhatsAppClient, db):
         self.wa = wa
@@ -14,28 +15,33 @@ class KickoffAlertService:
         """Runs based on settings interval for Kick-off Alerts"""
         logger.info("🏟️ Checking for upcoming kick-offs...")
         upcoming = orchestrator.get_upcoming_matches()
-        
+
         # Broadcast to all users
         users = self.db.get_all_active_users()
         logger.info(f"📢 Checking kick-off alerts for {len(users)} users.")
 
-        lead_time = settings.get('GLOBAL_APP_CONFIG.scheduling.alert_lead_time_mins', 60)
-        
+        lead_time = settings.get(
+            "GLOBAL_APP_CONFIG.scheduling.alert_lead_time_mins", 60
+        )
+
         for target_user in users:
             for m in upcoming:
                 # Generate Fallback Text
                 fallback = f"🚨 KICK-OFF ALERT: {m['team_home']} vs {m['team_away']} starts in {lead_time} minutes!\nReply 'Analyze {m['team_home']}' for a last-minute edge."
-                
-                if settings.get('GLOBAL_APP_CONFIG.whatsapp.use_templates'):
-                    template_name = settings.get('GLOBAL_APP_CONFIG.whatsapp.templates.kickoff', 'goalmine_kickoff_alert')
+
+                if settings.get("GLOBAL_APP_CONFIG.whatsapp.use_templates"):
+                    template_name = settings.get(
+                        "GLOBAL_APP_CONFIG.whatsapp.templates.kickoff",
+                        "goalmine_kickoff_alert",
+                    )
                     self.wa.send_template_message(
-                        target_user, 
-                        template_name, 
-                        [m['team_home'], m['team_away']],
-                        fallback_text=fallback
+                        target_user,
+                        template_name,
+                        [m["team_home"], m["team_away"]],
+                        fallback_text=fallback,
                     )
                 else:
                     self.wa.send_message(target_user, fallback)
-                
+
         if not upcoming:
             logger.info(f"✅ No matches starting in the next {lead_time} minutes.")

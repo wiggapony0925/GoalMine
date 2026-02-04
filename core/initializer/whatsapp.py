@@ -7,30 +7,34 @@ from core.log import get_logger
 
 logger = get_logger("WhatsApp")
 
+
 class WhatsAppClient:
     """
     Handles all interactions with the WhatsApp Cloud API.
     """
+
     def __init__(self):
         self.token = os.getenv("WHATSAPP_TOKEN")
         self.phone_number_id = os.getenv("PHONE_NUMBER_ID")
         self.api_version = "v24.0"
         self.base_url = f"https://graph.facebook.com/{self.api_version}"
         self.app_secret = os.getenv("WHATSAPP_APP_SECRET")
-        self._appsecret_proof = self._generate_appsecret_proof() if self.app_secret and self.token else None
-        
+        self._appsecret_proof = (
+            self._generate_appsecret_proof() if self.app_secret and self.token else None
+        )
+
         # LOG SECURITY STATUS
         if self._appsecret_proof:
             logger.info("🛡️ WhatsApp Security: App Secret Proof ACTIVE (Secure Mode)")
         else:
-            logger.warning("🔓 WhatsApp Security: App Secret Proof INACTIVE (Standard Mode)")
+            logger.warning(
+                "🔓 WhatsApp Security: App Secret Proof INACTIVE (Standard Mode)"
+            )
 
     def _generate_appsecret_proof(self):
         """Generates the appsecret_proof required for secure API calls."""
         return hmac.new(
-            self.app_secret.encode('utf-8'),
-            self.token.encode('utf-8'),
-            hashlib.sha256
+            self.app_secret.encode("utf-8"), self.token.encode("utf-8"), hashlib.sha256
         ).hexdigest()
 
     def _get_headers(self):
@@ -65,10 +69,14 @@ class WhatsAppClient:
             response = requests.post(url, headers=headers, json=data)
             response.raise_for_status()
             logger.info(f"Message sent to {to_number}")
-            
+
             # [AUDIT LOG] Log what the bot said (Developer Only)
-            logger.debug(f"🤖 BOT REPLY: {message_text[:200]}..." if len(message_text) > 200 else f"🤖 BOT REPLY: {message_text}")
-                
+            logger.debug(
+                f"🤖 BOT REPLY: {message_text[:200]}..."
+                if len(message_text) > 200
+                else f"🤖 BOT REPLY: {message_text}"
+            )
+
             return response.json()
         except requests.exceptions.RequestException as e:
             if e.response is not None:
@@ -76,14 +84,24 @@ class WhatsAppClient:
                 if status == 401:
                     logger.error("❌ WHATSAPP AUTH ERROR (401 Unauthorized)")
                     logger.error("👉 TROUBLESHOOTING:")
-                    logger.error("   1. Your WHATSAPP_TOKEN has likely expired. Temporary tokens only last 24 hours.")
-                    logger.error("   2. Go to Meta Developer Portal -> WhatsApp -> API Setup to generate a new token.")
-                    logger.error("   3. Check if your PHONE_NUMBER_ID in .env matches the portal.")
+                    logger.error(
+                        "   1. Your WHATSAPP_TOKEN has likely expired. Temporary tokens only last 24 hours."
+                    )
+                    logger.error(
+                        "   2. Go to Meta Developer Portal -> WhatsApp -> API Setup to generate a new token."
+                    )
+                    logger.error(
+                        "   3. Check if your PHONE_NUMBER_ID in .env matches the portal."
+                    )
                 elif status == 400:
                     logger.error(f"❌ WHATSAPP BAD REQUEST (400): {e.response.text}")
                     logger.error("👉 TROUBLESHOOTING:")
-                    logger.error("   1. Check if the recipient number is a 'Test Number' in your Meta Portal.")
-                    logger.error("   2. Ensure the phone number format is correct (no + or leading zeros).")
+                    logger.error(
+                        "   1. Check if the recipient number is a 'Test Number' in your Meta Portal."
+                    )
+                    logger.error(
+                        "   2. Ensure the phone number format is correct (no + or leading zeros)."
+                    )
                     logger.error("   3. Check if THE PHONE_NUMBER_ID is correct.")
                 else:
                     logger.error(f"WhatsApp API Error ({status}): {e.response.text}")
@@ -91,7 +109,14 @@ class WhatsAppClient:
                 logger.error(f"Network Error sending WhatsApp message: {e}")
             return None
 
-    def send_template_message(self, to_number, template_name, components, fallback_text=None, language_code="en_US"):
+    def send_template_message(
+        self,
+        to_number,
+        template_name,
+        components,
+        fallback_text=None,
+        language_code="en_US",
+    ):
         """
         Sends a pre-approved template message.
         'components' should be a list of strings for variables {{1}}, {{2}}, etc.
@@ -103,9 +128,9 @@ class WhatsAppClient:
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
         headers = self._get_headers()
-        
+
         parameters = [{"type": "text", "text": str(val)} for val in components]
-        
+
         data = {
             "messaging_product": "whatsapp",
             "to": to_number,
@@ -113,8 +138,8 @@ class WhatsAppClient:
             "template": {
                 "name": template_name,
                 "language": {"code": language_code},
-                "components": []
-            }
+                "components": [],
+            },
         }
 
         # 1. HANDLE BODY COMPONENTS
@@ -125,11 +150,13 @@ class WhatsAppClient:
         else:
             # Named Parameters Format
             parameters = [
-                {"type": "text", "parameter_name": key, "text": str(val)} 
+                {"type": "text", "parameter_name": key, "text": str(val)}
                 for key, val in components.items()
             ]
-        
-        data["template"]["components"].append({"type": "body", "parameters": parameters})
+
+        data["template"]["components"].append(
+            {"type": "body", "parameters": parameters}
+        )
 
         try:
             response = requests.post(url, headers=headers, json=data)
@@ -139,12 +166,14 @@ class WhatsAppClient:
         except requests.exceptions.RequestException as e:
             error_data = e.response.text if e.response else str(e)
             logger.warning(f"⚠️ Template '{template_name}' failed: {error_data}")
-            
+
             if fallback_text:
-                logger.info(f"🔄 Attempting fallback to standard message for {to_number}")
+                logger.info(
+                    f"🔄 Attempting fallback to standard message for {to_number}"
+                )
                 return self.send_message(to_number, fallback_text)
             return None
-        
+
     def mark_as_read(self, message_id):
         """
         Marks a received message as read.
@@ -157,7 +186,7 @@ class WhatsAppClient:
         data = {
             "messaging_product": "whatsapp",
             "status": "read",
-            "message_id": message_id
+            "message_id": message_id,
         }
         try:
             requests.post(url, headers=headers, json=data)
@@ -172,17 +201,19 @@ class WhatsAppClient:
             interactive_object (dict): The inner 'interactive' JSON object properly formatted.
         """
         if not self.token or not self.phone_number_id:
-            logger.warning("WhatsApp Credentials missing. Interactive message not sent.")
+            logger.warning(
+                "WhatsApp Credentials missing. Interactive message not sent."
+            )
             return None
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
         headers = self._get_headers()
-        
+
         data = {
             "messaging_product": "whatsapp",
             "to": to_number,
             "type": "interactive",
-            "interactive": interactive_object
+            "interactive": interactive_object,
         }
 
         try:
@@ -190,7 +221,7 @@ class WhatsAppClient:
             # If 400, log the payload for debugging
             if response.status_code == 400:
                 logger.error(f"❌ WhatsApp 400 Payload: {json.dumps(data, indent=2)}")
-            
+
             response.raise_for_status()
             logger.info(f"🔘 Interactive Message sent to {to_number}")
             return response.json()
@@ -200,14 +231,16 @@ class WhatsAppClient:
             if e.response is not None:
                 try:
                     error_body = json.dumps(e.response.json(), indent=2)
-                except:
+                except Exception:
                     error_body = e.response.text
-            
+
             logger.error(f"❌ WhatsApp API Failed: {e}")
             logger.error(f"📝 Error Details: {error_body}")
             return None
 
-    def send_location_message(self, to_number, latitude, longitude, name=None, address=None):
+    def send_location_message(
+        self, to_number, latitude, longitude, name=None, address=None
+    ):
         """
         Sends a Location message.
         """
@@ -217,11 +250,8 @@ class WhatsAppClient:
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
         headers = self._get_headers()
-        
-        location_data = {
-            "latitude": latitude,
-            "longitude": longitude
-        }
+
+        location_data = {"latitude": latitude, "longitude": longitude}
         if name:
             location_data["name"] = name
         if address:
@@ -231,7 +261,7 @@ class WhatsAppClient:
             "messaging_product": "whatsapp",
             "to": to_number,
             "type": "location",
-            "location": location_data
+            "location": location_data,
         }
 
         try:
@@ -249,16 +279,16 @@ class WhatsAppClient:
 
         url = f"{self.base_url}/{self.phone_number_id}/messages"
         headers = self._get_headers()
-        
+
         data = {
             "messaging_product": "whatsapp",
             "recipient_type": "individual",
             "to": to_number,
             "type": "sender_action",
-            "sender_action": "typing_on"
+            "sender_action": "typing_on",
         }
-        
+
         try:
-           requests.post(url, headers=headers, json=data, timeout=5)
+            requests.post(url, headers=headers, json=data, timeout=5)
         except Exception:
-           pass
+            pass

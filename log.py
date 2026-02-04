@@ -1,1 +1,1 @@
-from core.log import *
+from core.log import *  # noqa: F403

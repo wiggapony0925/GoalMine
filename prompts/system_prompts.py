@@ -406,4 +406,3 @@ Each bet MUST start with the header: # BET X
 # YOUR TASK:
 Generate {num_bets} bets NOW using the complete intelligence above.
 """
-

@@ -113,14 +113,13 @@ The **DataScout Service** (`services/data_scout.py`) is the engine's central ner
 ---
 
 ## 🗄️ 5. Data Persistence: The God View System
-We do not pass strings between agents. We pass a **God View** object via Supabase.
+We do not pass strings between agents. We pass a **God View** object via Supabase. All tables are protected by Row Level Security (RLS) to ensure only the GoalMine engine (Service Role) can perform sensitive writes.
 
 | Table | Column | Type | Purpose |
 | :--- | :--- | :--- | :--- |
-| **sessions** | `god_view` | `JSONB` | Stores the 2.5KB intelligence matrix for a match. |
-| **sessions** | `context` | `JSONB` | Remembers the "last match" for conversational follow-ups. |
-| **system_storage** | `live_schedule` | `JSONB` | Stores the current merged 2026 World Cup calendar. |
-| **predictions** | `payload` | `JSONB` | Archives every bet sent to every user for ROI tracking. |
+| **sessions** | `god_view` | `JSONB` | Stores the 2.5KB intelligence matrix for a match. Indexed by `created_at` for TTL. |
+| **system_storage** | `value` | `JSONB` | Key-Value store for global state. Primary key `live_schedule` holds the synced calendar. |
+| **predictions** | `(All Columns)`| `Mix` | The ROI Audit Trail. Logs `user_phone`, `odds`, `stake`, and `outcome` for P&L tracking. |
 
 ---
 

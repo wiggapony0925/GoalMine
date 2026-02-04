@@ -506,44 +506,53 @@ pip install -r requirements.txt
 
 ### **3. Database Setup (Supabase)**
 
-Create tables:
+GoalMine uses a hardened Supabase schema designed for high-concurrency World Cup traffic. Execute this in your SQL Editor:
 
 ```sql
--- God View storage
+-- 1. Optimized God View Storage
 CREATE TABLE sessions (
   phone TEXT PRIMARY KEY,
   god_view JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Chat context
-CREATE TABLE active_sessions (
-  phone TEXT PRIMARY KEY,
-  recent_messages TEXT[],
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+-- B-tree index for 3-hour TTL enforcement
+CREATE INDEX IF NOT EXISTS idx_sessions_created_at ON public.sessions (created_at);
 
--- Bet logging
-CREATE TABLE bet_predictions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  phone TEXT,
-  match TEXT,
-  bets JSONB,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- System State & Live Schedule Storage
+-- 2. Secure System State (Live Schedule)
 CREATE TABLE system_storage (
   key TEXT PRIMARY KEY,
   value JSONB,
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+-- Hardened: RLS Enabled (Server-Only Access)
+ALTER TABLE public.system_storage ENABLE ROW LEVEL SECURITY;
 
--- Indexes for performance
-CREATE INDEX idx_sessions_phone ON sessions(phone);
-CREATE INDEX idx_sessions_created ON sessions(created_at);
+-- 3. ROI Audit Trail (Predictions)
+CREATE TABLE predictions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_phone TEXT NOT NULL,
+  match_id TEXT NOT NULL,
+  predicted_outcome TEXT NOT NULL,
+  odds NUMERIC,
+  confidence TEXT,
+  stake NUMERIC,
+  model_version TEXT DEFAULT 'v2.1_dixon_coles',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT fk_predictions_user_phone FOREIGN KEY (user_phone)
+    REFERENCES public.sessions (phone) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_predictions_user_phone ON public.predictions (user_phone);
+CREATE INDEX IF NOT EXISTS idx_predictions_created_at ON public.predictions (created_at);
+-- Hardened: RLS Enabled (Server-Only Access)
+ALTER TABLE public.predictions ENABLE ROW LEVEL SECURITY;
 ```
+
+#### **Table Purposes:**
+| Table | Role | App Usage |
+| :--- | :--- | :--- |
+| **`sessions`** | User Memory | Stores 'God View' JSON. Used for follow-up Q&A and session persistence. |
+| **`system_storage`** | App State | Stores the global `live_schedule` merged by DataScout. |
+| **`predictions`** | Audit Log | Logs every bet recommendation for real-time ROI auditing and bankroll tracking. |
 
 ### **4. Run Locally**
 
