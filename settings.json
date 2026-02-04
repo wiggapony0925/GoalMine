@@ -36,6 +36,11 @@
             "alert_lead_time_mins": 60,
             "market_monitor_interval_mins": 30
         },
+        "live_data": {
+            "api_token": "d0bcb25a490b4a3ebc278b88f256f59f",
+            "sync_interval_mins": 60,
+            "enabled": true
+        },
         "llm_core": {
             "default_model": "gpt-4o",
             "temperature": 0.3,

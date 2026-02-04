@@ -13,7 +13,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from collections import deque
 from core import setup_logging, register_request_logger, print_start_banner, settings
 from core.initializer import WhatsAppClient, Database
-from services import ConversationHandler, ButtonConversationHandler, orchestrator
+from services import ConversationHandler, ButtonConversationHandler, DataScoutService, data_scout, orchestrator
 from services._automatic_messages import MorningBriefService, KickoffAlertService, MarketMonitor
 
 # --- SETUP ---
@@ -48,6 +48,7 @@ ID_QUEUE = deque(maxlen=500)
 
 # Dynamic Handler Selection
 db_client = Database()
+data_scout.set_database(db_client)
 
 if settings.get('GLOBAL_APP_CONFIG.app.interaction_mode') == "BUTTON_STRICT":
     conv_handler = ButtonConversationHandler(wa_client, db_client)
@@ -71,6 +72,9 @@ def kickoff_alert_job():
 def market_monitor_job():
     run_bg_task(market_monitor.check_for_line_moves())
 
+def live_data_sync_job():
+    run_bg_task(data_scout.sync_now())
+
 scheduler = BackgroundScheduler()
 scheduler.add_job(
     morning_brief_job, 
@@ -88,7 +92,15 @@ scheduler.add_job(
     'interval',
     minutes=settings.get('GLOBAL_APP_CONFIG.scheduling.market_monitor_interval_mins', 30)
 )
+scheduler.add_job(
+    live_data_sync_job,
+    'interval',
+    minutes=settings.get('GLOBAL_APP_CONFIG.live_data.sync_interval_mins', 60)
+)
 scheduler.start()
+
+# Initial Live Sync
+run_bg_task(data_scout.sync_now())
 
 # --- ROUTES ---
 @app.route("/")

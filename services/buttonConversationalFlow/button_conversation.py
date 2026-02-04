@@ -284,7 +284,7 @@ class ButtonConversationHandler:
 
     async def _send_group_matches(self, to_number, filter_name, is_stage=False):
         """Sends matches for a specific group or stage, organized by 'Matchday'."""
-        all_matches = orchestrator.SCHEDULE
+        all_matches = orchestrator.get_active_schedule()
         
         if is_stage:
             matches = [m for m in all_matches if m.get('stage') == filter_name]

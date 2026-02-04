@@ -8,10 +8,15 @@ from agents.market.market import MarketAgent
 from agents.narrative.narrative import NarrativeAgent
 from agents.quant.quant import run_quant_engine # Still function based for now
 from core.initializer.llm import query_llm
-from data.scripts.data import SCHEDULE, BET_TYPES
+from data.scripts.data import BET_TYPES
 from core.config import settings
+from services.data_scout import data_scout
 
 logger = get_logger("Orchestrator")
+
+def get_active_schedule():
+    """Helper to get live-merged schedule from DataScout."""
+    return data_scout.get_merged_schedule()
 
 # Initialize Agents
 logistics_agent = LogisticsAgent()
@@ -310,7 +315,7 @@ def get_todays_matches():
     target_date = datetime.now().date()
     
     todays_matches = []
-    for m in SCHEDULE:
+    for m in get_active_schedule():
         # parsed iso format
         match_date = datetime.fromisoformat(m['date_iso']).date()
         if match_date == target_date:
@@ -327,7 +332,7 @@ def get_upcoming_matches():
     cutoff = now + timedelta(minutes=lead_time + 5) # +5 for small overlap
     
     upcoming = []
-    for m in SCHEDULE:
+    for m in get_active_schedule():
         match_start = datetime.fromisoformat(m['date_iso'])
         if now < match_start <= cutoff:
             upcoming.append(m)
@@ -340,7 +345,7 @@ def get_next_scheduled_match():
     """
     now = datetime.now()
     next_match = None
-    for m in SCHEDULE:
+    for m in get_active_schedule():
         match_date = datetime.fromisoformat(m['date_iso'])
         if match_date > now:
             next_match = m
@@ -362,7 +367,7 @@ def get_next_match_content():
     """
     now = datetime.now()
     next_match = None
-    for m in SCHEDULE:
+    for m in get_active_schedule():
         if datetime.fromisoformat(m['date_iso']) > now:
             next_match = m
             break
@@ -380,7 +385,7 @@ def get_schedule_menu(limit=4):
     """
     limit = min(limit, 15) # Cap at 15 for WhatsApp readability
     now = datetime.now()
-    upcoming = [m for m in SCHEDULE if datetime.fromisoformat(m['date_iso']) > now][:limit]
+    upcoming = [m for m in get_active_schedule() if datetime.fromisoformat(m['date_iso']) > now][:limit]
     
     if not upcoming:
         return "📅 I've checked the schedule, and it looks like there aren't any matches coming up soon."
@@ -404,11 +409,11 @@ def get_schedule_brief(days=7):
     """
     now = datetime.now()
     cutoff = now + timedelta(days=days)
-    upcoming = [m for m in SCHEDULE if now.date() <= datetime.fromisoformat(m['date_iso']).date() <= cutoff.date()]
+    upcoming = [m for m in get_active_schedule() if now.date() <= datetime.fromisoformat(m['date_iso']).date() <= cutoff.date()]
 
     # Fallback: If no matches in the next week, show the next 5 match days regardless of date
     if not upcoming:
-        upcoming = [m for m in SCHEDULE if datetime.fromisoformat(m['date_iso']) > now][:15]
+        upcoming = [m for m in get_active_schedule() if datetime.fromisoformat(m['date_iso']) > now][:15]
         if not upcoming:
             return "📅 It looks like the calendar is clear. No future official matches found in the schedule!"
         msg_prefix = "📅 *Next Scheduled Matches:*\n"
@@ -456,7 +461,7 @@ def get_next_matches(limit=3):
     upcoming = []
     
     # Sort schedule by date to be safe
-    sorted_schedule = sorted(SCHEDULE, key=lambda x: datetime.fromisoformat(x['date_iso']))
+    sorted_schedule = sorted(get_active_schedule(), key=lambda x: datetime.fromisoformat(x['date_iso']))
     
     for m in sorted_schedule:
         match_dt = datetime.fromisoformat(m['date_iso'])
@@ -482,7 +487,7 @@ def find_match_by_home_team(team_name):
     if not team_name: return None
     target = _normalize_team(team_name)
     
-    for m in SCHEDULE:
+    for m in get_active_schedule():
         if _normalize_team(m['team_home']) == target or target in m['team_home'].lower():
             return {
                 'home_team': m['team_home'],
@@ -502,7 +507,7 @@ def find_match_by_teams(home_team, away_team):
     h = _normalize_team(home_team)
     a = _normalize_team(away_team)
     
-    for m in SCHEDULE:
+    for m in get_active_schedule():
         sched_h = _normalize_team(m['team_home'])
         sched_a = _normalize_team(m['team_away'])
         
@@ -554,7 +559,7 @@ def validate_match_request(extracted_data):
     target_home = _normalize_team(extracted_data.get('home_team', ''))
     target_away = _normalize_team(extracted_data.get('away_team', ''))
     
-    for m in SCHEDULE:
+    for m in get_active_schedule():
         sched_home = _normalize_team(m['team_home'])
         sched_away = _normalize_team(m['team_away'])
         

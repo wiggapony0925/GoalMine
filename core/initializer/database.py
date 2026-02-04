@@ -309,3 +309,28 @@ class Database:
             else:
                 logger.error(f"Failed to fetch active users: {e}")
             return []
+
+    def save_live_schedule(self, schedule_data: List[Dict]):
+        """Persists the merged/live schedule to the database."""
+        try:
+            # We store the entire list as a blob in a 'system_storage' or similar table
+            # Or dedicated 'fixtures' table. For simplicity, we'll try a system_config table.
+            data = {
+                "key": "live_schedule",
+                "value": schedule_data,
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }
+            self.client.table('system_storage').upsert(data).execute()
+            logger.info("💾 Live schedule saved to database.")
+        except Exception as e:
+            logger.error(f"Failed to save live schedule: {e}")
+
+    def load_live_schedule(self) -> List[Dict]:
+        """Loads the last known live schedule from the database."""
+        try:
+            res = self.client.table('system_storage').select("value").eq("key", "live_schedule").execute()
+            if res.data:
+                return res.data[0].get("value", [])
+        except Exception as e:
+            logger.warning(f"Could not load live schedule from DB: {e}")
+        return []
