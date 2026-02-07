@@ -15,8 +15,8 @@ logger = get_logger("GodViewBuilder")
 GOD_VIEW_SCHEMA_VERSION = "3.0"
 
 
-def _compute_signal_convergence(logistics_data, tactics_data, market_data,
-                                narrative_home, narrative_away):
+def _compute_signal_convergence(home_team, away_team, logistics_data, tactics_data,
+                                market_data, narrative_home, narrative_away):
     """
     Calculates how many agents agree on the same directional signal.
     Convergence of 4-5 = elite conviction. Convergence of 1-2 = caution.
@@ -44,11 +44,14 @@ def _compute_signal_convergence(logistics_data, tactics_data, market_data,
     if fatigue >= 6:
         signals.append("home")  # Away team fatigued = home advantage
 
-    # Market signal: where is value?
+    # Market signal: where is value? Match against actual team names.
     analysis = market_data.get("analysis", {})
-    best_bet = analysis.get("best_bet", "")
+    best_bet = (analysis.get("best_bet", "") or "").lower()
     if best_bet:
-        signals.append("home" if "home" in best_bet.lower() or "team a" in best_bet.lower() else "away")
+        if home_team.lower() in best_bet or "home" in best_bet:
+            signals.append("home")
+        elif away_team.lower() in best_bet or "away" in best_bet:
+            signals.append("away")
 
     home_count = signals.count("home")
     away_count = signals.count("away")
@@ -156,6 +159,7 @@ def build_god_view(
     """
 
     signal_convergence = _compute_signal_convergence(
+        home_team, away_team,
         logistics_data, tactics_data, market_data, narrative_home, narrative_away
     )
     data_quality = _compute_data_quality(
