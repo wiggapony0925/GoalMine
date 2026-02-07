@@ -39,9 +39,16 @@ jobs:
       # https://github.com/sigstore/cosign-installer
       - name: Install cosign
         if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@v3.1.1
+        uses: sigstore/cosign-installer@v3.7.0
         with:
-          cosign-release: 'v2.1.1'
+          cosign-release: 'v2.4.1'
+
+      # Initialize TUF root metadata to avoid stale cache issues
+      - name: Initialize cosign TUF root
+        if: github.event_name != 'pull_request'
+        run: |
+          rm -rf ~/.sigstore || true
+          cosign initialize
 
       # Workaround: https://github.com/docker/build-push-action/issues/461
       - name: Setup Docker buildx
@@ -92,4 +99,11 @@ jobs:
         env:
           TAGS: ${{ steps.meta.outputs.tags }}
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
-        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+        run: |
+          echo "${TAGS}" | xargs -I {} bash -c '
+            for i in 1 2 3; do
+              cosign sign --yes "$1" && break
+              echo "Signing attempt $i failed, retrying in 5s..."
+              sleep 5
+            done
+          ' _ {}@${DIGEST}
