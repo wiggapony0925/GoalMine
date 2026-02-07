@@ -2,24 +2,26 @@
 
 <p align="center">
   <strong>Professional-grade sports betting intelligence delivered via WhatsApp</strong><br>
-  <em>5 AI agents • 20-second analysis • $0.038 per match • Production-ready</em>
+  <em>6 AI agents • Parallel analysis • Button-driven UX • Production-ready</em>
 </p>
 
 ---
 
 ## Overview
 
-**GoalMine** is a production-grade, autonomous betting intelligence platform built for the **2026 FIFA World Cup**. It orchestrates a multi-agent AI swarm to analyze matches from every angle — logistics, tactics, market odds, narrative sentiment, and quantitative modeling — then synthesizes everything into high-conviction betting recommendations.
+**GoalMine** is a production-grade, autonomous betting intelligence platform built for the **2026 FIFA World Cup**. It orchestrates a multi-agent AI swarm to analyze matches from every angle — logistics, tactics, market odds, narrative sentiment, and quantitative modeling — then synthesizes everything into high-conviction betting recommendations delivered through an interactive WhatsApp interface.
+
+Users interact entirely through **WhatsApp buttons and list menus** (`STRICT_BUTTON` mode). The Gatekeeper agent classifies any free-text input as either a **BETTING** or **SCHEDULE** intent and routes it into the appropriate button-driven flow — there is no open conversational mode.
 
 **Key Numbers:**
 
 | Metric | Value |
 |---|---|
-| Analysis Speed | 20 seconds (parallel agents) |
-| Cost per Match | $0.038 |
+| Analysis Speed | ~20 seconds (parallel agents) |
 | Agents | 5 specialized AI + 1 quant engine |
-| Delivery | WhatsApp Cloud API |
-| Uptime | 99.9% (cloud-hosted) |
+| Delivery | WhatsApp Cloud API (buttons & lists) |
+| Interaction Mode | `STRICT_BUTTON` (menu-driven) |
+| Cache TTL | 6 hours (swarm cache) / 3 hours (God View) |
 
 ---
 
@@ -28,25 +30,26 @@
 ```
 User (WhatsApp) → app.py Webhook → Gatekeeper Agent
                                         │
-                          ┌──────────────┴──────────────┐
-                          ▼                             ▼
-                   Button-Strict Mode          Conversational Mode
-                          │                             │
-                          └──────────────┬──────────────┘
-                                         ▼
-                              Orchestrator (Swarm)
-                                         │
-                    ┌───────┬────────┬────┴────┬────────┐
-                    ▼       ▼        ▼         ▼        ▼
-               Logistics  Tactics  Market  Narrative  Quant
-                    │       │        │         │        │
-                    └───────┴────────┴────┬────┴────────┘
-                                         ▼
-                               God View Builder → Supabase
-                                         ▼
-                              Bet Generator (Big Daddy)
-                                         ▼
-                               WhatsApp Response
+                              Intent Classification
+                          ┌─────────────┴─────────────┐
+                          ▼                           ▼
+                   BETTING Intent            SCHEDULE Intent
+                   (Team Extraction)         (Schedule Browser)
+                          │                           │
+                          ▼                           ▼
+                  Orchestrator (Swarm)         UI Manager
+                          │                  (Group/Stage Menus)
+         ┌───────┬────────┬────┴────┬────────┐
+         ▼       ▼        ▼         ▼        ▼
+    Logistics  Tactics  Market  Narrative  Quant
+         │       │        │         │        │
+         └───────┴────────┴────┬────┴────────┘
+                               ▼
+                    God View Builder → Supabase
+                               ▼
+                   Bet Generator (Big Daddy)
+                               ▼
+                    WhatsApp Button Response
 ```
 
 ---
@@ -76,62 +79,82 @@ GoalMine/
 │   ├── market/                         # Odds analysis & value detection (gpt-4o)
 │   │   └── api/the_odds_api.py         # Live odds aggregator
 │   ├── narrative/                      # Sentiment & morale (gpt-4o-mini)
-│   │   └── api/                        # News, Reddit, web scraping
+│   │   └── api/                        # Google News, Reddit, Wikipedia, web scraping
 │   └── quant/                          # Dixon-Coles + Kelly Criterion (Python/NumPy)
 │
-├── services/                           # Orchestration & conversation flows
+├── services/                           # Orchestration & button-driven flows
 │   ├── orchestrator.py                 # Swarm coordinator (parallel agent execution)
 │   ├── data_scout.py                   # Live schedule sync (Football-Data API)
 │   └── interface/
-│       ├── message_handler.py          # Button-based UI engine
+│       ├── message_handler.py          # Strict-button message router
 │       ├── ui_manager.py               # WhatsApp interactive message builder
 │       └── automatic/                  # Scheduled background services
-│           ├── morning_brief.py        # Daily 5AM briefing
+│           ├── morning_brief.py        # Daily briefing (configurable hour)
 │           ├── kickoff_alerts.py       # Pre-match alerts (60 min before)
 │           └── market_monitor.py       # Sharp line movement detection
 │
 ├── prompts/                            # AI System Prompts (centralized)
 │   ├── system_prompts.py              # All agent prompts with {variable} injection
-│   └── messages_prompts.py            # UI text responses
+│   └── messages_prompts.py            # UI text & button responses
 │
 ├── data/                               # Static data & utilities
-│   ├── schedule.json                   # 2026 World Cup calendar
-│   ├── venues.json                     # Stadium metadata
+│   ├── schedule.json                   # 2026 World Cup match calendar
+│   ├── venues.json                     # Stadium metadata (coords, elevation, climate)
 │   ├── bet_types.json                  # Betting market catalog
 │   └── scripts/
 │       ├── data.py                     # Data loaders
 │       └── godview_builder.py          # God View JSON constructor
 │
 ├── test/                               # Test suites
-│   ├── unit/                           # Unit tests
-│   └── integration/                    # Integration tests
+│   ├── unit/                           # Unit tests (DB, quant, prompts, venues, etc.)
+│   ├── flows/button_mode/              # Button-flow integration tests
+│   ├── integration/                    # End-to-end journey tests
+│   └── api_test/                       # API-level tests (Reddit, agent data)
 │
 ├── settings.json                       # Central configuration
 ├── requirements.txt                    # Python dependencies
-├── Dockerfile                          # Container config
+├── Dockerfile                          # Multi-stage container config
 └── docker-compose.yml                  # Multi-service orchestration
 ```
 
 ---
 
+## User Interaction (Strict-Button Mode)
+
+GoalMine enforces a `STRICT_BUTTON` interaction mode — users navigate entirely through WhatsApp **interactive buttons and list menus**. Free-text input is classified by the Gatekeeper and routed into a button flow, or rejected with a nudge back to the main menu.
+
+**Core Flows:**
+
+1. **Match Analysis** — User selects a match (via schedule browser or text extraction) → Swarm runs all agents in parallel → "The Closer" synthesizes a briefing → Response delivered with navigation buttons
+2. **Bet Generation** — After analysis, user picks 1, 3, or 5 bets → Big Daddy generates structured recommendations from the God View → "Generate More" excludes previous picks
+3. **Schedule Browsing** — Groups A–L and Knockouts displayed as list menus → Drill into any group for match details with venue location pins
+4. **Strategic Q&A** — Context-aware follow-up questions against the cached God View (e.g., "Should I parlay?") → Constrained to betting strategy, not open chat
+
+**Text Handling:**
+- Free-text with a betting intent (e.g., "USA vs Mexico") → Gatekeeper classifies → team extraction → analysis flow
+- Free-text with a schedule intent → Gatekeeper classifies → schedule browser
+- Unrecognized or inappropriate text → Profanity filter → Rejection message → Main menu buttons
+
+---
+
 ## The Agent Swarm
 
-Each agent is a domain expert with its own LLM configuration and data sources. All agents run **in parallel** via `asyncio.gather` for speed.
+Each agent is a domain expert with its own LLM configuration and data sources. All agents run **in parallel** via `asyncio.gather` for speed. Individual agent failures degrade gracefully — the system falls back to neutral baselines without crashing.
 
 | Agent | Model | Temp | Domain | Key Output |
 |---|---|---|---|---|
-| **Gatekeeper** | gpt-4o-mini | 0.1 | Intent routing | BETTING / SCHEDULE |
-| **Logistics** | gpt-4o | 0.3 | Physical factors | Fatigue score (0-10) |
-| **Tactics** | gpt-4o | 0.3 | Style matchups | Adjusted xG |
-| **Market** | gpt-4o | 0.3 | Odds analysis | Edge %, trap alerts |
-| **Narrative** | gpt-4o-mini | 0.5 | Sentiment/morale | Morale score (0-10) |
-| **Quant** | Pure Python | — | Probability math | Kelly-optimized stakes |
+| **Gatekeeper** | gpt-4o-mini | 0.1 | Intent classification | BETTING / SCHEDULE |
+| **Logistics** | gpt-4o | 0.3 | Physical factors | Fatigue index (travel, altitude, rest days) |
+| **Tactics** | gpt-4o | 0.3 | Style matchups | xG baseline + tactical mismatch |
+| **Market** | gpt-4o | 0.3 | Odds analysis | Edge %, vig, trap alerts, arbitrage |
+| **Narrative** | gpt-4o-mini | 0.5 | Sentiment/morale | Morale score + news headlines |
+| **Quant** | Pure Python | — | Probability math | Dixon-Coles matrix + Kelly stakes |
 
 ---
 
 ## The God View System
 
-The **God View** is a comprehensive JSON intelligence matrix — the single source of truth that powers bet generation and follow-up queries.
+The **God View** is a comprehensive JSON intelligence matrix — the single source of truth that powers bet generation, follow-up Q&A, and the "Generate More" feature. It aggregates outputs from all agents, applies adjustment chains (narrative ± morale, logistics fatigue penalty), and scores signal convergence across agents.
 
 ### Schema (v3.0)
 
@@ -255,13 +278,14 @@ The **God View** is a comprehensive JSON intelligence matrix — the single sour
 
 ## Automated Services
 
-Three background services run on APScheduler to keep users informed:
+Four background services run on APScheduler to keep users informed and data fresh:
 
 | Service | Schedule | Purpose |
 |---|---|---|
-| **Morning Brief** | Daily at 5:00 AM | Sends today's match count, featured fixture, and full fixture list |
-| **Kickoff Alerts** | Every 15 minutes | Alerts users 60 minutes before any match kicks off |
+| **Morning Brief** | Daily (configurable hour) | Sends today's match count, featured fixture, and full fixture list |
+| **Kickoff Alerts** | Every 15 minutes | Alerts users ~60 minutes before any match kicks off |
 | **Market Monitor** | Every 30 minutes | Detects significant odds movements (>15% threshold) and sends sharp money alerts |
+| **Data Scout** | Every 60 minutes | Syncs live schedule from Football-Data.org API into local `schedule.json` |
 
 All scheduling parameters are configurable in `settings.json` under `GLOBAL_APP_CONFIG.scheduling`.
 
@@ -314,7 +338,7 @@ export PYTHONPATH=$PYTHONPATH:$(pwd)
 python app.py
 ```
 
-Server runs on `http://localhost:8000`
+Server runs on `http://localhost:8000` (Gunicorn + gevent in production).
 
 ### Docker
 
@@ -392,11 +416,12 @@ python test/run_all_tests.py --coverage
 ## Design Principles
 
 1. **Separation of Concerns** — Infrastructure (`llm.py`) vs business logic (`generate_bets.py`) vs domain expertise (agents)
-2. **Single Source of Truth** — God View persisted in database for follow-up queries
-3. **Hybrid Intelligence** — LLMs for subjective reasoning + Python for deterministic math
-4. **Parallel Execution** — All agents run simultaneously (`asyncio.gather`) — 4x speed improvement
-5. **Graceful Degradation** — Individual agent failures don't crash the system
-6. **Cost Optimization** — gpt-4o-mini for simple tasks, gpt-4o only for complex reasoning
+2. **Single Source of Truth** — God View persisted in database for bet generation and strategic Q&A
+3. **Hybrid Intelligence** — LLMs for subjective reasoning + Python for deterministic math (Dixon-Coles, Kelly Criterion)
+4. **Parallel Execution** — All agents run simultaneously (`asyncio.gather`) for speed
+5. **Graceful Degradation** — Individual agent failures fall back to neutral baselines without crashing the system
+6. **Cost Optimization** — gpt-4o-mini for simple tasks (intent classification, sentiment), gpt-4o for complex reasoning (tactics, market)
+7. **Button-Driven UX** — `STRICT_BUTTON` mode enforces structured navigation; no open-ended chat
 
 ---
 
@@ -414,4 +439,5 @@ python test/run_all_tests.py --coverage
 **Developer:** Jeffrey Fernandez  
 **Version:** 3.0 (God View v3 + Prompt Engineering v2)  
 **Status:** 🟢 Production Ready  
+**Interaction Mode:** STRICT_BUTTON  
 **License:** Proprietary
