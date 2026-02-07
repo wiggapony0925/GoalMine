@@ -24,6 +24,10 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 # =============================================================================
 FROM python:3.11-slim
 
+LABEL org.opencontainers.image.source=https://github.com/wiggapony0925/GoalMine
+LABEL org.opencontainers.image.description="GoalMine: World Cup 2026 AI Betting Intelligence Platform"
+LABEL org.opencontainers.image.licenses=Proprietary
+
 WORKDIR /app
 
 # Set environment variables
