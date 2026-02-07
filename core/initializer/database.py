@@ -359,7 +359,7 @@ class Database:
                     phones = list(set([row["phone"] for row in res.data]))
                     return phones
                 except Exception:
-                    logger.error("Failed to fetch users from sessions too: {se}")
+                    logger.error(f"Failed to fetch users from sessions too: {e}")
             else:
                 logger.error(f"Failed to fetch active users: {e}")
             return []

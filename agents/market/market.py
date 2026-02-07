@@ -1,3 +1,4 @@
+import asyncio
 import json
 from core.log import get_logger
 from core.initializer.llm import query_llm
@@ -21,8 +22,6 @@ class MarketAgent:
         # 1. Fetch Data
         if odds_data is None:
             try:
-                import asyncio
-
                 odds_data = await asyncio.to_thread(fetch_latest_odds)
             except Exception as e:
                 logger.error(f"Odds API failed: {e}")

@@ -1,4 +1,5 @@
 import json
+import re
 import asyncio
 from core.log import get_logger
 from services import orchestrator
@@ -230,9 +231,6 @@ class GoalMineHandler:
             report = await orchestrator.format_the_closer_report(briefing)
 
             # Send chunks
-            import asyncio
-            import re
-
             parts = re.split(r"(?=# BET \d+)", report)
             for part in parts:
                 if part.strip():
@@ -288,7 +286,6 @@ class GoalMineHandler:
         """
         Sends long messages split by '# BET' as separate WhatsApp messages.
         """
-        import re
         if not text:
             return
 

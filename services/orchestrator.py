@@ -2,6 +2,12 @@ import asyncio
 import json
 from datetime import datetime, timedelta
 from core.log import get_logger
+from core.utils import (
+    clean_llm_json_response,
+    clean_markdown_json,
+    extract_predictions_json,
+    log_predictions_to_db,
+)
 from agents.logistics.logistics import LogisticsAgent
 from agents.tactics.tactics import TacticsAgent
 from agents.market.market import MarketAgent
@@ -352,47 +358,24 @@ async def format_the_closer_report(briefing, num_bets=1):
             formatted_prompt, user_prompt, config_key="closer", temperature=0.5
         )
 
-        # ========================================================================
-        # EXTRACT & LOG PREDICTIONS FOR ROI AUDIT
-        # ========================================================================
-        clean_response = response
-        if "JSON_START" in response and "JSON_END" in response:
-            try:
+        # Extract & log predictions for ROI audit
+        predictions = extract_predictions_json(response)
+        if predictions:
+            match_id = briefing.get("meta", {}).get("cache_key", "unknown_match")
+            user_phone = briefing.get("user_phone")
+            if user_phone:
                 from core.initializer.database import Database
 
                 db = Database()
-                # Extract JSON block
-                json_part = response.split("JSON_START")[1].split("JSON_END")[0].strip()
-                # Remove double braces if they leaked from prompt formatting
-                json_part = json_part.replace("{{", "{").replace("}}", "}")
-                predictions = json.loads(json_part)
+                log_predictions_to_db(db, user_phone, match_id, predictions)
 
-                # Log to DB
-                match_id = briefing.get("meta", {}).get("cache_key", "unknown_match")
-                user_phone = briefing.get(
-                    "user_phone"
-                )  # Ensure this is passed or found
-                if user_phone:
-                    for p in predictions:
-                        db.log_bet_prediction(user_phone, match_id, p)
-
-                # Clean the response for WhatsApp (STRICT STRIP)
-                clean_response = response.split("JSON_START")[0].strip()
-                if "---" in clean_response:
-                    # Remove the last separator and everything after it (the audit label)
-                    clean_response = "---".join(
-                        clean_response.split("---")[:-1]
-                    ).strip()
-            except Exception as pe:
-                logger.error(f"Failed to parse/log Closer's prediction: {pe}")
+        clean_response = clean_llm_json_response(response)
 
         return clean_response
 
     except Exception as e:
         logger.error(f"The Closer failed: {e}")
         return "Intelligence gathered, but the briefing failed to generate."
-
-
 
 
 def get_todays_matches():
@@ -441,13 +424,7 @@ def get_next_scheduled_match():
             break
 
     if next_match:
-        return {
-            "home_team": next_match["team_home"],
-            "away_team": next_match["team_away"],
-            "date_iso": next_match["date_iso"],
-            "venue": next_match.get("venue", "Estadio Azteca, Mexico City"),
-            "venue_from": "MetLife Stadium, East Rutherford",
-        }
+        return _build_match_dict(next_match)
     return None
 
 
@@ -549,13 +526,7 @@ def get_match_info_from_selection(selection_idx):
     todays = get_todays_matches()
     if selection_idx < len(todays):
         m = todays[selection_idx]
-        return {
-            "home_team": m["team_home"],
-            "away_team": m["team_away"],
-            "date_iso": m["date_iso"],
-            "venue": m.get("venue", "Estadio Azteca, Mexico City"),
-            "venue_from": "MetLife Stadium, East Rutherford",
-        }
+        return _build_match_dict(m)
     return None
 
 
@@ -592,53 +563,58 @@ def _normalize_team(name):
     return n
 
 
-def find_match_by_home_team(team_name):
-    """
-    Finds a match where the home team matches the provided name (fuzzy).
-    """
-    if not team_name:
-        return None
-    target = _normalize_team(team_name)
-
-    for m in get_active_schedule():
-        if (
-            _normalize_team(m["team_home"]) == target
-            or target in m["team_home"].lower()
-        ):
-            return {
-                "home_team": m["team_home"],
-                "away_team": m["team_away"],
-                "date_iso": m["date_iso"],
-                "venue": m.get("venue", "Estadio Azteca, Mexico City"),
-                "venue_from": "MetLife Stadium, East Rutherford",
-            }
-    return None
+def _build_match_dict(m):
+    """Constructs a standardized match info dict from a schedule entry."""
+    return {
+        "home_team": m["team_home"],
+        "away_team": m["team_away"],
+        "date_iso": m["date_iso"],
+        "venue": m.get("venue", "Estadio Azteca, Mexico City"),
+        "venue_from": "MetLife Stadium, East Rutherford",
+    }
 
 
-def find_match_by_teams(home_team, away_team):
+def find_match(home_team=None, away_team=None):
     """
-    Finds a specific match between two teams with TBD normalization.
+    Unified match finder. Supports single-team (fuzzy) or two-team (exact) lookup.
+
+    Args:
+        home_team: Primary team name (required).
+        away_team: Second team name (optional). If omitted, searches by home team only.
+
+    Returns:
+        dict: Match info dict or None if not found.
     """
-    if not home_team or not away_team:
+    if not home_team:
         return None
 
     h = _normalize_team(home_team)
-    a = _normalize_team(away_team)
 
-    for m in get_active_schedule():
-        sched_h = _normalize_team(m["team_home"])
-        sched_a = _normalize_team(m["team_away"])
+    if away_team:
+        # Two-team search: check both orderings
+        a = _normalize_team(away_team)
+        for m in get_active_schedule():
+            sched_h = _normalize_team(m["team_home"])
+            sched_a = _normalize_team(m["team_away"])
+            if (h == sched_h and a == sched_a) or (h == sched_a and a == sched_h):
+                return _build_match_dict(m)
+    else:
+        # Single-team search: fuzzy match on home team
+        for m in get_active_schedule():
+            if _normalize_team(m["team_home"]) == h or h in m["team_home"].lower():
+                return _build_match_dict(m)
 
-        # Check standard and reverse to be helpful
-        if (h == sched_h and a == sched_a) or (h == sched_a and a == sched_h):
-            return {
-                "home_team": m["team_home"],
-                "away_team": m["team_away"],
-                "date_iso": m["date_iso"],
-                "venue": m.get("venue", "Estadio Azteca, Mexico City"),
-                "venue_from": "MetLife Stadium, East Rutherford",
-            }
     return None
+
+
+def find_match_by_home_team(team_name):
+    """Finds a match by home team name (fuzzy). Delegates to find_match()."""
+    return find_match(home_team=team_name)
+
+
+def find_match_by_teams(home_team, away_team):
+    """Finds a specific match between two teams. Delegates to find_match()."""
+    return find_match(home_team=home_team, away_team=away_team)
 
 
 async def extract_match_details_from_text(text):
@@ -655,7 +631,7 @@ async def extract_match_details_from_text(text):
             TEAM_EXTRACTION_PROMPT, user_prompt, config_key="extractor", temperature=0.1
         )
         # Naive json parsing (cleanup markdown code blocks if present)
-        resp = resp.replace("```json", "").replace("```", "").strip()
+        resp = clean_markdown_json(resp)
         data = json.loads(resp)
         teams = data.get("teams", [])
         if not teams:

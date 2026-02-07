@@ -2,6 +2,7 @@ import math
 import json
 from core.log import get_logger
 from core.initializer.llm import query_llm
+from core.utils import clean_markdown_json
 from data.scripts.data import get_venue_info
 
 logger = get_logger("Logistics")
@@ -69,7 +70,7 @@ class LogisticsAgent:
         )
 
         # 6. PARSING CLEANUP (in case LLM includes markdown)
-        clean_json = raw_response.replace("```json", "").replace("```", "").strip()
+        clean_json = clean_markdown_json(raw_response)
 
         # 7. PARSE & RETURN
         try:
