@@ -32,7 +32,7 @@ def push_morning_brief():
     
     try:
         matches = orchestrator.get_todays_matches()
-        test_user = "9294255178"
+        test_user = os.getenv("ALERT_PHONE_NUMBER", "9294255178")
         
         if not matches:
             logger.info("📅 No matches today — skipping morning brief.")
@@ -64,7 +64,7 @@ def check_upcoming_matches_alert():
     """ Runs on interval — sends kickoff alerts with venue + stage context. """
     try:
         upcoming = orchestrator.get_upcoming_matches()
-        test_user = "9294255178"
+        test_user = os.getenv("ALERT_PHONE_NUMBER", "9294255178")
 
         for m in upcoming:
             home = m['team_home']
