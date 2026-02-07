@@ -101,9 +101,17 @@ jobs:
           DIGEST: ${{ steps.build-and-push.outputs.digest }}
         run: |
           echo "${TAGS}" | xargs -I {} bash -c '
+            signed=false
             for i in 1 2 3; do
-              cosign sign --yes "$1" && break
+              if cosign sign --yes "$1"; then
+                signed=true
+                break
+              fi
               echo "Signing attempt $i failed, retrying in 5s..."
-              sleep 5
+              [ $i -lt 3 ] && sleep 5
             done
+            if [ "$signed" != "true" ]; then
+              echo "All signing attempts failed for $1"
+              exit 1
+            fi
           ' _ {}@${DIGEST}
