@@ -319,7 +319,7 @@ def get_next_scheduled_match():
 
 def get_next_match_content():
     """
-    Returns only the absolute next match (What the user had before).
+    Returns the absolute next match with venue + stage context.
     """
     now = datetime.now()
     next_match = None
@@ -330,38 +330,43 @@ def get_next_match_content():
     
     if next_match:
         time_str = format_to_12hr(next_match['date_iso'])
-        return (f"🔮 *Next Up:* {next_match['team_home']} vs {next_match['team_away']}.\n"
-                f"They kick off today at {time_str} in the Azteca stadium.\n\n"
-                f"Would you like me to analyze this match for you? Just say 'Analyze' or ask about another fixture.")
-    return "📅 Looking at the calendar, there are no upcoming matches scheduled right now."
+        stage = next_match.get('stage', 'Group Stage')
+        venue = next_match.get('venue', 'TBD')
+        return (f"⚽ *Next Up:* {next_match['team_home']} vs {next_match['team_away']}\n"
+                f"🕐 Kickoff: {time_str} · {stage}\n"
+                f"🏟️ {venue}\n\n"
+                f"Say _\"analyze\"_ to get the breakdown.")
+    return "📅 No upcoming matches on the schedule right now."
 
 def get_schedule_menu(limit=4):
     """
-    Returns a more conversational menu for the next {limit} matches.
+    Returns a conversational menu for the next {limit} matches with venue context.
     """
     limit = min(limit, 15) # Cap at 15 for WhatsApp readability
     now = datetime.now()
     upcoming = [m for m in SCHEDULE if datetime.fromisoformat(m['date_iso']) > now][:limit]
     
     if not upcoming:
-        return "📅 I've checked the schedule, and it looks like there aren't any matches coming up soon."
+        return "📅 No matches coming up soon. Say _\"full schedule\"_ to see what's ahead."
 
-    msg = f"⚽ *Next {len(upcoming)} Fixtures:*\n\n"
+    msg = f"⚽ *Upcoming Fixtures*\n\n"
     for m in upcoming:
         dt = datetime.fromisoformat(m['date_iso'])
         time_str = format_to_12hr(m['date_iso'])
         date_str = dt.strftime('%b %d')
+        venue = m.get('venue', 'TBD')
         
         # Only say "today" if it's actually today
         day_label = "today" if dt.date() == now.date() else f"on {date_str}"
         msg += f"• *{m['team_home']} vs {m['team_away']}* ({day_label} at {time_str})\n"
+        msg += f"  🏟️ {venue}\n"
     
-    msg += "\nWhich one should we look into? Just say 'Analyze' followed by the teams."
+    msg += "\nSay _\"analyze [teams]\"_ to dive into any match."
     return msg
 
 def get_schedule_brief(days=7):
     """
-    Returns the comprehensive 7-day schedule summary.
+    Returns a comprehensive schedule summary with venue + stage info.
     """
     now = datetime.now()
     cutoff = now + timedelta(days=days)
@@ -371,12 +376,12 @@ def get_schedule_brief(days=7):
     if not upcoming:
         upcoming = [m for m in SCHEDULE if datetime.fromisoformat(m['date_iso']) > now][:15]
         if not upcoming:
-            return "📅 It looks like the calendar is clear. No future official matches found in the schedule!"
-        msg_prefix = "📅 *Next Scheduled Matches:*\n"
+            return "📅 No future matches on the schedule!"
+        msg_prefix = "📅 *Upcoming Matches*\n"
     elif days == 1:
-        msg_prefix = "☀️ *Good Morning! GoalMine AI is online.*\n\nHere is today's World Cup lineup:\n"
+        msg_prefix = "☀️ *Good Morning — GoalMine is live.*\n\nToday's World Cup lineup:\n"
     else:
-        msg_prefix = f"🗓️ *World Cup Schedule (Next {days} Days)*\n"
+        msg_prefix = f"🗓️ *Schedule — Next {days} Days*\n"
 
     grouped = {}
     for m in upcoming:
@@ -389,9 +394,13 @@ def get_schedule_brief(days=7):
         msg += f"\n📅 *{date}*\n"
         for m in matches:
             time_str = format_to_12hr(m['date_iso'])
-            msg += f"• *{m['team_home']} vs {m['team_away']}* (@ {time_str})\n"
+            stage = m.get('stage', '')
+            venue = m.get('venue', 'TBD')
+            stage_tag = f" · {stage}" if stage else ""
+            msg += f"• *{m['team_home']} vs {m['team_away']}* (@ {time_str}{stage_tag})\n"
+            msg += f"  🏟️ {venue}\n"
     
-    msg += "\nTo get a deep-dive analysis on any of these, just say 'Analyze' followed by the teams."
+    msg += "\nSay _\"analyze [teams]\"_ for a deep dive on any fixture."
     return msg
 
 def get_match_info_from_selection(selection_idx):

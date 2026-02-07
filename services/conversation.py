@@ -354,7 +354,7 @@ class ConversationHandler:
     async def _send_multi(self, to_number, text):
         """
         Sends long messages split by '# BET' as separate WhatsApp messages.
-        This provides a cleaner, professional 'bet receipt' feel.
+        Appends a clean bet options footer after the last bet card.
         """
         if not text:
             logger.warning(f"Attempted to send empty multi-part message to {to_number}")
@@ -364,18 +364,17 @@ class ConversationHandler:
 
         # Check if '# BET' is present
         if "# BET" in text:
-            # Split by '# BET' but keep the delimiter for each segment
-            # Pattern matches '# BET' followed by something, but we just use split and add it back
             parts = re.split(r'(?=# BET \d+)', text)
             
             for part in parts:
                 clean_part = part.strip()
                 if clean_part:
                     self.wa.send_message(to_number, clean_part)
-                    # Tiny sleep to ensure message order in WhatsApp (sometimes they flip)
                     await asyncio.sleep(0.3)
+            
+            # Send bet options footer
+            self.wa.send_message(to_number, Responses.BET_OPTIONS_FOOTER)
         else:
-            # Fallback for messages without BET headers
             self.wa.send_message(to_number, text)
 
     def _is_confirmation(self, text):

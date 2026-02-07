@@ -3,48 +3,50 @@ import random
 class Responses:
     """
     Central repository for premium, conversational bot strings.
+    Clean, punchy messages designed for WhatsApp button conversation flow.
     """
     
     GREETING = (
-        "🤖 *Welcome to GoalMine AI* — Your elite World Cup 2026 **Money-Making Machine**.\n\n"
-        "I am a multi-agent swarm engineered for one purpose: **Alpha**. I bypass public narratives to find mathematical edges in the market.\n\n"
-        "📍 *Operational Capabilities:*\n"
-        "• *Deep-Swarm Analysis:* Say 'Analyze [Teams]' for a full tactical & market breakdown.\n"
-        "• *Strategic Parlays:* Ask 'Parlay this with [Team]' to find compounded value.\n"
-        "• *Budget Allocation:* Ask 'How should I spend $200 today?' for a Kelly-based plan.\n\n"
-        "📜 *The Rules:*\n"
-        "1. I only track official World Cup 2026 fixtures.\n"
-        "2. I strictly discuss Football and Betting ROI.\n"
-        "3. Every morning at *5:00 AM*, I drop a 'Sharp' briefing into your inbox.\n\n"
-        "How can I help you extract value from the pitch today?"
+        "⚽ *GoalMine AI* — World Cup 2026\n\n"
+        "Sharp odds. Real edges. Zero fluff.\n\n"
+        "Here's what I do:\n"
+        "• 📊 *Analyze* any match — say _\"Analyze USA vs Mexico\"_\n"
+        "• 🎯 *Parlays* — say _\"Parlay this with Brazil\"_\n"
+        "• 💵 *Budget plans* — say _\"How should I spend $200?\"_\n\n"
+        "I drop a *Sharp Briefing* every morning at *5 AM*.\n\n"
+        "What match are we looking at?"
     )
 
     MATCH_READING = [
-        "🔍 One moment, I'm pulling the latest data for this fixture...",
-        "⚖️ Accessing the vault. Reading match context and market odds...",
-        "🤖 Just a second, GoalMine Analyst 01 is parsing the details..."
+        "🔍 Pulling live data…",
+        "⚙️ Reading odds & match context…",
+        "📡 Syncing market data…"
     ]
 
     LAUNCHING_SWARM = [
-        "🚀 Action confirmed: *{match}*. Deploying the Swarm [Logistics, Tactics, Market, Narrative]...",
-        "📡 Syncing all agents for *{match}*. Calculating adjusted xG and market edge...",
-        "🕵️ Identified: *{match}*. Launching deep-swarm analysis now..."
+        "🚀 *{match}* — Running full analysis…",
+        "📡 *{match}* — Crunching xG & market edge…",
+        "🔬 *{match}* — Deep scan in progress…"
     ]
     
     CONFIRMATION_PROMPTS = [
-        "I assume you mean *{match}*?\nShall I run the numbers?",
-        "Found it: *{match}*.\nWant me to deploy the swarm?",
-        "Next up: *{match}*.\nReady to analyze?"
+        "👉 *{match}* — want me to run it?",
+        "📌 *{match}* — shall I break it down?",
+        "🎯 *{match}* — ready to analyze?"
     ]
     
-    ANALYSIS_ERROR = "⚠️ Something went wrong with the analysis. Let me try again..."
+    ANALYSIS_ERROR = "⚠️ Hit a snag pulling that analysis. Give me one more shot — try again."
     
-    CONTEXT_ERROR = "I'm having trouble accessing that information right now. Could you rephrase your question?"
+    CONTEXT_ERROR = "Hmm, couldn't pull that up. Try rephrasing your question."
     
     GENERAL_HELP = (
-        "Hey! I'm GoalMine, your World Cup betting assistant. "
-        "I can analyze matches, check schedules, and identify value bets. "
-        "What would you like to know?"
+        "⚽ I'm *GoalMine* — your World Cup edge-finder.\n"
+        "Ask me to analyze a match, check the schedule, or find value bets."
+    )
+
+    BET_OPTIONS_FOOTER = (
+        "🎲 *Bet Options*\n"
+        "Want more plays? Say _\"more bets\"_ or _\"parlay this\"_."
     )
 
     @staticmethod
@@ -64,6 +66,15 @@ class Responses:
         """Returns a natural confirmation prompt for a match."""
         return random.choice(Responses.CONFIRMATION_PROMPTS).format(match=match)
 
-    NO_MATCHES_TODAY = "📅 *Calendar Check:* No official World Cup matches scheduled for today.\n\nTry asking for the 'Full Schedule' or analyze an upcoming clash like 'Analyze USA vs Mexico'."
-    UNKNOWN_TEAMS = "❓ *Identify Failed:* I couldn't quite catch those teams. Could you specify them clearly? (e.g., 'Analyze England vs Germany')"
-    INVALID_SCHEDULE = "⚠️ *Fixture Error:* Match not found in the official World Cup 2026 Schedule.\nI only track sanctioned tournament games."
+    NO_MATCHES_TODAY = (
+        "📅 No World Cup matches today.\n\n"
+        "Say _\"full schedule\"_ or try _\"Analyze USA vs Mexico\"_."
+    )
+    UNKNOWN_TEAMS = (
+        "❓ Couldn't catch those teams.\n"
+        "Try something like _\"Analyze England vs Germany\"_."
+    )
+    INVALID_SCHEDULE = (
+        "⚠️ Match not found in the World Cup 2026 schedule.\n"
+        "I only cover official tournament fixtures."
+    )

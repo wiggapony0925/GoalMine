@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -26,51 +27,72 @@ conv_handler = ConversationHandler(wa_client)
 
 # --- SCHEDULER ---
 def push_morning_brief():
-    """ Daily Brief from settings """
-    logger.info("Pushing Morning Brief...")
+    """ Daily Brief — sends today's match lineup with venue context. """
+    logger.info("☀️ Pushing Morning Brief...")
     
-    # 1. Get raw data needed for template / text
-    matches = orchestrator.get_todays_matches()
-    num_edges = len(matches) # Simplified for now
-    today_str = datetime.now().strftime("%b %d")
-    top_match = f"{matches[0]['team_home']} vs {matches[0]['team_away']}" if matches else "N/A"
-
-    test_user = "9294255178"
-    
-    # Generate Fallback Text
-    fallback = orchestrator.get_schedule_brief(days=1)
-
-    if settings.get('whatsapp.use_templates'):
-        template_name = settings.get('whatsapp.templates.briefing', 'goalmine_alpha_briefing')
-        wa_client.send_template_message(
-            test_user, 
-            template_name, 
-            [today_str, num_edges, top_match],
-            fallback_text=fallback
-        )
-    else:
-        if fallback:
-            wa_client.send_message(test_user, fallback)
-
-def check_upcoming_matches_alert():
-    """ Runs based on settings interval for Kick-off Alerts """
-    upcoming = orchestrator.get_upcoming_matches()
-    test_user = "9294255178"
-
-    for m in upcoming:
-        # Generate Fallback Text
-        fallback = f"🚨 KICK-OFF ALERT: {m['team_home']} vs {m['team_away']} starts in 1 hour!\nReply 'Analyze {m['team_home']}' for a last-minute edge."
+    try:
+        matches = orchestrator.get_todays_matches()
+        test_user = os.getenv("ALERT_PHONE_NUMBER", "9294255178")
         
+        if not matches:
+            logger.info("📅 No matches today — skipping morning brief.")
+            return
+        
+        today_str = datetime.now().strftime("%b %d")
+        num_matches = len(matches)
+        top_match = f"{matches[0]['team_home']} vs {matches[0]['team_away']}"
+        top_venue = matches[0].get('venue', 'TBD')
+
+        # Generate rich fallback text
+        fallback = orchestrator.get_schedule_brief(days=1)
+
         if settings.get('whatsapp.use_templates'):
-            template_name = settings.get('whatsapp.templates.kickoff', 'goalmine_kickoff_alert')
+            template_name = settings.get('whatsapp.templates.briefing', 'goalmine_alpha_briefing')
             wa_client.send_template_message(
                 test_user, 
                 template_name, 
-                [m['team_home'], m['team_away']],
+                [today_str, str(num_matches), top_match],
                 fallback_text=fallback
             )
         else:
-            wa_client.send_message(test_user, fallback)
+            if fallback:
+                wa_client.send_message(test_user, fallback)
+    except Exception as e:
+        logger.error(f"❌ Morning brief failed: {e}")
+
+def check_upcoming_matches_alert():
+    """ Runs on interval — sends kickoff alerts with venue + stage context. """
+    try:
+        upcoming = orchestrator.get_upcoming_matches()
+        test_user = os.getenv("ALERT_PHONE_NUMBER", "9294255178")
+
+        for m in upcoming:
+            home = m['team_home']
+            away = m['team_away']
+            venue = m.get('venue', 'TBD')
+            stage = m.get('stage', 'Group Stage')
+            time_str = orchestrator.format_to_12hr(m['date_iso'])
+            
+            fallback = (
+                f"🚨 *KICKOFF ALERT*\n\n"
+                f"⚽ *{home} vs {away}*\n"
+                f"🕐 {time_str} · {stage}\n"
+                f"🏟️ {venue}\n\n"
+                f"Say _\"analyze {home} vs {away}\"_ for a last-minute edge."
+            )
+            
+            if settings.get('whatsapp.use_templates'):
+                template_name = settings.get('whatsapp.templates.kickoff', 'goalmine_kickoff_alert')
+                wa_client.send_template_message(
+                    test_user, 
+                    template_name, 
+                    [home, away],
+                    fallback_text=fallback
+                )
+            else:
+                wa_client.send_message(test_user, fallback)
+    except Exception as e:
+        logger.error(f"❌ Kickoff alert failed: {e}")
 
 
 scheduler = BackgroundScheduler()
