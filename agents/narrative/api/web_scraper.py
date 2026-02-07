@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from core.log import get_logger
+from core.utils import DEFAULT_HEADERS
 
 logger = get_logger("API.Scraper")
 
@@ -12,12 +13,8 @@ def extract_article_text(url):
     if not url or "reddit.com" in url:  # Reddit already handled via JSON
         return None
 
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-
     try:
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=DEFAULT_HEADERS, timeout=5)
         if response.status_code != 200:
             return None
 

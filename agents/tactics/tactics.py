@@ -1,7 +1,9 @@
+import asyncio
 import re
 import json
 from core.log import get_logger
 from core.initializer.llm import query_llm
+from core.utils import clean_markdown_json
 from .api.sportmonks import fetch_team_stats
 
 logger = get_logger("Tactics")
@@ -89,8 +91,6 @@ class TacticsAgent:
     async def _fetch_data_safely(self, id_a, id_b):
         """Fetches data or returns 'League Average' defaults on failure."""
         try:
-            import asyncio
-
             raw_a = await asyncio.to_thread(fetch_team_stats, id_a)
             raw_b = await asyncio.to_thread(fetch_team_stats, id_b)
             return raw_a, raw_b
@@ -131,7 +131,7 @@ class TacticsAgent:
 
         try:
             # Clean markdown code blocks if present
-            clean_text = response_text.replace("```json", "").replace("```", "").strip()
+            clean_text = clean_markdown_json(response_text)
 
             # Regex to find the JSON structure specifically
             match = re.search(r"\{.*\}", clean_text, re.DOTALL)

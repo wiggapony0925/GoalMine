@@ -2,6 +2,7 @@ import requests
 import xml.etree.ElementTree as ET
 from urllib.parse import quote
 from core.log import get_logger
+from core.utils import DEFAULT_HEADERS
 
 logger = get_logger("API.GoogleNews")
 
@@ -46,12 +47,7 @@ def fetch_headlines(team_name, query_type="general", region="GB"):
     rss_url = f"https://news.google.com/rss/search?q={encoded_q}&hl=en-{region}&gl={region}&ceid={region}:en"
 
     try:
-        # User-Agent is vital to avoid 403 Forbidden on some Google endpoints
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-        }
-
-        response = requests.get(rss_url, headers=headers, timeout=10)
+        response = requests.get(rss_url, headers=DEFAULT_HEADERS, timeout=10)
         response.raise_for_status()
 
         root = ET.fromstring(response.content)

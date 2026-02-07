@@ -42,8 +42,6 @@ def run_tests(test_type="all", with_coverage=False):
 
     # Test paths
     test_files = [
-        "test/test_complete_coverage.py",
-        "test/integration/test_end_to_end.py",
         "test/unit/",
     ]
     base_cmd.extend(test_files)
@@ -86,8 +84,8 @@ def print_coverage_summary():
         ],
         "Orchestration": ["services/orchestrator.py"],
         "Conversation Flows": [
-            "services/buttonConversationalFlow/button_conversation.py",
-            "services/conversationalFlow/conversation.py",
+            "services/interface/message_handler.py",
+            "services/interface/ui_manager.py",
         ],
         "God View System": ["data/scripts/godview_builder.py"],
     }

@@ -1,5 +1,9 @@
+import asyncio
+import random
+import urllib.parse
 import requests
 from typing import List, Dict
+from core.utils import DEFAULT_USER_AGENT
 from data.scripts.data import REDDIT_CONFIG
 from core.log import get_logger
 
@@ -15,10 +19,9 @@ class RedditScanner:
     def __init__(self):
         # No keys required for public JSON access!
         self.config = REDDIT_CONFIG
-        self.user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         self.session = requests.Session()
         self.session.headers.update(
-            {"User-Agent": self.user_agent, "Accept": "application/json"}
+            {"User-Agent": DEFAULT_USER_AGENT, "Accept": "application/json"}
         )
         logger.info("✅ Reddit No-Key Scraper Initialized (Session Mode)")
 
@@ -45,24 +48,18 @@ class RedditScanner:
             all_keywords = [
                 item for sublist in keywords_dict.values() for item in sublist
             ]
-            import random
-
             selected = random.sample(all_keywords, min(len(all_keywords), 3))
             targeted_query = f"{team_name} (" + " OR ".join(selected) + ")"
             queries.append(targeted_query)
 
         try:
             for search_query in queries:
-                import urllib.parse
-
                 encoded_query = urllib.parse.quote(search_query)
 
                 # Search across all subreddits at once
                 url = f"https://www.reddit.com/r/{sub_string}/search.json?q={encoded_query}&restrict_sr=1&sort=relevance&t=month&limit=25"
 
                 try:
-                    import asyncio
-
                     # Small offset to avoid burst penalty
                     await asyncio.sleep(0.5)
 
@@ -149,8 +146,6 @@ class RedditScanner:
             return []
         url = f"https://www.reddit.com{permalink}.json?limit=5&depth=1"
         try:
-            import asyncio
-
             response = await asyncio.to_thread(self.session.get, url, timeout=8)
             if response.status_code == 200:
                 # Reddit structure: [post_data, comment_data]

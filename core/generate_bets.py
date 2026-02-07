@@ -8,6 +8,7 @@ import json
 from core.log import get_logger
 from core.initializer.llm import query_llm
 from core.initializer.database import Database
+from core.utils import clean_llm_json_response, extract_predictions_json, log_predictions_to_db
 from data.scripts.data import BET_TYPES
 
 logger = get_logger("BetGenerator")
@@ -118,30 +119,13 @@ async def generate_bet_recommendations(
             temperature=0.5,
         )
 
-        # ========================================================================
-        # EXTRACT & LOG PREDICTIONS FOR ROI AUDIT
-        # ========================================================================
-        clean_response = response
-        if "JSON_START" in response and "JSON_END" in response:
-            try:
-                # Extract JSON block
-                json_part = response.split("JSON_START")[1].split("JSON_END")[0].strip()
-                predictions = json.loads(json_part)
+        # Extract & log predictions for ROI audit
+        predictions = extract_predictions_json(response)
+        if predictions:
+            match_id = god_view.get("meta", {}).get("cache_key", "unknown_match")
+            log_predictions_to_db(db, user_phone, match_id, predictions)
 
-                # Log each prediction to DB
-                match_id = god_view.get("meta", {}).get("cache_key", "unknown_match")
-                for p in predictions:
-                    db.log_bet_prediction(user_phone, match_id, p)
-
-                # Clean the response for WhatsApp (STRICT STRIP)
-                clean_response = response.split("JSON_START")[0].strip()
-                if "---" in clean_response:
-                    # Remove the last separator and everything after it (the audit label)
-                    clean_response = "---".join(
-                        clean_response.split("---")[:-1]
-                    ).strip()
-            except Exception as pe:
-                logger.error(f"Failed to parse/log structured predictions: {pe}")
+        clean_response = clean_llm_json_response(response)
 
         # Format output based on mode
         if conversational_mode:

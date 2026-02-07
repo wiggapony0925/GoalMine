@@ -1,8 +1,10 @@
+import asyncio
 import json
 from core.log import get_logger
 from core.initializer.llm import query_llm
 from .api.google_news import fetch_headlines
 from .api.reddit_api import RedditScanner
+from .api.free_sports import fetch_team_wikipedia_summary
 
 logger = get_logger("Narrative")
 
@@ -20,8 +22,6 @@ class NarrativeAgent:
     async def analyze(self, team_name):
         # 1. Fetch Google News Headlines (Dual-Scan Strategy)
         # Scan for physical fitness/injuries
-        import asyncio
-
         injury_articles = await asyncio.to_thread(
             fetch_headlines, team_name, query_type="injury", region="GB"
         )
@@ -35,7 +35,7 @@ class NarrativeAgent:
         # 2. Scan Reddit
         reddit_data = await self.reddit.scan_team_sentiment(team_name)
 
-        # 3. Deep Scan top News Link (New 'Link Look-In' Feature)
+        # 3. Deep Scan top News Link ('Link Look-In' Feature)
         deep_content = None
         if all_articles:
             from .api.web_scraper import extract_article_text
@@ -44,9 +44,14 @@ class NarrativeAgent:
             top_link = all_articles[0].get("link")
             deep_content = await asyncio.to_thread(extract_article_text, top_link)
 
-        source = "GOOGLE NEWS (GB) + REDDIT (DEEP_SCAN_ENABLED)"
+        # 4. Wikipedia context for historical/background enrichment
+        wiki_data = await asyncio.to_thread(
+            fetch_team_wikipedia_summary, team_name
+        )
+
+        source = "GOOGLE NEWS (GB) + REDDIT + WIKIPEDIA (DEEP_SCAN_ENABLED)"
         if not all_articles and not reddit_data.get("headlines"):
-            source = "INTERNAL_ARCHIVE_RECALL"
+            source = "WIKIPEDIA + INTERNAL_ARCHIVE_RECALL"
 
         # Combine Evidence
         news_entries = []
@@ -67,8 +72,16 @@ class NarrativeAgent:
                 entry += f" | TOP_COMMENTS: {comment_text}"
             reddit_entries.append(entry)
 
+        # Wikipedia background context
+        wiki_entries = []
+        wiki_summary = wiki_data.get("summary", "")
+        if wiki_summary:
+            wiki_entries.append(
+                f"- [WIKIPEDIA] BACKGROUND: {wiki_summary[:600]}"
+            )
+
         evidence = (
-            "\n".join(news_entries + reddit_entries)
+            "\n".join(news_entries + reddit_entries + wiki_entries)
             or "No live data. Analyze based on historical reputation."
         )
 
