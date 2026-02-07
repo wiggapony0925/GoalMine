@@ -101,7 +101,7 @@ async def generate_bet_recommendations(
         system_prompt = BET_GENERATOR_PROMPT.format(
             num_bets=num_bets,
             match=match_title,
-            stage=god_view.get("meta", {}).get("cache_key", "Group Stage"),
+            stage=god_view.get("meta", {}).get("stage", "Group Stage"),
             timestamp=god_view.get("timestamp", "N/A"),
             budget=user_state.get("budget", 100),
             intelligence=json.dumps(intelligence_package, indent=2),
@@ -141,7 +141,7 @@ async def generate_bet_recommendations(
             return f"🎰 *Bet Recommendations for {match_title}*\n\n{clean_response}"
 
     except Exception as e:
-        logger.error(f"Unified Bet Generator failed: {e}")
+        logger.error(f"Unified Bet Generator failed: {type(e).__name__}: {e}")
         return "⚠️ Failed to generate bets. Please try again."
 
 

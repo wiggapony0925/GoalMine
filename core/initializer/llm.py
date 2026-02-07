@@ -6,7 +6,7 @@ from tenacity import (
     retry,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
+    retry_if_exception,
 )
 import time
 from core.log import get_logger
@@ -51,14 +51,7 @@ def _should_retry(exc):
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
-    retry=retry_if_exception_type(
-        (
-            json.JSONDecodeError,
-            ValueError,
-            openai.APIConnectionError,
-            openai.APITimeoutError,
-        )
-    ),
+    retry=retry_if_exception(_should_retry),
     reraise=True,
 )
 async def query_llm(

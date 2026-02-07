@@ -2,6 +2,25 @@
 
 
 
+from core.config import settings
+
+
+def _get_support_block():
+    """Builds the admin support contact block from settings."""
+    name = settings.get("GLOBAL_APP_CONFIG.app.admin_name", "Admin")
+    phone = settings.get("GLOBAL_APP_CONFIG.app.admin_phone", "")
+    email = settings.get("GLOBAL_APP_CONFIG.app.admin_email", "")
+    biz_email = settings.get("GLOBAL_APP_CONFIG.app.admin_business_email", "")
+    lines = [f"👤 *{name}*"]
+    if phone:
+        lines.append(f"📱 {phone}")
+    if email:
+        lines.append(f"📧 {email}")
+    if biz_email:
+        lines.append(f"💼 {biz_email}")
+    return "\n".join(lines)
+
+
 class ButtonResponses:
     """
     Dedicated copy for the Button-Strict Interaction Mode.
@@ -73,6 +92,21 @@ class ButtonResponses:
     MATCH_LIST_FOOTER = "GoalMine Tournament Browser"
     MATCH_LIST_BUTTON = "View Fixtures"
 
+    @classmethod
+    def get_help_menu(cls):
+        return (
+            "🤖 *GoalMine AI Help*\n\n"
+            "I am an advanced AI prediction engine for the 2026 World Cup.\n"
+            "My Swarm of agents analyzes:\n"
+            "• Performance Data (xG)\n"
+            "• Market Odds\n"
+            "• Tactical Matchups\n"
+            "• Logistics (Weather/Travel)\n\n"
+            "Tap *Analyze Matches* to start.\n\n"
+            "📞 *Support Contact:*\n"
+            + _get_support_block()
+        )
+
     HELP_MENU = (
         "🤖 *GoalMine AI Help*\n\n"
         "I am an advanced AI prediction engine for the 2026 World Cup.\n"
@@ -81,12 +115,7 @@ class ButtonResponses:
         "• Market Odds\n"
         "• Tactical Matchups\n"
         "• Logistics (Weather/Travel)\n\n"
-        "Tap *Analyze Matches* to start.\n\n"
-        "📞 *Support Contact:*\n"
-        "👤 Jeffrey Fernandez\n"
-        "📱 9294255178\n"
-        "📧 ninjeff06@gmail.com\n"
-        "💼 capital.jfm@gmail.com"
+        "Tap *Analyze Matches* to start."
     )
 
     BET_GENERATION_MENU = {
@@ -123,14 +152,19 @@ class ButtonResponses:
     NO_MATCHES = "⚠️ No matches found for {filter_name}."
     MATCH_NOT_FOUND = "❌ Error: Match data not found."
     ANALYSIS_START = "🚀 Initializing Swarm for {home} vs {away}..."
+    @classmethod
+    def get_analysis_error(cls):
+        return (
+            "⚠️ *Service Temporarily Unavailable*\n\n"
+            "Our analysis engine encountered an issue. This may be due to a temporary API outage.\n\n"
+            "If this persists, please contact the administrator:\n"
+            + _get_support_block()
+        )
+
     ANALYSIS_ERROR = (
         "⚠️ *Service Temporarily Unavailable*\n\n"
         "Our analysis engine encountered an issue. This may be due to a temporary API outage.\n\n"
-        "If this persists, please contact the administrator:\n"
-        "👤 *Jeffrey Fernandez*\n"
-        "📱 9294255178\n"
-        "📧 ninjeff06@gmail.com\n"
-        "💼 capital.jfm@gmail.com"
+        "If this persists, please contact the administrator."
     )
     
     # Rejection & Guidelines
