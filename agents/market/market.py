@@ -43,9 +43,12 @@ class MarketAgent:
 
         # Pass the pre-calculated math into the system prompt context
         formatted_system_prompt = MARKET_PROMPT.format(
+            home_team=team_a,
+            away_team=team_b,
             best_odds=market_math["best_odds"],
             implied_probs=market_math["fair_probs"],
             vig=market_math["vig"],
+            model_probs=market_math["fair_probs"],
             arb_exists="YES (Risk-Free Profit!)"
             if market_math["is_arbitrage"]
             else "No",

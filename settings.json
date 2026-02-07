@@ -9,6 +9,10 @@
             "interaction_mode": "STRICT_BUTTON", // Strictly App-like button navigation
             "log_level": "INFO", // Logging verbosity: DEBUG, INFO, WARNING, ERROR
             "support_contact": "@Admin", // Support handle shown in error messages
+            "admin_name": "Jeffrey Fernandez",
+            "admin_phone": "9294255178",
+            "admin_email": "ninjeff06@gmail.com",
+            "admin_business_email": "capital.jfm@gmail.com",
             "detailed_request_logging": false // If true, logs full HTTP payloads (careful: sensitive data)
         },
         "whatsapp": {

@@ -5,7 +5,7 @@ from core.log import get_logger
 from services import orchestrator
 from core.config import settings
 from agents.gatekeeper.gatekeeper import Gatekeeper
-from prompts.messages_prompts import ButtonResponses
+from prompts.messages_prompts import ButtonResponses, _get_support_block
 from core.generate_bets import generate_bet_recommendations, generate_strategic_advice
 from .ui_manager import GoalMineUI
 
@@ -180,8 +180,13 @@ class GoalMineHandler:
             await self.ui.send_bet_footer(to_number)
 
         except Exception as e:
-            logger.error(f"Bet Gen failed: {e}")
-            self.wa.send_message(to_number, "⚠️ Could not generate bets at this time.")
+            logger.error(f"Bet Gen failed: {type(e).__name__}: {e}")
+            self.wa.send_message(
+                to_number,
+                "⚠️ Could not generate bets at this time.\n\n"
+                "If this persists, please contact the administrator:\n"
+                + _get_support_block(),
+            )
             await self.ui.send_main_menu(to_number)
 
     async def _trigger_analysis(self, to_number, match_query):
@@ -262,10 +267,9 @@ class GoalMineHandler:
             await self.ui.send_analysis_footer(to_number)
 
         except Exception as e:
-            logger.error(f"Strict Analysis failed: {e}")
-            support = settings.get("GLOBAL_APP_CONFIG.app.support_contact", "@Admin")
+            logger.error(f"Strict Analysis failed: {type(e).__name__}: {e}")
             self.wa.send_message(
-                to_number, ButtonResponses.ANALYSIS_ERROR.format(support=support)
+                to_number, ButtonResponses.get_analysis_error()
             )
 
     async def _strategic_betting_advisor(self, user_state, question, user_phone):

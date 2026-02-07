@@ -154,7 +154,7 @@ async def generate_betting_briefing(match_info, user_budget=None):
     # 2. Handle failures with fallback data
     # Logistics fallback
     if isinstance(log_res, Exception):
-        logger.error(f"❌ Logistics Agent failed: {log_res}")
+        logger.error(f"❌ Logistics Agent failed: {type(log_res).__name__}: {log_res}")
         log_res = {
             "branch": "logistics",
             "fatigue_score": 5,
@@ -169,7 +169,7 @@ async def generate_betting_briefing(match_info, user_budget=None):
 
     # Tactics fallback
     if isinstance(tac_res, Exception):
-        logger.error(f"❌ Tactics Agent failed: {tac_res}")
+        logger.error(f"❌ Tactics Agent failed: {type(tac_res).__name__}: {tac_res}")
         tac_res = {
             "branch": "tactics",
             "team_a_xg": 1.5,
@@ -185,7 +185,7 @@ async def generate_betting_briefing(match_info, user_budget=None):
 
     # Market fallback
     if isinstance(mkt_res, Exception):
-        logger.error(f"❌ Market Agent failed: {mkt_res}")
+        logger.error(f"❌ Market Agent failed: {type(mkt_res).__name__}: {mkt_res}")
         mkt_res = {
             "branch": "market",
             "best_odds": {},
@@ -200,7 +200,7 @@ async def generate_betting_briefing(match_info, user_budget=None):
 
     # Narrative A fallback
     if isinstance(nar_a, Exception):
-        logger.error(f"❌ Narrative Agent ({home}) failed: {nar_a}")
+        logger.error(f"❌ Narrative Agent ({home}) failed: {type(nar_a).__name__}: {nar_a}")
         nar_a = {
             "branch": "narrative",
             "team": home,
@@ -219,7 +219,7 @@ async def generate_betting_briefing(match_info, user_budget=None):
 
     # Narrative B fallback
     if isinstance(nar_b, Exception):
-        logger.error(f"❌ Narrative Agent ({away}) failed: {nar_b}")
+        logger.error(f"❌ Narrative Agent ({away}) failed: {type(nar_b).__name__}: {nar_b}")
         nar_b = {
             "branch": "narrative",
             "team": away,
@@ -348,7 +348,9 @@ async def format_the_closer_report(briefing, num_bets=1):
     }
 
     formatted_prompt = CLOSER_PROMPT.format(
-        match=briefing["match"], intelligence=json.dumps(intel_matrix, indent=2)
+        match=briefing["match"],
+        timestamp=briefing.get("timestamp", "N/A"),
+        intelligence=json.dumps(intel_matrix, indent=2),
     )
 
     user_prompt = f"USER REQUESTED: {num_bets} betting play(s).\n\nGOD VIEW DATA:\n{json.dumps(briefing['quant']['top_plays'][:3], indent=2)}"
@@ -374,7 +376,7 @@ async def format_the_closer_report(briefing, num_bets=1):
         return clean_response
 
     except Exception as e:
-        logger.error(f"The Closer failed: {e}")
+        logger.error(f"The Closer failed: {type(e).__name__}: {e}")
         return "Intelligence gathered, but the briefing failed to generate."
 
 

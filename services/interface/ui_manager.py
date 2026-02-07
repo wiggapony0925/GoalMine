@@ -193,8 +193,7 @@ class GoalMineUI:
 
     async def send_help_menu(self, to_number):
         """Sends the Help/About info."""
-        support = settings.get("GLOBAL_APP_CONFIG.app.support_contact", "@Admin")
-        msg = ButtonResponses.HELP_MENU + f"\n\nFor support, contact {support}"
+        msg = ButtonResponses.get_help_menu()
 
         nav_obj = {
             "type": "button",

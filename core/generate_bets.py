@@ -89,7 +89,9 @@ async def generate_bet_recommendations(
     if conversational_mode and user_question:
         # User asked a specific strategy question
         system_prompt = STRATEGIC_ADVISOR_PROMPT.format(
-            god_view=json.dumps(intelligence_package, indent=2)
+            user_question=user_question,
+            god_view=json.dumps(intelligence_package, indent=2),
+            budget=user_state.get("budget", 100),
         )
         user_prompt = user_question
         logger.info(f"💡 Strategic Advisor Mode: {user_question[:50]}...")
@@ -97,7 +99,12 @@ async def generate_bet_recommendations(
     else:
         # Standard bet generation (Button flow or simple "give me X bets")
         system_prompt = BET_GENERATOR_PROMPT.format(
-            num_bets=num_bets, intelligence=json.dumps(intelligence_package, indent=2)
+            num_bets=num_bets,
+            match=match_title,
+            stage=god_view.get("meta", {}).get("stage", "Group Stage"),
+            timestamp=god_view.get("timestamp", "N/A"),
+            budget=user_state.get("budget", 100),
+            intelligence=json.dumps(intelligence_package, indent=2),
         )
         user_prompt = f"Generate {num_bets} high-value betting recommendations using ALL available intelligence."
 
@@ -134,7 +141,7 @@ async def generate_bet_recommendations(
             return f"🎰 *Bet Recommendations for {match_title}*\n\n{clean_response}"
 
     except Exception as e:
-        logger.error(f"Unified Bet Generator failed: {e}")
+        logger.error(f"Unified Bet Generator failed: {type(e).__name__}: {e}")
         return "⚠️ Failed to generate bets. Please try again."
 
 

@@ -102,7 +102,12 @@ class NarrativeAgent:
         )
 
         llm_response = await query_llm(
-            NARRATIVE_PROMPT.format(source=source),
+            NARRATIVE_PROMPT.format(
+                team_name=team_name,
+                opponent_name="Opponent",
+                stage="Group Stage",
+                source=source,
+            ),
             user_prompt,
             config_key="narrative",
             json_mode=True,

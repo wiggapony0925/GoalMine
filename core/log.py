@@ -64,6 +64,8 @@ class GoalMineFormatter(logging.Formatter):
         "System": "🔹",
         "Gatekeeper": "🚪",
         "DataScout": "🛰️",
+        "BetGenerator": "🎰",
+        "GodViewBuilder": "🔮",
     }
 
     def format(self, record):
