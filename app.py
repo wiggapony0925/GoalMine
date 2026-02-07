@@ -174,11 +174,6 @@ def data_deletion():
 
     user_id = data.get("user_id")
     if user_id:
-        # 1. Trigger the Wipe
-        # Note: Meta passes a 'user_id'. In our DB, we use 'phone'.
-        # For simplicity in this dev stage, we assume they are mapped or delete by ID.
-        # If your users log in with FB, 'user_id' is their FB ID.
-        # If it's pure WhatsApp, Meta will send the account ID.
         success = db_client.delete_all_user_data(user_id)
 
         if success:

@@ -28,7 +28,7 @@ class FootballDataClient:
 
         try:
             logger.info(f"📡 Requesting live data from {competition} {season}...")
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=10)
 
             if response.status_code == 200:
                 data = response.json()

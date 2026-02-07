@@ -66,7 +66,7 @@ class WhatsAppClient:
         }
 
         try:
-            response = requests.post(url, headers=headers, json=data)
+            response = requests.post(url, headers=headers, json=data, timeout=10)
             response.raise_for_status()
             logger.info(f"Message sent to {to_number}")
 
@@ -159,7 +159,7 @@ class WhatsAppClient:
         )
 
         try:
-            response = requests.post(url, headers=headers, json=data)
+            response = requests.post(url, headers=headers, json=data, timeout=10)
             response.raise_for_status()
             logger.info(f"✅ Template '{template_name}' sent to {to_number}")
             return response.json()
@@ -189,7 +189,7 @@ class WhatsAppClient:
             "message_id": message_id,
         }
         try:
-            requests.post(url, headers=headers, json=data)
+            requests.post(url, headers=headers, json=data, timeout=5)
         except Exception as e:
             logger.warning(f"Failed to mark message as read: {e}")
 
@@ -217,7 +217,7 @@ class WhatsAppClient:
         }
 
         try:
-            response = requests.post(url, headers=headers, json=data)
+            response = requests.post(url, headers=headers, json=data, timeout=10)
             # If 400, log the payload for debugging
             if response.status_code == 400:
                 logger.error(f"❌ WhatsApp 400 Payload: {json.dumps(data, indent=2)}")
@@ -265,7 +265,7 @@ class WhatsAppClient:
         }
 
         try:
-            requests.post(url, headers=headers, json=data)
+            requests.post(url, headers=headers, json=data, timeout=10)
             logger.info(f"📍 Location sent to {to_number}")
         except Exception as e:
             logger.error(f"Failed to send location: {e}")

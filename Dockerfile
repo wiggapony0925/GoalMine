@@ -45,10 +45,6 @@ ENV PATH=/root/.local/bin:$PATH
 # Copy application code
 COPY . .
 
-# Create non-root user for security (optional but recommended)
-# RUN useradd -m goalmine && chown -R goalmine:goalmine /app
-# USER goalmine
-
 # Expose the port
 EXPOSE 8000
 

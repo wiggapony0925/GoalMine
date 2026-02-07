@@ -44,20 +44,3 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-# =============================================================================
-# Future Expansion (Optional)
-# =============================================================================
-# If you ever need Redis for caching or rate limiting:
-#
-#   redis:
-#     image: redis:alpine
-#     container_name: goalmine-redis
-#     restart: unless-stopped
-#     ports:
-#       - "6379:6379"
-#     volumes:
-#       - redis_data:/data
-#
-# volumes:
-#   redis_data:

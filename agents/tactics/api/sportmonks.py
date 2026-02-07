@@ -17,7 +17,7 @@ def fetch_team_stats(team_name):
     try:
         # 1. Search for Team ID - Prioritize National Teams
         search_url = f"https://api.sportmonks.com/v3/football/teams/search/{team_name}?api_token={api_token}"
-        response = requests.get(search_url)
+        response = requests.get(search_url, timeout=10)
         response.raise_for_status()
         data = response.json().get("data", [])
 
@@ -32,11 +32,10 @@ def fetch_team_stats(team_name):
 
         # 2. Get Fixture Data (Today/Upcoming) with Lineups
         fixtures_url = f"https://api.sportmonks.com/v3/football/fixtures/between/2026-01-01/2026-12-31/{team_id}?api_token={api_token}&include=lineups.player,coaches.coach,venue"
-        fixture_resp = requests.get(fixtures_url)
+        fixture_resp = requests.get(fixtures_url, timeout=10)
         fixture_data = fixture_resp.json().get("data", [])
 
         # Sort by date to find the most relevant (upcoming or live)
-        # For simplicity, we grab the first one found or a live one if exists
         target_fixture = None
         if fixture_data:
             # Prefer 'Live' status (state_id in [2, 3, 4])
@@ -74,9 +73,6 @@ def fetch_team_stats(team_name):
             elif state_id == 5:
                 live_status = "FINISHED"
 
-            target_fixture.get("scores", [])
-            # In V3, scores are usually in a list or object depending on nesting
-            # This is a simplified extraction
             score = "Check God View"
 
             venue_name = target_fixture.get("venue", {}).get("name", venue_name)

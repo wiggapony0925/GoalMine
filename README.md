@@ -64,6 +64,7 @@ GoalMine/
 │   │   └── database.py                 # Supabase interface
 │   ├── config.py                       # Settings manager (settings.json)
 │   ├── log.py                          # Centralized logging
+│   ├── utils.py                        # Shared utilities & HTTP helpers
 │   └── generate_bets.py               # Bet generation synthesizer (Big Daddy)
 │
 ├── agents/                             # AI Agent Swarm (parallel execution)
