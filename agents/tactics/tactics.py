@@ -51,7 +51,14 @@ class TacticsAgent:
 
         # 4. EXECUTE ANALYSIS
         formatted_sys = TACTICS_PROMPT.format(
-            style_a=style_a, style_b=style_b, base_a=base_xg_a, base_b=base_xg_b
+            home_team=data_a["name"],
+            away_team=data_b["name"],
+            style_a=style_a,
+            style_b=style_b,
+            base_a=base_xg_a,
+            base_b=base_xg_b,
+            home_form=data_a.get("form", "Unknown"),
+            away_form=data_b.get("form", "Unknown"),
         )
 
         response = await query_llm(

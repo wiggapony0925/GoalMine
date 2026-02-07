@@ -81,7 +81,12 @@ class ButtonResponses:
         "• Market Odds\n"
         "• Tactical Matchups\n"
         "• Logistics (Weather/Travel)\n\n"
-        "Tap *Analyze Matches* to start."
+        "Tap *Analyze Matches* to start.\n\n"
+        "📞 *Support Contact:*\n"
+        "👤 Jeffrey Fernandez\n"
+        "📱 9294255178\n"
+        "📧 ninjeff06@gmail.com\n"
+        "💼 capital.jfm@gmail.com"
     )
 
     BET_GENERATION_MENU = {
@@ -118,7 +123,15 @@ class ButtonResponses:
     NO_MATCHES = "⚠️ No matches found for {filter_name}."
     MATCH_NOT_FOUND = "❌ Error: Match data not found."
     ANALYSIS_START = "🚀 Initializing Swarm for {home} vs {away}..."
-    ANALYSIS_ERROR = "⚠️ Operational error. Please contact {support} if this persists."
+    ANALYSIS_ERROR = (
+        "⚠️ *Service Temporarily Unavailable*\n\n"
+        "Our analysis engine encountered an issue. This may be due to a temporary API outage.\n\n"
+        "If this persists, please contact the administrator:\n"
+        "👤 *Jeffrey Fernandez*\n"
+        "📱 9294255178\n"
+        "📧 ninjeff06@gmail.com\n"
+        "💼 capital.jfm@gmail.com"
+    )
     
     # Rejection & Guidelines
     REJECT_TEXT = (

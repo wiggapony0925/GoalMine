@@ -19,6 +19,35 @@ logger = get_logger("LLM")
 client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
+def _is_quota_or_billing_error(exc):
+    """Detects OpenAI quota/billing errors that should NOT be retried."""
+    if isinstance(exc, openai.AuthenticationError):
+        return True
+    if isinstance(exc, openai.PermissionDeniedError):
+        return True
+    if isinstance(exc, openai.RateLimitError):
+        error_msg = str(exc).lower()
+        if "quota" in error_msg or "billing" in error_msg or "exceeded" in error_msg:
+            return True
+    return False
+
+
+def _should_retry(exc):
+    """Custom retry filter: retry transient errors, skip billing/quota errors."""
+    if _is_quota_or_billing_error(exc):
+        return False
+    return isinstance(
+        exc,
+        (
+            json.JSONDecodeError,
+            ValueError,
+            openai.APIConnectionError,
+            openai.APITimeoutError,
+            openai.RateLimitError,
+        ),
+    )
+
+
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=2, max=10),
@@ -28,7 +57,6 @@ client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
             ValueError,
             openai.APIConnectionError,
             openai.APITimeoutError,
-            openai.RateLimitError,
         )
     ),
     reraise=True,
@@ -129,8 +157,42 @@ async def query_llm(
 
         return content
 
-    except Exception as e:
+    except openai.AuthenticationError as e:
+        logger.critical(
+            f"🔑 OPENAI AUTH ERROR [{config_key or 'General'}]: API key is invalid or expired. "
+            f"Check your OPENAI_API_KEY environment variable. Details: {e}"
+        )
+        raise e
+
+    except openai.RateLimitError as e:
+        error_msg = str(e).lower()
+        if "quota" in error_msg or "billing" in error_msg or "exceeded" in error_msg:
+            logger.critical(
+                f"💳 OPENAI QUOTA EXCEEDED [{config_key or 'General'}]: Your OpenAI account has run out of credits. "
+                f"Add funds at https://platform.openai.com/account/billing. Details: {e}"
+            )
+            raise e  # Do NOT retry billing errors
+        else:
+            logger.warning(
+                f"⏳ OPENAI RATE LIMITED [{config_key or 'General'}]: Too many requests. Will retry. Details: {e}"
+            )
+            raise e  # Let Tenacity handle transient rate limits
+
+    except openai.PermissionDeniedError as e:
+        logger.critical(
+            f"🚫 OPENAI PERMISSION DENIED [{config_key or 'General'}]: Your API key lacks access to {final_model}. "
+            f"Check your OpenAI plan and permissions. Details: {e}"
+        )
+        raise e
+
+    except (openai.APIConnectionError, openai.APITimeoutError) as e:
         logger.error(
-            f"❌ LLM Failure [{config_key or 'General'}] on {final_model}: {e}"
+            f"🌐 OPENAI NETWORK ERROR [{config_key or 'General'}] on {final_model}: {e}"
         )
         raise e  # Let Tenacity handle the retry
+
+    except Exception as e:
+        logger.error(
+            f"❌ LLM Failure [{config_key or 'General'}] on {final_model}: {type(e).__name__}: {e}"
+        )
+        raise e
