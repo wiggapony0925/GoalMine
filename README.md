@@ -12,6 +12,7 @@
 **GoalMine** is a production-grade, autonomous betting intelligence platform built for the **2026 FIFA World Cup**. It orchestrates a multi-agent AI swarm to analyze matches from every angle — logistics, tactics, market odds, narrative sentiment, and quantitative modeling — then synthesizes everything into high-conviction betting recommendations.
 
 **Key Numbers:**
+
 | Metric | Value |
 |---|---|
 | Analysis Speed | 20 seconds (parallel agents) |
@@ -268,11 +269,13 @@ All scheduling parameters are configurable in `settings.json` under `GLOBAL_APP_
 ## Prompt Engineering
 
 All system prompts use `{variable}` injection for dynamic context. This makes agents:
+
 - **Context-aware** — each prompt receives match-specific data at runtime
 - **Precise** — variables like `{home_team}`, `{base_a:.2f}`, `{intelligence}` eliminate ambiguity
 - **Maintainable** — prompts are centralized in `prompts/system_prompts.py`
 
 Every prompt includes:
+
 - **Role identity** with clear mission
 - **Chain-of-Thought** reasoning steps
 - **Few-shot examples** for consistent output
@@ -317,6 +320,20 @@ Server runs on `http://localhost:8000`
 ```bash
 docker build -t goalmine-ai .
 docker run -p 8000:8000 --env-file .env goalmine-ai
+```
+
+#### Automated Production Builds
+
+This repository is configured with GitHub Actions to automatically build and publish the Docker image to the **GitHub Container Registry (GHCR)** on every push to the `main` branch.
+
+- **Registry:** `ghcr.io/wiggapony0925/goalmine`
+- **Latest Tag:** `:main`
+- **Release Tags:** `:vX.X.X`
+
+To pull the latest production image:
+
+```bash
+docker pull ghcr.io/wiggapony0925/goalmine:main
 ```
 
 ### Database (Supabase)
