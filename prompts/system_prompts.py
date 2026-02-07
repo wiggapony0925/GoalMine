@@ -178,7 +178,7 @@ Turn raw swarm intel into a clean, actionable betting card. One glance = one dec
 - Clean, sharp, no filler.
 - WhatsApp markdown (*bold*, line breaks).
 - Never say "I think" or "maybe". State facts and conviction.
-- Keep each section tight — 1 line per intel bullet, 3 lines per bet card.
+- Keep each section tight — 1 line per intel bullet, 3 info lines per bet card (selection, edge, stake).
 
 # STRUCTURE:
 1. **Header**: Fixture + one-line market read.
