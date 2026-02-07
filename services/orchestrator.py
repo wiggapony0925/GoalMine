@@ -12,7 +12,7 @@ from agents.logistics.logistics import LogisticsAgent
 from agents.tactics.tactics import TacticsAgent
 from agents.market.market import MarketAgent
 from agents.narrative.narrative import NarrativeAgent
-from agents.quant.quant import run_quant_engine  # Still function based for now
+from agents.quant.quant import run_quant_engine
 from core.initializer.llm import query_llm
 from core.config import settings
 from services.data_scout import data_scout

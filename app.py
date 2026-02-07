@@ -13,7 +13,7 @@ import hashlib
 from flask import Flask, request, jsonify, render_template_string
 from apscheduler.schedulers.background import BackgroundScheduler
 from collections import deque
-from core import setup_logging, register_request_logger, print_start_banner, settings
+from core import setup_logging, clear_log, register_request_logger, print_start_banner, settings
 from core.initializer import WhatsAppClient, Database
 from services.interface import GoalMineHandler
 from services import data_scout
@@ -24,6 +24,7 @@ from services.interface.automatic import (
 )
 
 # --- SETUP ---
+clear_log()
 logger = setup_logging()
 
 app = Flask(__name__)
@@ -173,11 +174,6 @@ def data_deletion():
 
     user_id = data.get("user_id")
     if user_id:
-        # 1. Trigger the Wipe
-        # Note: Meta passes a 'user_id'. In our DB, we use 'phone'.
-        # For simplicity in this dev stage, we assume they are mapped or delete by ID.
-        # If your users log in with FB, 'user_id' is their FB ID.
-        # If it's pure WhatsApp, Meta will send the account ID.
         success = db_client.delete_all_user_data(user_id)
 
         if success:

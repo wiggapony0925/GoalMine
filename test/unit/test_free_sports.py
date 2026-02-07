@@ -3,6 +3,7 @@ Tests for agents/narrative/api/free_sports.py API functions.
 """
 
 from unittest.mock import patch, MagicMock
+import requests
 from agents.narrative.api.free_sports import (
     fetch_team_wikipedia_summary,
     fetch_football_rankings,
@@ -57,6 +58,37 @@ class TestFetchTeamWikipediaSummary:
         result = fetch_team_wikipedia_summary("Brazil")
         assert result["source"] == "wikipedia"
         assert result["summary"] == ""
+
+    @patch("agents.narrative.api.free_sports.time.sleep")
+    @patch("agents.narrative.api.free_sports.requests.get")
+    def test_timeout_retries_then_returns_empty(self, mock_get, mock_sleep):
+        mock_get.side_effect = requests.exceptions.Timeout("Read timed out")
+
+        result = fetch_team_wikipedia_summary("South Africa")
+        assert result["source"] == "wikipedia"
+        assert result["summary"] == ""
+        assert mock_get.call_count == 3  # 3 retry attempts
+        assert mock_sleep.call_count == 2  # sleep between retries
+
+    @patch("agents.narrative.api.free_sports.time.sleep")
+    @patch("agents.narrative.api.free_sports.requests.get")
+    def test_timeout_then_success_on_retry(self, mock_get, mock_sleep):
+        mock_200 = MagicMock()
+        mock_200.status_code = 200
+        mock_200.json.return_value = {
+            "title": "South Africa national football team",
+            "extract": "Team summary here",
+            "thumbnail": {"source": "https://example.com/thumb.jpg"},
+        }
+        mock_get.side_effect = [
+            requests.exceptions.Timeout("Read timed out"),
+            mock_200,
+        ]
+
+        result = fetch_team_wikipedia_summary("South Africa")
+        assert result["source"] == "wikipedia"
+        assert result["summary"] == "Team summary here"
+        assert mock_get.call_count == 2
 
 
 class TestFetchFootballRankings:
