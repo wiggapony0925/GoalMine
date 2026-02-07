@@ -7,27 +7,97 @@ from flask import request
 # Initialize colorama for terminal colors
 init(autoreset=True)
 
+
+def get_logger(name="GoalMine"):
+    """
+    Helper to get a sub-logger that inherits from the main GoalMine configuration.
+    """
+    if not name.startswith("GoalMine"):
+        full_name = f"GoalMine.{name}"
+    else:
+        full_name = name
+    logger = logging.getLogger(full_name)
+    logger.propagate = True
+    return logger
+
+
+def clear_log():
+    """
+    Truncates the app.log file to give a fresh start.
+    """
+    from datetime import datetime
+
+    try:
+        with open("app.log", "w") as f:
+            f.write(
+                f"--- 🧼 LOG WIPED: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} (Session Refresh) ---\n"
+            )
+    except Exception as e:
+        print(f"Failed to clear log: {e}")
+
+
 class GoalMineFormatter(logging.Formatter):
     """
-    Custom formatter for Terminal Output with colors and component names.
+    Premium Formatter for Terminal Output with icons and vibrant colors.
     """
+
     COLORS = {
-        'DEBUG': Fore.CYAN,
-        'INFO': Fore.GREEN,
-        'WARNING': Fore.YELLOW,
-        'ERROR': Fore.RED,
-        'CRITICAL': Fore.MAGENTA + Style.BRIGHT,
+        "DEBUG": Fore.CYAN,
+        "INFO": Fore.GREEN,
+        "WARNING": Fore.YELLOW,
+        "ERROR": Fore.RED,
+        "CRITICAL": Fore.MAGENTA + Style.BRIGHT,
+    }
+
+    ICONS = {
+        "GoalMine": "🏰",
+        "Database": "📡",
+        "LLM": "🧠",
+        "WhatsApp": "💬",
+        "Network": "🌐",
+        "Orchestrator": "🎯",
+        "Tactics": "⚔️",
+        "Logistics": "🚛",
+        "Market": "💰",
+        "Narrative": "📰",
+        "Quant": "🎲",
+        "System": "🔹",
+        "Gatekeeper": "🚪",
+        "DataScout": "🛰️",
     }
 
     def format(self, record):
         log_color = self.COLORS.get(record.levelname, Fore.WHITE)
-        comp_name = f"[{record.name}]"
-        
-        # Clean terminal output: Component -> Message
-        if record.levelname == 'INFO':
-            return f"{log_color}{comp_name} {record.getMessage()}"
+
+        # Extract base component name (e.g., GoalMine.Database -> Database)
+        comp_parts = record.name.split(".")
+        base_comp = comp_parts[-1] if comp_parts else "System"
+        icon = self.ICONS.get(base_comp, "⚙️")
+
+        # Handle special formatting for LLM or Agent results
+        message = record.getMessage()
+
+        # 🟢 Special Formatting for "INTERNAL RESULTS" (JSON or long text)
+        if base_comp == "LLM" and ("Response" in message or "Request" in message):
+            icon = "🪄"
+            comp_color = Fore.MAGENTA
+        elif base_comp in ["Tactics", "Logistics", "Market", "Narrative", "Quant"]:
+            comp_color = Fore.CYAN
         else:
-            return f"{log_color}{record.levelname}: {comp_name} {record.getMessage()}"
+            comp_color = log_color
+
+        comp_label = f"{icon} {base_comp}"
+
+        # High-End Formatting
+        if record.levelname == "INFO":
+            # Add a vertical bar for cleaner separation
+            timestamp = self.formatTime(record, "%H:%M:%S")
+            return f"{Fore.WHITE}{timestamp} | {comp_color}{comp_label.ljust(15)}{Style.RESET_ALL} | {message}"
+        elif record.levelname == "DEBUG":
+            return f"{Fore.WHITE}{Style.DIM}[DEBUG] {comp_label.ljust(15)} | {message}"
+        else:
+            return f"{log_color}{record.levelname.ljust(8)} | {comp_label.ljust(15)} | {message}"
+
 
 def setup_logging():
     """
@@ -42,88 +112,93 @@ def setup_logging():
     logging.basicConfig(level=logging.WARNING)
 
     # 3. GoalMine Master Logger
-    from core.config import settings
-    log_level_str = settings.get('app.log_level', 'INFO').upper()
-    log_level = getattr(logging, log_level_str, logging.INFO)
+    try:
+        from core.config import settings
 
-    main_logger = logging.getLogger("GoalMine")
-    main_logger.setLevel(log_level)
-    main_logger.propagate = False
+        log_level_str = settings.get("GLOBAL_APP_CONFIG.app.log_level", "INFO").upper()
+    except Exception:
+        log_level_str = "INFO"
+
+    log_level = getattr(logging, log_level_str, logging.INFO)
 
     # 4. Handlers
     # File Handler: Detailed for debugging, persistent in app.log
-    file_handler = logging.FileHandler('app.log', mode='w')
+    file_handler = logging.FileHandler("app.log", mode="a")  # Append for history
     file_handler.setLevel(logging.DEBUG)
-    file_format = logging.Formatter('%(asctime)s | %(levelname)-8s | [%(name)s] | %(message)s')
-    file_handler.setFormatter(file_format)
+    file_handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    )
 
     # Console Handler: Optimized for clean terminal viewing
     console_handler = logging.StreamHandler()
     console_handler.setLevel(log_level)
     console_handler.setFormatter(GoalMineFormatter())
 
-    main_logger.addHandler(file_handler)
-    main_logger.addHandler(console_handler)
+    # Setup core loggers
+    for logger_name in [
+        "GoalMine",
+        "WhatsApp",
+        "Database",
+        "Orchestrator",
+        "Agent",
+        "LLM",
+        "System",
+        "KickoffAlerts",
+        "MarketMonitor",
+        "MorningBrief",
+    ]:
+        component_logger = logging.getLogger(logger_name)
+        component_logger.setLevel(log_level)
+        component_logger.propagate = (
+            False  # Ensure these specific loggers don't propagate to root
+        )
+        component_logger.addHandler(file_handler)
+        component_logger.addHandler(console_handler)
 
-    # Suppress external noise
-    # Suppress external noise UNLESS detailed logging is on
-    from core.config import settings
-    if not settings.get('app.detailed_request_logging'):
-        for noisy_lib in ["werkzeug", "openai", "httpx", "httpcore", "apscheduler", "supabase", "postgrest"]:
-            logging.getLogger(noisy_lib).setLevel(logging.WARNING)
-        
-        # Extra quiet for werkzeug (Flask logs)
+    main_logger = logging.getLogger("GoalMine")  # Get the configured GoalMine logger
+    main_logger.info(f"✅ Logging System Initialized (Level: {log_level_str})")
+
+    # Suppress external noise for a cleaner terminal
+    # Library noise is suppressed at WARNING unless the app is in DEBUG mode
+    ext_level = logging.WARNING if log_level != logging.DEBUG else logging.INFO
+
+    for noisy_lib in [
+        "werkzeug",
+        "openai",
+        "httpx",
+        "httpcore",
+        "apscheduler",
+        "supabase",
+        "postgrest",
+    ]:
+        logging.getLogger(noisy_lib).setLevel(ext_level)
+
+    # Extra quiet for werkzeug (Flask logs) unless in debug
+    if log_level != logging.DEBUG:
         logging.getLogger("werkzeug").setLevel(logging.ERROR)
-    else:
-        # If detailed logging is on, set them to INFO so we see API calls
-        for noisy_lib in ["openai", "httpx", "httpcore", "apscheduler", "supabase", "postgrest"]:
-            logging.getLogger(noisy_lib).setLevel(logging.INFO)
-            # Ensure they propagate to our handlers
-            logging.getLogger(noisy_lib).addHandler(file_handler)
-            if log_level == logging.DEBUG:
-                 logging.getLogger(noisy_lib).addHandler(console_handler)
 
     return main_logger
 
-def get_logger(name="GoalMine"):
-    """
-    Helper to get a sub-logger that inherits from the main GoalMine configuration.
-    Example usage: logger = get_logger("Tactics")
-    """
-    # If the name doesn't start with GoalMine, we prefix it to ensure it inherits settings/handlers
-    # if we were using propagate=True. But since we have custom handlers on "GoalMine",
-    # we'll just attach them if it's a new top-level request.
-    
-    # For now, let's keep all app logic under the "GoalMine" hierarchy or just return a child.
-    if not name.startswith("GoalMine"):
-        full_name = f"GoalMine.{name}"
-    else:
-        full_name = name
-        
-    logger = logging.getLogger(full_name)
-    
-    # If this logger has no handlers and isn't the root, it might not log anything 
-    # if we don't enable propagation or add handlers. 
-    # We want child loggers to propagate up to "GoalMine".
-    logger.propagate = True 
-    
-    return logger
 
 def register_request_logger(app):
     """
     Cleaner Flask request logging.
     """
     logger = get_logger("Network")
-    
+
     @app.after_request
     def log_response(response):
         from core.config import settings
+
         # We only care about matching/webhook logs to keep terminal noise down
-        if "webhook" in request.path or settings.get('app.detailed_request_logging'):
+        if "webhook" in request.path or settings.get(
+            "GLOBAL_APP_CONFIG.app.detailed_request_logging"
+        ):
             status = response.status_code
             symbol = "🟢" if status < 400 else "🔴"
             logger.info(f"{symbol} Net {request.method} {request.path} -> {status}")
         return response
+
 
 def print_start_banner():
     """
@@ -134,20 +209,31 @@ def print_start_banner():
     if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         ascii_banner = pyfiglet.figlet_format("GoalMine AI")
         print(Fore.CYAN + ascii_banner)
-        print(Fore.GREEN + "🚀 GoalMine AI Prediction Engine — v2.0 'Ghost Logic' Active")
-        print(Fore.WHITE + "------------------------------------------------------------")
-        
-        # Check Database
-        db_valid = os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY")
-        db_msg = Fore.GREEN + "Cloud Sync: ONLINE" if db_valid else Fore.RED + "Cloud Sync: OFFLINE (Check Keys)"
-        print(f"💾 {db_msg}")
-        
-        # Check Data
-        try:
-            from data.scripts.data import SCHEDULE
-            print(Fore.GREEN + f"📅 Schedule: {len(SCHEDULE)} Matches Loaded")
-        except:
-            print(Fore.RED + "📅 Schedule: FAILED TO LOAD")
+        print(
+            Fore.GREEN + "🚀 GoalMine AI Prediction Engine — v2.1 Strict Button Mode"
+        )
+        print(
+            Fore.WHITE + "------------------------------------------------------------"
+        )
 
-        print(Fore.YELLOW + "🤖 Agents: [Tactics, Logistics, Market, Narrative] -> WAITING")
-        print(Fore.WHITE + "------------------------------------------------------------\n")
+        # Check Database
+        # Metadata
+        from data.scripts.data import SCHEDULE
+
+        num_matches = len(SCHEDULE)
+
+        # Security Check for Banner
+        secret_status = (
+            "🛡️ SECURE (HMAC)" if os.getenv("WHATSAPP_APP_SECRET") else "🔓 STANDARD"
+        )
+
+        print(Fore.WHITE + "💾 Cloud Sync: ONLINE")
+        print(Fore.WHITE + f"📅 Schedule: {num_matches} Matches Loaded")
+        print(Fore.WHITE + f"🔐 Security: {secret_status}")
+        print(
+            Fore.WHITE + "🤖 Agents: [Tactics, Logistics, Market, Narrative] -> WAITING"
+        )
+        print(
+            Fore.WHITE + "------------------------------------------------------------"
+        )
+        print(Style.RESET_ALL)

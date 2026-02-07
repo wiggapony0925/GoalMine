@@ -1,12 +1,17 @@
 {
     "subreddits": [
         "soccer",
-        "FIFAWorldCup",
+        "worldcup",
         "football",
         "soccerbetting",
-        "FantasyPL",
-        "bootroom",
-        "FootballTactics"
+        "USMNT",
+        "CanadaSoccer",
+        "LigaMX",
+        "WorldCup2026Tickets",
+        "worldcuptravelers",
+        "sportsanalytics",
+        "FootballTactics",
+        "FantasyWC"
     ],
     "keywords": {
         "morale_signals": [
@@ -17,7 +22,9 @@
             "unhappy",
             "dispute",
             "frozen out",
-            "squad harmony"
+            "squad harmony",
+            "disgraceful pricing",
+            "national optimism"
         ],
         "fitness_signals": [
             "hamstring",
@@ -27,7 +34,9 @@
             "unfit",
             "training alone",
             "medical",
-            "late fitness test"
+            "late fitness test",
+            "travel fatigue",
+            "altitude sickness"
         ],
         "tactical_narratives": [
             "park the bus",
@@ -36,21 +45,36 @@
             "exposed",
             "dropped",
             "benched",
-            "substitution"
+            "substitution",
+            "shape",
+            "pressing system",
+            "low block"
         ],
-        "scandal_distractions": [
-            "contract talks",
-            "transfer request",
-            "scandal",
-            "arrest",
-            "leaked",
-            "unauthorized",
-            "travel delay"
+        "logistical_volatility": [
+            "Group J",
+            "coast-to-coast",
+            "travel nightmare",
+            "visa delay",
+            "flight cancelled",
+            "6000 miles",
+            "stadium readiness",
+            "fan fest protest"
+        ],
+        "market_integrity": [
+            "scam",
+            "wrong tickets",
+            "PMA code",
+            "insider code",
+            "T J Peters",
+            "17000 cancellations",
+            "lottery success"
         ]
     },
     "metadata": {
-        "version": "1.2",
-        "deep_scan_limit": 3,
-        "comment_sort": "top"
+        "version": "2.0",
+        "deep_scan_limit": 5,
+        "comment_sort": "top",
+        "tri_nation_focus": true,
+        "primary_host": "USA"
     }
 }
